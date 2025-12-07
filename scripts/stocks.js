@@ -4,7 +4,6 @@ async function loadStocks() {
     const response = await fetch('./data/stocks.json');
     if (!response.ok) throw new Error("Erreur de chargement des stocks");
     const stocks = await response.json();
-    console.log(stocks); // Vérifie que toutes les données sont bien chargées
     localStorage.setItem('stocks', JSON.stringify(stocks));
     renderStocks(stocks);
   } catch (error) {
@@ -17,63 +16,7 @@ async function loadStocks() {
 // Afficher les stocks dans le tableau
 function renderStocks(stocks) {
   const tbody = document.querySelector('#stocks-table tbody');
-  const container = document.querySelector('#stocks-table').parentNode;
-
-  if (window.innerWidth <= 768) {
-    container.innerHTML = stocks.map(stock => {
-      // Déterminer la spécification à afficher
-      let specText = '';
-      if (stock.Type === 'Malt') {
-        specText = stock.Spec || 'N/A';
-      } else if (stock.Type === 'Houblon') {
-        specText = stock.Spec || 'N/A';
-      } else if (stock.Type === 'Levure') {
-        specText = stock.Peremption || 'N/A';
-      }
-
-      // Vérifier si le stock est négatif
-      const isNegativeStock = stock['Qté restante'] < 0;
-      const warningIcon = isNegativeStock ? '<i class="fas fa-exclamation-triangle warning-icon" title="Stock négatif"></i>' : '';
-
-      return `
-        <div class="stock-card ${isNegativeStock ? 'negative-stock' : ''}">
-          ${warningIcon}
-          <div class="card-row">
-            <span class="card-label">Type:</span>
-            <span>${stock.Type}</span>
-          </div>
-          <div class="card-row">
-            <span class="card-label">Nom:</span>
-            <span>${stock.Nom}</span>
-          </div>
-          <div class="card-row">
-            <span class="card-label">Lot:</span>
-            <span>${stock['Numéro de lot']}</span>
-          </div>
-          <div class="card-row">
-            <span class="card-label">Qté restante:</span>
-            <span>${stock['Qté restante']} g</span>
-          </div>
-          <div class="card-row">
-            <span class="card-label">Fournisseur:</span>
-            <span>${stock.Fournisseur}</span>
-          </div>
-          <div class="card-row">
-            <span class="card-label">Spécification:</span>
-            <span>${specText}</span>
-          </div>
-          <div class="card-row">
-            <span class="card-label">Péremption:</span>
-            <span>${stock.Peremption || '-'}</span>
-          </div>
-          <div class="card-actions">
-            <button onclick="editStock('${stock.id}')">✏️</button>
-            <button onclick="confirmDeleteStock('${stock.id}')">🗑️</button>
-          </div>
-        </div>
-      `;
-    }).join('');
-  } else {
+  if (tbody) {
     tbody.innerHTML = stocks.map(stock => {
       // Déterminer la spécification à afficher
       let specText = '';
@@ -108,7 +51,41 @@ function renderStocks(stocks) {
   }
 }
 
+// Ajouter un ingrédient
+document.getElementById('form-add-ingredient').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const formData = new FormData(e.target);
+  const stock = Object.fromEntries(formData.entries());
+  stock.id = `${stock.Type}::${stock.Fournisseur}::${stock.Nom}::${stock['Numéro de lot'] || 'no-lot'}`;
+  stock['Qté utilisée (g)'] = 0;
+  stock['Qté restante'] = parseFloat(stock['Qté initiale (g)']);
+
+  const stocks = JSON.parse(localStorage.getItem('stocks')) || [];
+  stocks.push(stock);
+  localStorage.setItem('stocks', JSON.stringify(stocks));
+  e.target.reset();
+  closeModal('modal-add-ingredient');
+  renderStocks(stocks);
+});
+
+// Supprimer un stock (avec confirmation)
+function confirmDeleteStock(id) {
+  if (confirm("Êtes-vous sûr de vouloir supprimer cet ingrédient ?")) {
+    deleteStock(id);
+  }
+}
+
+function deleteStock(id) {
+  let stocks = JSON.parse(localStorage.getItem('stocks')) || [];
+  stocks = stocks.filter(stock => stock.id !== id);
+  localStorage.setItem('stocks', JSON.stringify(stocks));
+  renderStocks(stocks);
+}
+
+// Fonction d'édition (à implémenter selon tes besoins)
+function editStock(id) {
+  console.log("Éditer le stock avec l'ID:", id);
+}
 
 // Charger les stocks au démarrage
 document.addEventListener('DOMContentLoaded', loadStocks);
-
