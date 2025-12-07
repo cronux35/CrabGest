@@ -408,9 +408,9 @@
     "Qté restante": -1
   },
   {
-    "id": "Houblon::nan::Styrian Goldings::",
+    "id": "Houblon::HopFrance::Styrian Goldings::",
     "Type": "Houblon",
-    "Fournisseur": "Hop France",
+    "Fournisseur": "HopFrance",
     "Nom": "Styrian Goldings",
     "Numéro de lot": "",
     "Spec": "",
@@ -420,7 +420,7 @@
     "Qté restante": 0
   },
   {
-    "id": "Houblon::nan::Cascade::",
+    "id": "Houblon::Divers::Cascade::",
     "Type": "Houblon",
     "Fournisseur": "Divers",
     "Nom": "Cascade",
