@@ -410,7 +410,7 @@
   {
     "id": "Houblon::nan::Styrian Goldings::",
     "Type": "Houblon",
-    "Fournisseur": NaN,
+    "Fournisseur": "Hop France",
     "Nom": "Styrian Goldings",
     "Numéro de lot": "",
     "Spec": "",
@@ -422,7 +422,7 @@
   {
     "id": "Houblon::nan::Cascade::",
     "Type": "Houblon",
-    "Fournisseur": NaN,
+    "Fournisseur": "Divers",
     "Nom": "Cascade",
     "Numéro de lot": "",
     "Spec": "5.9%AA",
