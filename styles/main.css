@@ -1,0 +1,187 @@
+:root {
+  --bg: #1A1A1A;
+  --surface: #222;
+  --line: #333;
+  --ink: #F5F5F5;
+  --accent: #FFD300;
+  --accent-hover: #FFE066;
+  --danger: #EF4444;
+  --radius: 0.8rem;
+  --space: 1rem;
+}
+
+body {
+  margin: 0;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  line-height: 1.5;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  background: var(--surface);
+  padding: var(--space);
+  border-bottom: 1px solid var(--line);
+}
+
+.logo {
+  height: 40px;
+  margin-right: var(--space);
+}
+
+.main-menu {
+  display: flex;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.menu-btn {
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 0.6rem 1rem;
+  cursor: pointer;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s;
+}
+
+.menu-btn:hover {
+  background: var(--accent);
+  color: #000;
+}
+
+.menu-btn.active {
+  background: var(--accent);
+  color: #000;
+}
+
+.app-main {
+  padding: var(--space);
+}
+
+.app-section {
+  display: none;
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: var(--space);
+  margin-bottom: var(--space);
+}
+
+.app-section.active {
+  display: block;
+}
+
+.section-toolbar {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: var(--space);
+  gap: var(--space);
+}
+
+.action-btn {
+  background: var(--accent);
+  color: #000;
+  border: none;
+  border-radius: var(--radius);
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.action-btn:hover {
+  background: var(--accent-hover);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: var(--space);
+}
+
+th, td {
+  padding: 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+}
+
+th {
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 100;
+}
+
+.modal-content {
+  background: var(--surface);
+  margin: 10% auto;
+  padding: var(--space);
+  width: 80%;
+  max-width: 600px;
+  border-radius: var(--radius);
+}
+
+.modal-close {
+  float: right;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+.fermentation-charts {
+  display: flex;
+  gap: var(--space);
+  margin-bottom: var(--space);
+  height: 300px;
+}
+
+.fermentation-charts canvas {
+  flex: 1;
+  background: var(--bg);
+  border-radius: var(--radius);
+  padding: 0.5rem;
+}
+
+.douane-tools {
+  display: flex;
+  gap: var(--space);
+  margin-bottom: var(--space);
+}
+
+#douane-summary {
+  background: var(--bg);
+  padding: var(--space);
+  border-radius: var(--radius);
+  margin-bottom: var(--space);
+}
+
+form label {
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+form input, form select {
+  width: 100%;
+  padding: 0.5rem;
+  margin-bottom: 1rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+}
