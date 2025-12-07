@@ -82,10 +82,73 @@ function deleteStock(id) {
   renderStocks(stocks);
 }
 
-// Fonction d'édition (à implémenter selon tes besoins)
 function editStock(id) {
-  console.log("Éditer le stock avec l'ID:", id);
+  const stocks = JSON.parse(localStorage.getItem('stocks')) || [];
+  const stockToEdit = stocks.find(stock => stock.id === id);
+
+  if (stockToEdit) {
+    const formHtml = `
+      <div class="modal" id="modal-edit-ingredient">
+        <div class="modal-content">
+          <span class="modal-close" onclick="closeModal('modal-edit-ingredient')">&times;</span>
+          <h3>Éditer l'ingrédient</h3>
+          <form id="form-edit-ingredient">
+            <label>
+              Type :
+              <select name="Type" required>
+                <option value="Malt" ${stockToEdit.Type === 'Malt' ? 'selected' : ''}>Malt</option>
+                <option value="Houblon" ${stockToEdit.Type === 'Houblon' ? 'selected' : ''}>Houblon</option>
+                <option value="Levure" ${stockToEdit.Type === 'Levure' ? 'selected' : ''}>Levure</option>
+                <option value="Autre" ${stockToEdit.Type === 'Autre' ? 'selected' : ''}>Autre</option>
+              </select>
+            </label>
+            <label>
+              Nom :
+              <input type="text" name="Nom" value="${stockToEdit.Nom}" required>
+            </label>
+            <label>
+              Fournisseur :
+              <input type="text" name="Fournisseur" value="${stockToEdit.Fournisseur}" required>
+            </label>
+            <label>
+              Numéro de lot :
+              <input type="text" name="Numéro de lot" value="${stockToEdit['Numéro de lot']}">
+            </label>
+            <label>
+              Quantité initiale (g) :
+              <input type="number" name="Qté initiale (g)" step="0.01" value="${stockToEdit['Qté initiale (g)']}" required>
+            </label>
+            <label>
+              Péremption :
+              <input type="date" name="Peremption" value="${stockToEdit.Peremption || ''}">
+            </label>
+            <label>
+              Spécification :
+              <input type="text" name="Spec" value="${stockToEdit.Spec || ''}">
+            </label>
+            <input type="hidden" name="id" value="${stockToEdit.id}">
+            <button type="submit">Enregistrer</button>
+          </form>
+        </div>
+      </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', formHtml);
+    document.getElementById('modal-edit-ingredient').style.display = 'block';
+
+    document.getElementById('form-edit-ingredient').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const updatedStock = Object.fromEntries(formData.entries());
+
+      const updatedStocks = stocks.map(stock => stock.id === updatedStock.id ? updatedStock : stock);
+      localStorage.setItem('stocks', JSON.stringify(updatedStocks));
+      closeModal('modal-edit-ingredient');
+      renderStocks(updatedStocks);
+    });
+  }
 }
+
 
 // Charger les stocks au démarrage
 document.addEventListener('DOMContentLoaded', loadStocks);
+
