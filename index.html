@@ -63,6 +63,28 @@
       </table>
     </section>
 
+    <section id="section-recettes" class="app-section">
+  <h2><i class="fas fa-book"></i> Gestion des recettes</h2>
+  <div class="section-toolbar">
+    <button class="action-btn" onclick="showAddRecetteForm()">
+      <i class="fas fa-plus"></i> Ajouter une recette
+    </button>
+  </div>
+  <table id="recettes-table">
+    <thead>
+      <tr>
+        <th>Nom</th>
+        <th>Style</th>
+        <th>Degré alcoolique</th>
+        <th>Volume (L)</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</section>
+
+
     <section id="section-fermentation" class="app-section">
       <h2><i class="fas fa-beer"></i> Suivi de fermentation</h2>
       <div class="section-toolbar">
@@ -227,3 +249,4 @@
   <script src="./scripts/douane.js"></script>
 </body>
 </html>
+
