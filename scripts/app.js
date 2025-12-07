@@ -55,3 +55,10 @@ window.addEventListener('click', (e) => {
   }
 });
 
+// Gérer le redimensionnement de la fenêtre
+window.addEventListener('resize', () => {
+  const stocks = JSON.parse(localStorage.getItem('stocks')) || [];
+  renderStocks(stocks);
+});
+
+
