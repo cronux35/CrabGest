@@ -4,6 +4,7 @@ async function loadStocks() {
     const response = await fetch('./data/stocks.json');
     if (!response.ok) throw new Error("Erreur de chargement des stocks");
     const stocks = await response.json();
+    console.log(stocks); // Ajoute cette ligne pour vérifier que toutes les données sont chargées
     localStorage.setItem('stocks', JSON.stringify(stocks));
     renderStocks(stocks);
   } catch (error) {
@@ -12,6 +13,7 @@ async function loadStocks() {
     renderStocks(stocks);
   }
 }
+
 
 // Afficher les stocks dans le tableau
 function renderStocks(stocks) {
@@ -74,4 +76,5 @@ function editStock(id) {
 
 // Charger les stocks au démarrage
 document.addEventListener('DOMContentLoaded', loadStocks);
+
 
