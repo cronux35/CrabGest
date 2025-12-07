@@ -20,10 +20,17 @@ body {
 
 .app-header {
   display: flex;
+  flex-direction: column;
   align-items: center;
   background: var(--surface);
   padding: var(--space);
   border-bottom: 1px solid var(--line);
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  width: 100%;
 }
 
 .logo {
@@ -31,10 +38,21 @@ body {
   margin-right: var(--space);
 }
 
+.menu-toggle {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--ink);
+  font-size: 1.5rem;
+  cursor: pointer;
+  margin-left: auto;
+}
+
 .main-menu {
   display: flex;
   gap: 0.5rem;
-  margin-left: auto;
+  margin-top: 1rem;
+  width: 100%;
 }
 
 .menu-btn {
@@ -114,7 +132,7 @@ th, td {
 }
 
 th {
-  font-weight: 600;
+  font-weight: bold;
   color: var(--accent);
 }
 
@@ -133,7 +151,7 @@ th {
   background: var(--surface);
   margin: 10% auto;
   padding: var(--space);
-  width: 80%;
+  width: 90%;
   max-width: 600px;
   border-radius: var(--radius);
 }
@@ -186,22 +204,14 @@ form input, form select {
   color: var(--ink);
 }
 
-/* Ajouter dans main.css */
-
 .negative-stock {
   background-color: rgba(255, 0, 0, 0.1);
 }
 
 .warning-icon {
-  color: #FFD300;
+  color: var(--accent);
   margin-right: 0.5rem;
 }
-
-/* Style pour les spécifications */
-td:nth-child(6) {
-  font-weight: bold;
-}
-
 
 /* Responsive Design */
 @media (max-width: 768px) {
@@ -210,36 +220,22 @@ td:nth-child(6) {
     align-items: flex-start;
   }
 
-  .main-menu {
-    flex-direction: column;
-    width: 100%;
-    margin-top: 1rem;
+  .menu-toggle {
+    display: block;
   }
 
-  .menu-btn {
-    width: 100%;
-    margin-bottom: 0.5rem;
-    justify-content: flex-start;
+  .main-menu {
+    display: none;
+    flex-direction: column;
+  }
+
+  .main-menu.active {
+    display: flex;
   }
 
   table {
     display: block;
     overflow-x: auto;
-    white-space: nowrap;
-  }
-
-  th, td {
-    padding: 0.5rem;
-    font-size: 0.8rem;
-  }
-
-  .section-toolbar {
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .action-btn {
-    width: 100%;
   }
 
   .fermentation-charts {
@@ -252,99 +248,3 @@ td:nth-child(6) {
     margin-bottom: 1rem;
   }
 }
-
-/* Amélioration générale */
-body {
-  font-size: 1rem;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-th, td {
-  text-align: left;
-  padding: 0.75rem;
-  border-bottom: 1px solid var(--line);
-}
-
-th {
-  font-weight: bold;
-  color: var(--accent);
-}
-
-.modal-content {
-  width: 95%;
-  max-width: 600px;
-  margin: 5% auto;
-}
-
-input, select, button {
-  width: 100%;
-  padding: 0.75rem;
-  margin-bottom: 1rem;
-}
-
-/* Menu Hamburger */
-.header-content {
-  display: flex;
-  align-items: center;
-  width: 100%;
-}
-
-.menu-toggle {
-  display: none;
-  background: none;
-  border: none;
-  color: var(--ink);
-  font-size: 1.5rem;
-  cursor: pointer;
-  margin-left: auto;
-}
-
-@media (max-width: 768px) {
-  .menu-toggle {
-    display: block;
-  }
-
-  .main-menu {
-    display: none;
-    flex-direction: column;
-    width: 100%;
-  }
-
-  .main-menu.active {
-    display: flex;
-  }
-}
-
-
-/* Cartes pour les données sur mobile */
-@media (max-width: 768px) {
-  .stock-card, .fermentation-card, .conditionnement-card, .vente-card, .douane-card {
-    display: block;
-    background: var(--surface);
-    border-radius: var(--radius);
-    padding: 1rem;
-    margin-bottom: 1rem;
-    border: 1px solid var(--line);
-  }
-
-  table {
-    display: none;
-  }
-
-  .stock-card .card-row, .fermentation-card .card-row, .conditionnement-card .card-row, .vente-card .card-row, .douane-card .card-row {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 0.5rem;
-  }
-
-  .stock-card .card-label, .fermentation-card .card-label, .conditionnement-card .card-label, .vente-card .card-label, .douane-card .card-label {
-    font-weight: bold;
-  }
-}
-
-
-
