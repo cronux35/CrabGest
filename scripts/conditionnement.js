@@ -1,3 +1,7 @@
+function genLot() {
+  return 'LOT-' + Date.now();
+}
+
 function showAddConditionnementForm() {
   const formHtml = `
     <div class="modal" id="modal-add-conditionnement">
@@ -33,8 +37,4 @@ function showAddConditionnementForm() {
     closeModal('modal-add-conditionnement');
     location.reload();
   });
-}
-
-function genLot() {
-  return 'LOT-' + Date.now();
 }
