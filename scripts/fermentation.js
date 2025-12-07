@@ -31,14 +31,21 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function showAddFermentationForm() {
+  const recettes = JSON.parse(localStorage.getItem('recettes')) || [];
   const formHtml = `
     <div class="modal" id="modal-add-fermentation">
       <div class="modal-content">
         <span class="modal-close" onclick="closeModal('modal-add-fermentation')">&times;</span>
         <h3>Ajouter un suivi de fermentation</h3>
         <form id="form-add-fermentation">
-          <label>Bière : <input name="nom_biere" required></label>
-          <label>Style : <input name="style" required></label>
+          <label>
+            Recette :
+            <select name="RecetteId" required>
+              ${recettes.map(recette => `
+                <option value="${recette.id}">${recette.Nom}</option>
+              `).join('')}
+            </select>
+          </label>
           <label>Densité : <input type="number" name="densite" step="0.001" required></label>
           <label>Température : <input type="number" name="temperature" step="0.1" required></label>
           <label>pH : <input type="number" name="ph" step="0.1" required></label>
