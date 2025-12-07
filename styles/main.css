@@ -286,6 +286,39 @@ input, select, button {
   margin-bottom: 1rem;
 }
 
+/* Menu Hamburger */
+.header-content {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.menu-toggle {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--ink);
+  font-size: 1.5rem;
+  cursor: pointer;
+  margin-left: auto;
+}
+
+@media (max-width: 768px) {
+  .menu-toggle {
+    display: block;
+  }
+
+  .main-menu {
+    display: none;
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .main-menu.active {
+    display: flex;
+  }
+}
+
 
 
 
