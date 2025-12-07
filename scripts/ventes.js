@@ -1,12 +1,20 @@
 function showAddVenteForm() {
+  const recettes = JSON.parse(localStorage.getItem('recettes')) || [];
   const formHtml = `
     <div class="modal" id="modal-add-vente">
       <div class="modal-content">
         <span class="modal-close" onclick="closeModal('modal-add-vente')">&times;</span>
         <h3>Ajouter une vente</h3>
         <form id="form-add-vente">
+          <label>
+            Recette :
+            <select name="RecetteId" required>
+              ${recettes.map(recette => `
+                <option value="${recette.id}">${recette.Nom}</option>
+              `).join('')}
+            </select>
+          </label>
           <label>Client : <input name="client" required></label>
-          <label>Produit : <input name="produit" required></label>
           <label>Quantité : <input type="number" name="quantite" step="0.01" required></label>
           <label>Prix unitaire : <input type="number" name="prix_unitaire" step="0.01" required></label>
           <button type="submit">Ajouter</button>
