@@ -76,12 +76,7 @@ function showAddRecetteForm() {
   });
 }
 
-// Fonction pour fermer les modales
-function closeModal(modalId) {
-  document.getElementById(modalId).style.display = 'none';
-  document.getElementById(modalId).remove();
-}
-
+// Afficher les détails d'une recette
 function showRecetteDetails(id) {
   const recettes = JSON.parse(localStorage.getItem('recettes')) || [];
   const recette = recettes.find(r => r.id === id);
@@ -99,6 +94,7 @@ function showRecetteDetails(id) {
                 <tr>
                   <th>Type</th>
                   <th>Nom</th>
+                  <th>Spécification</th>
                   <th>Quantité (g)</th>
                   <th>Actions</th>
                 </tr>
@@ -108,6 +104,7 @@ function showRecetteDetails(id) {
                   <tr>
                     <td>${ingredient.Type}</td>
                     <td>${ingredient.Nom}</td>
+                    <td>${ingredient.Spec}</td>
                     <td>${ingredient.Quantité} g</td>
                     <td>
                       <button onclick="removeIngredientFromRecette('${recette.id}', '${ingredient.id}')">🗑️</button>
@@ -131,6 +128,7 @@ function showRecetteDetails(id) {
 // Ajouter un ingrédient à une recette
 function showAddIngredientToRecetteForm(recetteId) {
   const stocks = JSON.parse(localStorage.getItem('stocks')) || [];
+
   const formHtml = `
     <div class="modal" id="modal-add-ingredient-to-recette">
       <div class="modal-content">
@@ -141,7 +139,9 @@ function showAddIngredientToRecetteForm(recetteId) {
             Ingrédient :
             <select name="IngredientId" required>
               ${stocks.map(stock => `
-                <option value="${stock.id}">${stock.Type} - ${stock.Nom}</option>
+                <option value="${stock.id}" data-type="${stock.Type}" data-spec="${stock.Spec}">
+                  ${stock.Type} - ${stock.Nom} (${stock.Spec})
+                </option>
               `).join('')}
             </select>
           </label>
@@ -155,6 +155,7 @@ function showAddIngredientToRecetteForm(recetteId) {
       </div>
     </div>
   `;
+
   document.body.insertAdjacentHTML('beforeend', formHtml);
   document.getElementById('modal-add-ingredient-to-recette').style.display = 'block';
 
@@ -162,7 +163,7 @@ function showAddIngredientToRecetteForm(recetteId) {
     e.preventDefault();
     const formData = new FormData(e.target);
     const ingredientId = formData.get('IngredientId');
-    const quantité = formData.get('Quantité');
+    const quantité = parseFloat(formData.get('Quantité'));
     const recetteId = formData.get('RecetteId');
 
     const stocks = JSON.parse(localStorage.getItem('stocks')) || [];
@@ -176,7 +177,8 @@ function showAddIngredientToRecetteForm(recetteId) {
         id: ingredient.id,
         Type: ingredient.Type,
         Nom: ingredient.Nom,
-        Quantité: parseFloat(quantité)
+        Spec: ingredient.Spec,
+        Quantité: quantité
       });
 
       localStorage.setItem('recettes', JSON.stringify(recettes));
@@ -198,6 +200,14 @@ function removeIngredientFromRecette(recetteId, ingredientId) {
   }
 }
 
+// Fonction pour fermer les modales
+function closeModal(modalId) {
+  const modal = document.getElementById(modalId);
+  if (modal) {
+    modal.style.display = 'none';
+    modal.remove();
+  }
+}
 
 // Charger les recettes au démarrage
 document.addEventListener('DOMContentLoaded', loadRecettes);
