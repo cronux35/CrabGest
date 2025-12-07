@@ -203,3 +203,89 @@ td:nth-child(6) {
 }
 
 
+/* Responsive Design */
+@media (max-width: 768px) {
+  .app-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .main-menu {
+    flex-direction: column;
+    width: 100%;
+    margin-top: 1rem;
+  }
+
+  .menu-btn {
+    width: 100%;
+    margin-bottom: 0.5rem;
+    justify-content: flex-start;
+  }
+
+  table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  th, td {
+    padding: 0.5rem;
+    font-size: 0.8rem;
+  }
+
+  .section-toolbar {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .action-btn {
+    width: 100%;
+  }
+
+  .fermentation-charts {
+    flex-direction: column;
+    height: auto;
+  }
+
+  .fermentation-charts canvas {
+    height: 200px;
+    margin-bottom: 1rem;
+  }
+}
+
+/* Amélioration générale */
+body {
+  font-size: 1rem;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  text-align: left;
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--line);
+}
+
+th {
+  font-weight: bold;
+  color: var(--accent);
+}
+
+.modal-content {
+  width: 95%;
+  max-width: 600px;
+  margin: 5% auto;
+}
+
+input, select, button {
+  width: 100%;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+
+
+
