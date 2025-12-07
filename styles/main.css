@@ -320,5 +320,31 @@ input, select, button {
 }
 
 
+/* Cartes pour les données sur mobile */
+@media (max-width: 768px) {
+  .stock-card, .fermentation-card, .conditionnement-card, .vente-card, .douane-card {
+    display: block;
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border: 1px solid var(--line);
+  }
+
+  table {
+    display: none;
+  }
+
+  .stock-card .card-row, .fermentation-card .card-row, .conditionnement-card .card-row, .vente-card .card-row, .douane-card .card-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+  }
+
+  .stock-card .card-label, .fermentation-card .card-label, .conditionnement-card .card-label, .vente-card .card-label, .douane-card .card-label {
+    font-weight: bold;
+  }
+}
+
 
 
