@@ -3,13 +3,21 @@ function genLot() {
 }
 
 function showAddConditionnementForm() {
+  const recettes = JSON.parse(localStorage.getItem('recettes')) || [];
   const formHtml = `
     <div class="modal" id="modal-add-conditionnement">
       <div class="modal-content">
         <span class="modal-close" onclick="closeModal('modal-add-conditionnement')">&times;</span>
         <h3>Ajouter un conditionnement</h3>
         <form id="form-add-conditionnement">
-          <label>Bière : <input name="nom_biere" required></label>
+          <label>
+            Recette :
+            <select name="RecetteId" required>
+              ${recettes.map(recette => `
+                <option value="${recette.id}">${recette.Nom}</option>
+              `).join('')}
+            </select>
+          </label>
           <label>Volume (L) : <input type="number" name="volume_total" step="0.01" required></label>
           <label>Fûts : <input type="number" name="futs"></label>
           <label>Bouteilles 33cl : <input type="number" name="bouteilles_33"></label>
