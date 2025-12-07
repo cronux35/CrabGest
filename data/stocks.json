@@ -1,0 +1,62 @@
+[
+  {
+    "id": "Houblon::Hops France::Barbe rouge 2023::no-lot",
+    "Type": "Houblon",
+    "Fournisseur": "Hops France",
+    "Nom": "Barbe rouge 2023",
+    "Numéro de lot": "no-lot",
+    "Spec": "8.9 %AA",
+    "Conditionnement": "sachet 100g",
+    "Qté initiale (g)": 300.0,
+    "Qté utilisée (g)": 300.0,
+    "Qté restante": 0
+  },
+  {
+    "id": "Houblon::Hops France::Strisselspalt 2022::no-lot",
+    "Type": "Houblon",
+    "Fournisseur": "Hops France",
+    "Nom": "Strisselspalt 2022",
+    "Numéro de lot": "no-lot",
+    "Spec": "1.7 %AA",
+    "Conditionnement": "sachet 100g",
+    "Qté initiale (g)": 2600.0,
+    "Qté utilisée (g)": 0.0,
+    "Qté restante": 2600
+  },
+  {
+    "id": "Houblon::Hops France::Elixir 2022::no-lot",
+    "Type": "Houblon",
+    "Fournisseur": "Hops France",
+    "Nom": "Elixir 2022",
+    "Numéro de lot": "no-lot",
+    "Spec": "4.5 / 5.5 %AA (2 lots)",
+    "Conditionnement": "sachet 100g",
+    "Qté initiale (g)": 3100.0,
+    "Qté utilisée (g)": 755.0,
+    "Qté restante": 2345
+  },
+  {
+    "id": "Houblon::Hops France::Triskel 2022::no-lot",
+    "Type": "Houblon",
+    "Fournisseur": "Hops France",
+    "Nom": "Triskel 2022",
+    "Numéro de lot": "no-lot",
+    "Spec": "2.6 %AA",
+    "Conditionnement": "sachet 100g",
+    "Qté initiale (g)": 1500.0,
+    "Qté utilisée (g)": 104.0,
+    "Qté restante": 1396
+  },
+  {
+    "id": "Houblon::Hops France::Aramis 2022::no-lot",
+    "Type": "Houblon",
+    "Fournisseur": "Hops France",
+    "Nom": "Aramis 2022",
+    "Numéro de lot": "no-lot",
+    "Spec": "5.5 %AA",
+    "Conditionnement": "sachet 100g",
+    "Qté initiale (g)": 400.0,
+    "Qté utilisée (g)": 0.0,
+    "Qté restante": 400
+  }
+]
