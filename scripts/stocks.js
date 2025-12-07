@@ -32,6 +32,10 @@ function renderStocks(stocks) {
   `).join('');
 }
 
+// Charger les stocks au démarrage
+document.addEventListener('DOMContentLoaded', loadStocks);
+
+
 // Ajouter un ingrédient
 document.getElementById('form-add-ingredient').addEventListener('submit', (e) => {
   e.preventDefault();
@@ -70,3 +74,4 @@ function editStock(id) {
 
 // Charger les stocks au démarrage
 document.addEventListener('DOMContentLoaded', loadStocks);
+
