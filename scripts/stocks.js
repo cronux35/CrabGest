@@ -149,6 +149,27 @@ function editStock(id) {
 }
 
 
+function sortIngredientsFromStock(recetteId) {
+  const recettes = JSON.parse(localStorage.getItem('recettes')) || [];
+  const recette = recettes.find(r => r.id === recetteId);
+  let stocks = JSON.parse(localStorage.getItem('stocks')) || [];
+
+  if (recette) {
+    recette.Ingrédients.forEach(ingredient => {
+      const stock = stocks.find(s => s.id === ingredient.id);
+      if (stock) {
+        stock['Qté utilisée (g)'] += ingredient.Quantité;
+        stock['Qté restante'] -= ingredient.Quantité;
+      }
+    });
+
+    localStorage.setItem('stocks', JSON.stringify(stocks));
+    renderStocks(stocks);
+  }
+}
+
+
 // Charger les stocks au démarrage
 document.addEventListener('DOMContentLoaded', loadStocks);
+
 
