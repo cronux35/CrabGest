@@ -185,3 +185,21 @@ form input, form select {
   background: var(--surface);
   color: var(--ink);
 }
+
+/* Ajouter dans main.css */
+
+.negative-stock {
+  background-color: rgba(255, 0, 0, 0.1);
+}
+
+.warning-icon {
+  color: #FFD300;
+  margin-right: 0.5rem;
+}
+
+/* Style pour les spécifications */
+td:nth-child(6) {
+  font-weight: bold;
+}
+
+
