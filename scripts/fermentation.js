@@ -1,3 +1,35 @@
+document.addEventListener('DOMContentLoaded', () => {
+  const fermentationData = JSON.parse(localStorage.getItem('fermentation')) || [];
+
+  // Graphique de densité
+  const densiteChart = new Chart(document.getElementById('densite-chart'), {
+    type: 'line',
+    data: {
+      labels: fermentationData.map(f => f.date),
+      datasets: [{
+        label: 'Densité',
+        data: fermentationData.map(f => f.densite),
+        borderColor: '#FFD300',
+        tension: 0.1
+      }]
+    }
+  });
+
+  // Graphique de température
+  const temperatureChart = new Chart(document.getElementById('temperature-chart'), {
+    type: 'line',
+    data: {
+      labels: fermentationData.map(f => f.date),
+      datasets: [{
+        label: 'Température (°C)',
+        data: fermentationData.map(f => f.temperature),
+        borderColor: '#EF4444',
+        tension: 0.1
+      }]
+    }
+  });
+});
+
 function showAddFermentationForm() {
   const formHtml = `
     <div class="modal" id="modal-add-fermentation">
@@ -32,8 +64,4 @@ function showAddFermentationForm() {
     closeModal('modal-add-fermentation');
     location.reload();
   });
-}
-
-function closeModal(modalId) {
-  document.getElementById(modalId).remove();
 }
