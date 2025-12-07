@@ -4,7 +4,6 @@ async function loadStocks() {
     const response = await fetch('./data/stocks.json');
     if (!response.ok) throw new Error("Erreur de chargement des stocks");
     const stocks = await response.json();
-    console.log(stocks); // Ajoute cette ligne pour vérifier que toutes les données sont chargées
     localStorage.setItem('stocks', JSON.stringify(stocks));
     renderStocks(stocks);
   } catch (error) {
@@ -14,29 +13,41 @@ async function loadStocks() {
   }
 }
 
-
 // Afficher les stocks dans le tableau
 function renderStocks(stocks) {
   const tbody = document.querySelector('#stocks-table tbody');
-  tbody.innerHTML = stocks.map(stock => `
-    <tr>
-      <td>${stock.Type}</td>
-      <td>${stock.Nom}</td>
-      <td>${stock['Numéro de lot']}</td>
-      <td>${stock['Qté restante']} g</td>
-      <td>${stock.Fournisseur}</td>
-      <td>${stock.Peremption || '-'}</td>
-      <td>
-        <button onclick="editStock('${stock.id}')">✏️</button>
-        <button onclick="confirmDeleteStock('${stock.id}')">🗑️</button>
-      </td>
-    </tr>
-  `).join('');
+  tbody.innerHTML = stocks.map(stock => {
+    // Déterminer la spécification à afficher
+    let specText = '';
+    if (stock.Type === 'Malt') {
+      specText = stock.Spec || 'N/A';
+    } else if (stock.Type === 'Houblon') {
+      specText = stock.Spec || 'N/A';
+    } else if (stock.Type === 'Levure') {
+      specText = stock.Peremption || 'N/A';
+    }
+
+    // Vérifier si le stock est négatif
+    const isNegativeStock = stock['Qté restante'] < 0;
+    const warningIcon = isNegativeStock ? '<i class="fas fa-exclamation-triangle warning-icon" title="Stock négatif"></i>' : '';
+
+    return `
+      <tr class="${isNegativeStock ? 'negative-stock' : ''}">
+        <td>${warningIcon} ${stock.Type}</td>
+        <td>${stock.Nom}</td>
+        <td>${stock['Numéro de lot']}</td>
+        <td>${stock['Qté restante']} g</td>
+        <td>${stock.Fournisseur}</td>
+        <td>${specText}</td>
+        <td>${stock.Peremption || '-'}</td>
+        <td>
+          <button onclick="editStock('${stock.id}')">✏️</button>
+          <button onclick="confirmDeleteStock('${stock.id}')">🗑️</button>
+        </td>
+      </tr>
+    `;
+  }).join('');
 }
-
-// Charger les stocks au démarrage
-document.addEventListener('DOMContentLoaded', loadStocks);
-
 
 // Ajouter un ingrédient
 document.getElementById('form-add-ingredient').addEventListener('submit', (e) => {
@@ -76,5 +87,3 @@ function editStock(id) {
 
 // Charger les stocks au démarrage
 document.addEventListener('DOMContentLoaded', loadStocks);
-
-
