@@ -12,10 +12,12 @@ function generateDouaneReport() {
   const rapport = [];
 
   conditionnementData.forEach(item => {
+    const recettes = JSON.parse(localStorage.getItem('recettes')) || [];
+    const recette = recettes.find(r => r.id === item.RecetteId);
+    const degree = recette ? recette['Degré alcoolique'] : 5;
     const volume = parseFloat(item.volume_total);
-    const degree = 5; // À remplacer par le degré réel de la bière
     const droits = calculateDroits(volume, degree);
-    rapport.push({ ...item, droits });
+    rapport.push({ ...item, droits, nom_biere: recette ? recette.Nom : 'Inconnu' });
     totalVolume += volume;
     totalDroits += droits;
   });
@@ -29,7 +31,7 @@ function generateDouaneReport() {
       <td>${item.lot}</td>
       <td>${item.nom_biere}</td>
       <td>${item.volume_total} L</td>
-      <td>${degree}°</td>
+      <td>${item.degree || 5}°</td>
       <td>${item.droits.toFixed(2)} €</td>
     </tr>
   `).join('');
@@ -38,15 +40,20 @@ function generateDouaneReport() {
 // Exporter les données pour la douane
 function exportDouaneData() {
   const data = JSON.parse(localStorage.getItem('conditionnement')) || [];
+  const recettes = JSON.parse(localStorage.getItem('recettes')) || [];
   const csv = [
     ['Lot', 'Bière', 'Volume (L)', 'Degré alcoolique', 'Droits (€)'],
-    ...data.map(item => [
-      item.lot,
-      item.nom_biere,
-      item.volume_total,
-      '5', // À adapter
-      calculateDroits(item.volume_total, 5).toFixed(2)
-    ])
+    ...data.map(item => {
+      const recette = recettes.find(r => r.id === item.RecetteId);
+      const degree = recette ? recette['Degré alcoolique'] : 5;
+      return [
+        item.lot,
+        recette ? recette.Nom : 'Inconnu',
+        item.volume_total,
+        degree,
+        calculateDroits(item.volume_total, degree).toFixed(2)
+      ];
+    })
   ].map(row => row.join(';')).join('\n');
 
   const blob = new Blob([csv], { type: 'text/csv' });
