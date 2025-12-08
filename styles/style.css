@@ -18,6 +18,53 @@
     }
 }
 
+/* Menu burger - caché par défaut sur grand écran */
+.menu-burger {
+    display: none;
+}
+
+/* Responsive - Menu burger visible sur mobile */
+@media (max-width: 768px) {
+    .menu-burger {
+        display: block;
+    }
+
+    .tabs {
+        display: none;
+        flex-direction: column;
+        position: absolute;
+        top: 70px;
+        left: 0;
+        width: 100%;
+        background-color: var(--crab-gris-fonce);
+        padding: 0;
+        border-top: 1px solid var(--crab-jaune);
+        z-index: 1000;
+    }
+
+    .tabs.active {
+        display: flex;
+    }
+
+    .tab-button {
+        padding: 0.8rem;
+        border-bottom: 1px solid var(--crab-jaune);
+    }
+
+    .header-content {
+        padding: 0.5rem;
+    }
+}
+
+/* Animation pour le menu burger */
+#menuBurger i {
+    transition: transform 0.3s;
+}
+
+#menuBurger.active i {
+    transform: rotate(90deg);
+}
+
 /* Tableaux */
 .table-responsive {
     overflow-x: auto;
@@ -37,20 +84,14 @@
     content: "⚠️ ";
 }
 
-/* Style pour les boutons et inputs sur mobile */
-@media (max-width: 480px) {
-    .tab-button {
-        padding: 0.5rem;
-        font-size: 0.8rem;
-    }
-
-    .form-control {
-        padding: 0.4rem;
-    }
-
-    .btn {
-        padding: 0.4rem 0.8rem;
-    }
+/* Style pour les sélecteurs */
+select.form-control {
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23FFD700'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.5rem center;
+    background-size: 1em;
+    padding-right: 2rem;
 }
 
 /* Animation pour les boutons */
@@ -60,22 +101,4 @@
 
 .btn:active {
     transform: translateY(0);
-}
-
-/* Style pour les titres des sections */
-h1, h2, h3 {
-    color: var(--crab-jaune);
-    border-bottom: 1px solid var(--crab-jaune);
-    padding-bottom: 0.3rem;
-    margin-bottom: 1rem;
-}
-
-/* Style pour les sélecteurs */
-select.form-control {
-    appearance: none;
-    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23FFD700'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
-    background-repeat: no-repeat;
-    background-position: right 0.5rem center;
-    background-size: 1em;
-    padding-right: 2rem;
 }

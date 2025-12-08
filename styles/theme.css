@@ -1,14 +1,11 @@
 :root {
-    /* Couleurs inspirées du logo (jaune/noir) */
-    --crab-jaune: #FFD700;  /* Jaune or */
-    --crab-jaune-clair: #FFE87C;  /* Jaune clair */
-    --crab-noir: #1a1a1a;  /* Noir profond */
-    --crab-gris-fonce: #2a2a2a;  /* Gris très foncé */
-    --crab-gris-clair: #3a3a3a;  /* Gris clair pour les cartes */
-    --crab-blanc: #f5f5f5;  /* Blanc cassé pour le texte */
-    --crab-alerte: #ff4444;  /* Rouge pour les alertes */
-
-    /* Polices */
+    --crab-jaune: #FFD700;
+    --crab-jaune-clair: #FFE87C;
+    --crab-noir: #1a1a1a;
+    --crab-gris-fonce: #2a2a2a;
+    --crab-gris-clair: #3a3a3a;
+    --crab-blanc: #f5f5f5;
+    --crab-alerte: #ff4444;
     --font-principal: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
@@ -23,30 +20,62 @@ body {
 
 header {
     background-color: var(--crab-gris-fonce);
-    padding: 1rem;
-    text-align: center;
-    border-bottom: 3px solid var(--crab-jaune);
+    padding: 0.5rem 1rem;
+    position: relative;
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo-container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 
 .logo {
-    width: 100px;
     height: 50px;
-    background-color: var(--crab-jaune);
-    margin: 0.5rem auto;
+    width: auto;
     border-radius: 5px;
+}
+
+h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: var(--crab-jaune);
+}
+
+h2, h3 {
+    color: var(--crab-jaune);
+    border-bottom: 1px solid var(--crab-jaune);
+    padding-bottom: 0.3rem;
+    margin-bottom: 1rem;
+}
+
+.menu-burger {
+    display: none;
+    background: none;
+    border: none;
+    color: var(--crab-blanc);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0.5rem;
 }
 
 .tabs {
     display: flex;
     background-color: var(--crab-gris-fonce);
     padding: 0.5rem;
-    overflow-x: auto;
+    border-top: 1px solid var(--crab-jaune);
 }
 
 .tab-button {
     flex: 1;
     padding: 0.75rem;
-    margin: 0 0.25rem;
+    margin: 0 0.2rem;
     background-color: var(--crab-gris-fonce);
     color: var(--crab-blanc);
     border: none;
@@ -110,7 +139,6 @@ main {
 .btn-primary:hover {
     background-color: var(--crab-jaune-clair);
     color: var(--crab-noir);
-    transform: translateY(-1px);
 }
 
 .table {
@@ -132,6 +160,10 @@ main {
 }
 
 .table tr:nth-child(even) {
+    background-color: rgba(255, 215, 0, 0.05);
+}
+
+.table tr:hover {
     background-color: rgba(255, 215, 0, 0.1);
 }
 
@@ -151,7 +183,6 @@ footer {
     border-top: 1px solid var(--crab-jaune);
 }
 
-/* Alertes visuelles */
 .stock-negatif {
     color: var(--crab-alerte);
     font-weight: bold;
@@ -160,7 +191,9 @@ footer {
     border-radius: 3px;
 }
 
-/* Effet survol sur les lignes du tableau */
-.table tr:hover {
-    background-color: rgba(255, 215, 0, 0.15);
+.fermentation-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
 }

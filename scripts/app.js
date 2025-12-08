@@ -21,14 +21,17 @@ function initData() {
     }
 }
 
-// Charger les données au démarrage
+// Gestion du menu burger et chargement initial
 document.addEventListener('DOMContentLoaded', () => {
     initData();
 
-    // Charger les données initiales
-    if (typeof chargerDonnees === 'function') {
-        chargerDonnees();
-    }
+    const menuBurger = document.getElementById('menuBurger');
+    const mainNav = document.getElementById('mainNav');
+
+    menuBurger.addEventListener('click', () => {
+        menuBurger.classList.toggle('active');
+        mainNav.classList.toggle('active');
+    });
 
     // Gestion des onglets
     const tabButtons = document.querySelectorAll('.tab-button');
@@ -41,6 +44,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 const tabId = button.getAttribute('data-tab');
                 const tab = document.getElementById(tabId);
                 if (tab) tab.classList.add('active');
+
+                // Fermer le menu burger après sélection sur mobile
+                if (window.innerWidth <= 768) {
+                    menuBurger.classList.remove('active');
+                    mainNav.classList.remove('active');
+                }
             });
         });
     }

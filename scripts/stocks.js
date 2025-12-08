@@ -1,3 +1,4 @@
+// Charger les données des stocks et recettes
 function chargerDonnees() {
     const stocks = JSON.parse(localStorage.getItem('stocks'));
     const recettes = JSON.parse(localStorage.getItem('recettes'));
@@ -16,53 +17,42 @@ function chargerDonnees() {
     }
 
     // Charger les bières
-    const selectsBiere = document.querySelectorAll('[id^="select-biere"]');
-    selectsBiere.forEach(select => {
-        if (select) {
-            select.innerHTML = '<option value="">-- Bière --</option>';
-            recettes.forEach(biere => {
-                const option = document.createElement('option');
-                option.value = biere.id;
-                option.textContent = biere.nom;
-                select.appendChild(option.cloneNode(true));
-            });
-        }
-    });
+    const selectBiere = document.getElementById('select-biere');
+    const selectBiereHistorique = document.getElementById('select-biere-historique');
+    if (selectBiere && selectBiereHistorique) {
+        selectBiere.innerHTML = '<option value="">-- Bière --</option>';
+        selectBiereHistorique.innerHTML = '<option value="">-- Bière --</option>';
+        recettes.forEach(biere => {
+            const option = document.createElement('option');
+            option.value = biere.id;
+            option.textContent = biere.nom;
+            selectBiere.appendChild(option.cloneNode(true));
+            selectBiereHistorique.appendChild(option.cloneNode(true));
+        });
+    }
 
     afficherStocks();
 }
 
+// Afficher les stocks
 function afficherStocks() {
     const stocks = JSON.parse(localStorage.getItem('stocks'));
-    const table = document.getElementById('table-stocks');
-    if (table) {
-        table.innerHTML = `
-            <thead>
-                <tr>
-                    <th>Type</th>
-                    <th>Nom</th>
-                    <th>Lot</th>
-                    <th>Quantité</th>
-                    <th>Fournisseur</th>
-                    <th>Spécification</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${stocks.map(stock => `
-                    <tr>
-                        <td>${stock.type}</td>
-                        <td>${stock.nom}</td>
-                        <td>${stock.lot || '-'}</td>
-                        <td class="${stock.quantite < 0 ? 'stock-negatif' : ''}">${stock.quantite}g</td>
-                        <td>${stock.fournisseur}</td>
-                        <td>${stock.specification || '-'}</td>
-                    </tr>
-                `).join('')}
-            </tbody>
-        `;
+    const tbody = document.querySelector('#table-stocks tbody');
+    if (tbody) {
+        tbody.innerHTML = stocks.map(stock =>
+            `<tr>
+                <td>${stock.type}</td>
+                <td>${stock.nom}</td>
+                <td>${stock.lot || '-'}</td>
+                <td class="${stock.quantite < 0 ? 'stock-negatif' : ''}">${stock.quantite}g</td>
+                <td>${stock.fournisseur}</td>
+                <td>${stock.specification || '-'}</td>
+            </tr>`
+        ).join('');
     }
 }
 
+// Retirer du stock
 function retirerStock() {
     const idIngredient = document.getElementById('select-ingredient').value;
     const idBiere = document.getElementById('select-biere').value;
@@ -100,30 +90,22 @@ function retirerStock() {
     afficherStocks();
 }
 
+// Afficher l'historique par bière
 function afficherHistoriqueParBiere(idBiere) {
     const historique = JSON.parse(localStorage.getItem('historique_stocks'));
     const historiqueFiltre = historique.filter(entry => entry.id_biere == idBiere);
-    const table = document.getElementById('historique-biere');
-    if (table) {
-        table.innerHTML = `
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Ingrédient</th>
-                    <th>Quantité</th>
-                    <th>Notes</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${historiqueFiltre.map(entry => `
-                    <tr>
-                        <td>${new Date(entry.date).toLocaleString()}</td>
-                        <td>${entry.ingredient}</td>
-                        <td>${entry.quantite}g</td>
-                        <td>${entry.notes}</td>
-                    </tr>
-                `).join('')}
-            </tbody>
-        `;
+    const tbody = document.querySelector('#historique-biere tbody');
+    if (tbody) {
+        tbody.innerHTML = historiqueFiltre.map(entry =>
+            `<tr>
+                <td>${new Date(entry.date).toLocaleString()}</td>
+                <td>${entry.ingredient}</td>
+                <td>${entry.quantite}g</td>
+                <td>${entry.notes}</td>
+            </tr>`
+        ).join('');
     }
 }
+
+// Appeler chargerDonnees une fois le DOM chargé
+document.addEventListener('DOMContentLoaded', chargerDonnees);
