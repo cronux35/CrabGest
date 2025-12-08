@@ -1,0 +1,25 @@
+Je souhaite en effet revoir certaines choses :
+- avoir des fichiers de données pour tous l'historique et sotcker l'ensemble des données (stocks, recettes, suivi de fermentation, suivi des conditionnements, suivi des ventes et declaration douane).
+
+D'un point de vue fonctionnel, je renseigne mon stock d'ingrédient régulièrement à chaque achat d'ingredients, ensuite dès lors que je vais brasser, je dois déclarer une nouvelle recette (une nouvelle bière), idéalement je voudrais pouvoir renseigner un fichier pdf correspondant à la recette, le style de la bière, et le cout de la recette).
+Le jour du brassage je retire les quantités nécessaires dans le stock, ce qui actualise mon stock en terme de quantité.
+
+Une fois la bière brassée, je dois suivre la fermentation et les différentes taches de suivi relatif à une bière. en terme d'action de suivi j'ai :
+ - Prise de densité (la densité en SG est un paramètre que je dois renseigner)
+ - Purge (quantité purgée)
+ - Mise sous pression (a quelle pression en bars)
+ - Réglage température (préciser la température et si température < 3° alors l'action esat un coldCrash)
+ - Dry Hopping (quantité à préciser et moment à J+x jours, J étant le jour de brassage)
+ 
+Il est nécessaire lorsqu'on ajoute une action de suivi de préciser la date et l'heure via une datetime picker proposant par defaut la date heure actuelle)
+Je souhaite avoir l'écran de suivi par bière, afin d'avoir les détails de suivi de chaque bière, un graph température et densité en SG est intéréssant.
+
+Après la fermentation vient le conditionnement, je dois préciser combien de litres j'ai conditionné et dans quels types de contenants (Bouteilles 33cl, bouteilles 50cl, bouteilles 75cl, canettes 44cl), je dois impérativement préciser l'abv 
+du produit conditionné. Ces produits condtionnés doivent pouvoir être listés dans un stock de produits finis disponibles à la vente.
+
+Après le condtionnement place à la vente, je peux indiquer ce que je vends et a quel prix (en pécisant à qui je le vends) dès lors que je renseigne la vente, une facture peut être éditée. J'ajoute les infos nécessaire des clients au fil de lot et ca alimente une base de donénes json des différents clients pour une future utilisation.
+Comme je connais le cout de revient de la recette, je suis en mesure de connaitre le benefice approximatif, et d'avoir des petites statistiques sur l'ensemble des produits vendu.
+On verra plus tard pour déduire le tarifs du contenant à ce calcul de bénéfice.
+
+Enfin chaque mois je dois déclaré ce que je dois déclarer aux douanes. Pour cela il s'agit de déclarer chaque mois le volume conditionné de chaque bière en précisant l'abv et en fonction que je paye les droits d'accises qui doivent donc être "retiré" des bénéfices.
+

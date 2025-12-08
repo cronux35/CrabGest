@@ -1,55 +1,28 @@
-document.addEventListener('DOMContentLoaded', () => {
-  const fermentationData = JSON.parse(localStorage.getItem('fermentation')) || [];
-
-  // Graphique de densité
-  const densiteChart = new Chart(document.getElementById('densite-chart'), {
-    type: 'line',
-    data: {
-      labels: fermentationData.map(f => f.date),
-      datasets: [{
-        label: 'Densité',
-        data: fermentationData.map(f => f.densite),
-        borderColor: '#FFD300',
-        tension: 0.1
-      }]
-    }
-  });
-
-  // Graphique de température
-  const temperatureChart = new Chart(document.getElementById('temperature-chart'), {
-    type: 'line',
-    data: {
-      labels: fermentationData.map(f => f.date),
-      datasets: [{
-        label: 'Température (°C)',
-        data: fermentationData.map(f => f.temperature),
-        borderColor: '#EF4444',
-        tension: 0.1
-      }]
-    }
-  });
-});
-
+// Ajouter une action de fermentation
 function showAddFermentationForm() {
   const recettes = JSON.parse(localStorage.getItem('recettes')) || [];
   const formHtml = `
     <div class="modal" id="modal-add-fermentation">
       <div class="modal-content">
         <span class="modal-close" onclick="closeModal('modal-add-fermentation')">&times;</span>
-        <h3>Ajouter un suivi de fermentation</h3>
+        <h3>Ajouter un suivi</h3>
         <form id="form-add-fermentation">
-          <label>
-            Recette :
-            <select name="RecetteId" required>
-              ${recettes.map(recette => `
-                <option value="${recette.id}">${recette.Nom}</option>
-              `).join('')}
+          <label>Recette:
+            <select name="recette_id" required>
+              ${recettes.map(r => `<option value="${r.id}">${r.nom}</option>`).join('')}
             </select>
           </label>
-          <label>Densité : <input type="number" name="densite" step="0.001" required></label>
-          <label>Température : <input type="number" name="temperature" step="0.1" required></label>
-          <label>pH : <input type="number" name="ph" step="0.1" required></label>
-          <label>Purge : <input name="purge"></label>
+          <label>Type:
+            <select name="type" required>
+              <option value="densite">Densité</option>
+              <option value="temperature">Température</option>
+              <option value="purge">Purge</option>
+              <option value="pression">Pression</option>
+              <option value="dry_hopping">Dry Hopping</option>
+            </select>
+          </label>
+          <label>Valeur: <input type="text" name="valeur" required></label>
+          <label>Date/Heure: <input type="datetime-local" name="date" required></label>
           <button type="submit">Ajouter</button>
         </form>
       </div>
@@ -61,14 +34,42 @@ function showAddFermentationForm() {
   document.getElementById('form-add-fermentation').addEventListener('submit', (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
-    const entry = Object.fromEntries(formData.entries());
-    entry.date = new Date().toISOString().split('T')[0];
-
-    const fermentation = JSON.parse(localStorage.getItem('fermentation')) || [];
-    fermentation.push(entry);
-    localStorage.setItem('fermentation', JSON.stringify(fermentation));
-    e.target.reset();
+    const action = {
+      type: formData.get('type'),
+      valeur: formData.get('valeur'),
+      date: formData.get('date')
+    };
+    ajouterActionFermentation(formData.get('recette_id'), action);
     closeModal('modal-add-fermentation');
-    location.reload();
   });
+}
+
+function ajouterActionFermentation(recetteId, action) {
+  let fermentations = JSON.parse(localStorage.getItem('fermentations')) || [];
+  let ferment = fermentations.find(f => f.recette_id === recetteId);
+  if (!ferment) {
+    ferment = { id: `ferment_${Date.now()}`, recette_id: recetteId, actions: [] };
+    fermentations.push(ferment);
+  }
+  ferment.actions.push(action);
+  localStorage.setItem('fermentations', JSON.stringify(fermentations));
+  renderFermentation(recetteId);
+}
+
+// Afficher les graphiques
+function renderFermentation(recetteId) {
+  const ferment = JSON.parse(localStorage.getItem('fermentations')) || []
+    .find(f => f.recette_id === recetteId);
+
+  if (ferment) {
+    const densiteData = ferment.actions
+      .filter(a => a.type === 'densite')
+      .map(a => ({ x: new Date(a.date), y: parseFloat(a.valeur) }));
+
+    new Chart(document.getElementById('densite-chart'), {
+      type: 'line',
+      data: { datasets: [{ label: 'Densité (SG)', data: densiteData, borderColor: '#FFD300' }] },
+      options: { scales: { x: { type: 'time' } } }
+    });
+  }
 }

@@ -1,48 +1,38 @@
-// Charger et afficher les stocks depuis le fichier JSON
-async function loadStocks() {
-  try {
-    const response = await fetch('./data/stocks.json');
-    if (!response.ok) throw new Error("Erreur de chargement des stocks");
-    const stocks = await response.json();
-    localStorage.setItem('stocks', JSON.stringify(stocks));
-    renderStocks(stocks);
-  } catch (error) {
-    console.error("Erreur:", error);
-    const stocks = JSON.parse(localStorage.getItem('stocks')) || [];
-    renderStocks(stocks);
-  }
+// Charger les stocks
+function loadStocks() {
+  fetch('./data/stocks.json')
+    .then(response => response.json())
+    .then(stocks => {
+      localStorage.setItem('stocks', JSON.stringify(stocks));
+      renderStocks();
+      renderHistorique();
+    })
+    .catch(() => {
+      const stocks = JSON.parse(localStorage.getItem('stocks')) || [];
+      renderStocks(stocks);
+      renderHistorique();
+    });
 }
 
-// Afficher les stocks dans le tableau
-function renderStocks(stocks) {
+// Afficher les stocks
+function renderStocks() {
+  const stocks = JSON.parse(localStorage.getItem('stocks')) || [];
   const tbody = document.querySelector('#stocks-table tbody');
   if (tbody) {
     tbody.innerHTML = stocks.map(stock => {
-      // Déterminer la spécification à afficher
-      let specText = '';
-      if (stock.Type === 'Malt') {
-        specText = stock.Spec || 'N/A';
-      } else if (stock.Type === 'Houblon') {
-        specText = stock.Spec || 'N/A';
-      } else if (stock.Type === 'Levure') {
-        specText = stock.Peremption || 'N/A';
-      }
-
-      // Vérifier si le stock est négatif
-      const isNegativeStock = stock['Qté restante'] < 0;
-      const warningIcon = isNegativeStock ? '<i class="fas fa-exclamation-triangle warning-icon" title="Stock négatif"></i>' : '';
-
+      const isNegative = stock.quantite < 0;
+      const warningIcon = isNegative ? '<i class="fas fa-exclamation-triangle warning-icon"></i>' : '';
       return `
-        <tr class="${isNegativeStock ? 'negative-stock' : ''}">
-          <td>${warningIcon} ${stock.Type}</td>
-          <td>${stock.Nom}</td>
-          <td>${stock['Numéro de lot']}</td>
-          <td>${stock['Qté restante']} g</td>
-          <td>${stock.Fournisseur}</td>
-          <td>${specText}</td>
-          <td>${stock.Peremption || '-'}</td>
+        <tr class="${isNegative ? 'negative-stock' : ''}">
+          <td>${warningIcon} ${stock.type}</td>
+          <td>${stock.nom}</td>
+          <td>${stock.lot}</td>
+          <td>${stock.quantite} g</td>
+          <td>${stock.fournisseur}</td>
+          <td>${stock.spec || '-'}</td>
+          <td>${stock.peremption || '-'}</td>
           <td>
-            <button onclick="editStock('${stock.id}')">✏️</button>
+            <button onclick="showEditStockForm('${stock.id}')">✏️</button>
             <button onclick="confirmDeleteStock('${stock.id}')">🗑️</button>
             <button onclick="showSortirStockForm('${stock.id}')">📤</button>
           </td>
@@ -53,6 +43,7 @@ function renderStocks(stocks) {
 }
 
 // Ajouter un ingrédient
+// Ajouter un ingrédient
 function showAddIngredientForm() {
   const formHtml = `
     <div class="modal" id="modal-add-ingredient">
@@ -60,39 +51,24 @@ function showAddIngredientForm() {
         <span class="modal-close" onclick="closeModal('modal-add-ingredient')">&times;</span>
         <h3>Ajouter un ingrédient</h3>
         <form id="form-add-ingredient">
-          <label>
-            Type :
-            <select name="Type" required>
+          <label>Type:
+            <select name="type" id="ingredient-type" required>
               <option value="Malt">Malt</option>
               <option value="Houblon">Houblon</option>
               <option value="Levure">Levure</option>
               <option value="Autre">Autre</option>
             </select>
           </label>
-          <label>
-            Nom :
-            <input type="text" name="Nom" required>
-          </label>
-          <label>
-            Fournisseur :
-            <input type="text" name="Fournisseur" required>
-          </label>
-          <label>
-            Numéro de lot :
-            <input type="text" name="Numéro de lot">
-          </label>
-          <label>
-            Quantité initiale (g) :
-            <input type="number" name="Qté initiale (g)" step="0.01" required>
-          </label>
-          <label>
-            Péremption :
-            <input type="date" name="Peremption">
-          </label>
-          <label>
-            Spécification :
-            <input type="text" name="Spec">
-          </label>
+          <label>Nom: <input type="text" name="nom" required></label>
+          <label>Fournisseur: <input type="text" name="fournisseur" required></label>
+          <label>Lot: <input type="text" name="lot"></label>
+          <label>Quantité (g): <input type="number" name="quantite" step="0.01" required></label>
+          <label>Prix/kg (€): <input type="number" name="prix_kg" step="0.01" required></label>
+          <div id="spec-container">
+            <!-- Contenu dynamique selon le type -->
+          </div>
+          <label>Péremption: <input type="date" name="peremption"></label>
+          <label>Notes: <input type="text" name="notes"></label>
           <button type="submit">Ajouter</button>
         </form>
       </div>
@@ -101,101 +77,149 @@ function showAddIngredientForm() {
   document.body.insertAdjacentHTML('beforeend', formHtml);
   document.getElementById('modal-add-ingredient').style.display = 'block';
 
+  // Ajouter l'écouteur pour le changement de type
+  document.getElementById('ingredient-type').addEventListener('change', updateSpecField);
+
+  // Initialiser le champ dynamique
+  updateSpecField();
+
   document.getElementById('form-add-ingredient').addEventListener('submit', (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
-    const stock = Object.fromEntries(formData.entries());
-    stock.id = `${stock.Type}::${stock.Fournisseur}::${stock.Nom}::${stock['Numéro de lot'] || 'no-lot'}`;
-    stock['Qté utilisée (g)'] = 0;
-    stock['Qté restante'] = parseFloat(stock['Qté initiale (g)']);
-
-    const stocks = JSON.parse(localStorage.getItem('stocks')) || [];
-    stocks.push(stock);
-    localStorage.setItem('stocks', JSON.stringify(stocks));
-    e.target.reset();
+    const ingredient = {
+      id: `ing_${Date.now()}`,
+      type: formData.get('type'),
+      nom: formData.get('nom'),
+      fournisseur: formData.get('fournisseur'),
+      lot: formData.get('lot'),
+      quantite: parseFloat(formData.get('quantite')),
+      prix_kg: parseFloat(formData.get('prix_kg')),
+      spec: formData.get('spec') || '',
+      peremption: formData.get('peremption')
+    };
+    ajouterIngredient(ingredient);
     closeModal('modal-add-ingredient');
-    renderStocks(stocks);
   });
 }
 
-// Sortir un ingrédient du stock
-function showSortirStockForm(id) {
+// Mettre à jour le champ de spécification selon le type
+function updateSpecField() {
+  const type = document.getElementById('ingredient-type').value;
+  const specContainer = document.getElementById('spec-container');
+  let specHtml = '';
+
+  if (type === 'Malt') {
+    specHtml = `<label>EBC: <input type="text" name="spec" placeholder="Ex: 6"></label>`;
+  } else if (type === 'Houblon') {
+    specHtml = `<label>% AA: <input type="text" name="spec" placeholder="Ex: 12"></label>`;
+  } else if (type === 'Levure') {
+    specHtml = ''; // Pas de champ spécification pour les levures
+  } else {
+    specHtml = `<label>Spécification: <input type="text" name="spec" placeholder="Détails"></label>`;
+  }
+
+  specContainer.innerHTML = specHtml;
+}
+
+
+// Logique d'ajout avec historique
+function ajouterIngredient(ingredient) {
   const stocks = JSON.parse(localStorage.getItem('stocks')) || [];
-  const stock = stocks.find(s => s.id === id);
-
-  if (stock) {
-    const formHtml = `
-      <div class="modal" id="modal-sortir-stock">
-        <div class="modal-content">
-          <span class="modal-close" onclick="closeModal('modal-sortir-stock')">&times;</span>
-          <h3>Sortir du stock</h3>
-          <p>Ingrédient : ${stock.Type} - ${stock.Nom}</p>
-          <form id="form-sortir-stock">
-            <label>
-              Quantité à sortir (g) :
-              <input type="number" name="Quantité" step="0.01" required>
-            </label>
-            <input type="hidden" name="StockId" value="${stock.id}">
-            <button type="submit">Sortir du stock</button>
-          </form>
-        </div>
-      </div>
-    `;
-    document.body.insertAdjacentHTML('beforeend', formHtml);
-    document.getElementById('modal-sortir-stock').style.display = 'block';
-
-    document.getElementById('form-sortir-stock').addEventListener('submit', (e) => {
-      e.preventDefault();
-      const formData = new FormData(e.target);
-      const quantité = parseFloat(formData.get('Quantité'));
-      const stockId = formData.get('StockId');
-
-      sortirStock(stockId, quantité);
-      closeModal('modal-sortir-stock');
-    });
-  }
-}
-
-function sortirStock(id, quantité) {
-  let stocks = JSON.parse(localStorage.getItem('stocks')) || [];
-  const stock = stocks.find(s => s.id === id);
-
-  if (stock) {
-    stock['Qté utilisée (g)'] += quantité;
-    stock['Qté restante'] -= quantité;
-
-    localStorage.setItem('stocks', JSON.stringify(stocks));
-    renderStocks(stocks);
-  }
-}
-
-// Supprimer un stock (avec confirmation)
-function confirmDeleteStock(id) {
-  if (confirm("Êtes-vous sûr de vouloir supprimer cet ingrédient ?")) {
-    deleteStock(id);
-  }
-}
-
-function deleteStock(id) {
-  let stocks = JSON.parse(localStorage.getItem('stocks')) || [];
-  stocks = stocks.filter(stock => stock.id !== id);
+  const historique = JSON.parse(localStorage.getItem('historique_stocks')) || [];
+  stocks.push(ingredient);
   localStorage.setItem('stocks', JSON.stringify(stocks));
-  renderStocks(stocks);
+
+  historique.push({
+    id: `hist_${Date.now()}`,
+    date: new Date().toISOString(),
+    type: "ajout",
+    ingredient_id: ingredient.id,
+    quantite: ingredient.quantite,
+    lot: ingredient.lot,
+    utilisateur: "François",
+    notes: ingredient.notes || '',
+    stock_avant: 0,
+    stock_apres: ingredient.quantite
+  });
+  localStorage.setItem('historique_stocks', JSON.stringify(historique));
+  renderStocks();
+  renderHistorique();
 }
 
-// Fonction d'édition (à implémenter selon tes besoins)
-function editStock(id) {
-  console.log("Éditer le stock avec l'ID:", id);
+// Retirer un ingrédient
+function showSortirStockForm(id) {
+  const stock = JSON.parse(localStorage.getItem('stocks')).find(s => s.id === id);
+  const formHtml = `
+    <div class="modal" id="modal-sortir-stock">
+      <div class="modal-content">
+        <span class="modal-close" onclick="closeModal('modal-sortir-stock')">&times;</span>
+        <h3>Sortir du stock</h3>
+        <p>${stock.type} - ${stock.nom} (Lot: ${stock.lot})</p>
+        <form id="form-sortir-stock">
+          <label>Quantité (g): <input type="number" name="quantite" step="0.01" required></label>
+          <input type="hidden" name="stockId" value="${id}">
+          <button type="submit">Valider</button>
+        </form>
+      </div>
+    </div>
+  `;
+  document.body.insertAdjacentHTML('beforeend', formHtml);
+  document.getElementById('modal-sortir-stock').style.display = 'block';
+
+  document.getElementById('form-sortir-stock').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const quantite = parseFloat(e.target.quantite.value);
+    sortirStock(id, quantite);
+    closeModal('modal-sortir-stock');
+  });
 }
 
-// Fonction pour fermer les modales
-function closeModal(modalId) {
-  const modal = document.getElementById(modalId);
-  if (modal) {
-    modal.style.display = 'none';
-    modal.remove();
+function sortirStock(id, quantite) {
+  let stocks = JSON.parse(localStorage.getItem('stocks'));
+  let historique = JSON.parse(localStorage.getItem('historique_stocks')) || [];
+  const stock = stocks.find(s => s.id === id);
+  const stockAvant = stock.quantite;
+  stock.quantite -= quantite;
+
+  historique.push({
+    id: `hist_${Date.now()}`,
+    date: new Date().toISOString(),
+    type: "retrait",
+    ingredient_id: id,
+    quantite: -quantite,
+    lot: stock.lot,
+    utilisateur: "François",
+    notes: `Retrait manuel`,
+    stock_avant: stockAvant,
+    stock_apres: stock.quantite
+  });
+
+  localStorage.setItem('stocks', JSON.stringify(stocks));
+  localStorage.setItem('historique_stocks', JSON.stringify(historique));
+  renderStocks();
+  renderHistorique();
+}
+
+// Afficher l'historique
+function renderHistorique() {
+  const historique = JSON.parse(localStorage.getItem('historique_stocks')) || [];
+  const tbody = document.querySelector('#historique-table tbody');
+  if (tbody) {
+    tbody.innerHTML = historique.map(entry => `
+      <tr>
+        <td>${new Date(entry.date).toLocaleString()}</td>
+        <td class="${entry.type === 'ajout' ? 'positive' : 'negative'}">${entry.type}</td>
+        <td>${entry.ingredient_id}</td>
+        <td>${entry.lot}</td>
+        <td>${entry.quantite}</td>
+        <td>${entry.stock_avant}</td>
+        <td>${entry.stock_apres}</td>
+        <td>${entry.utilisateur}</td>
+        <td>${entry.notes}</td>
+      </tr>
+    `).join('');
   }
 }
 
-// Charger les stocks au démarrage
+// Charger au démarrage
 document.addEventListener('DOMContentLoaded', loadStocks);

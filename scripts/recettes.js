@@ -1,31 +1,6 @@
-// Charger et afficher les recettes
-async function loadRecettes() {
-  try {
-    const recettes = JSON.parse(localStorage.getItem('recettes')) || [];
-    renderRecettes(recettes);
-  } catch (error) {
-    console.error("Erreur:", error);
-  }
-}
-
-// Afficher les recettes dans le tableau
-function renderRecettes(recettes) {
-  const tbody = document.querySelector('#recettes-table tbody');
-  if (tbody) {
-    tbody.innerHTML = recettes.map(recette => `
-      <tr>
-        <td>${recette.Nom}</td>
-        <td>${recette.Style}</td>
-        <td>${recette['Degré alcoolique']}%</td>
-        <td>${recette['Volume (L)']} L</td>
-        <td>
-          <button onclick="editRecette('${recette.id}')">✏️</button>
-          <button onclick="confirmDeleteRecette('${recette.id}')">🗑️</button>
-          <button onclick="showRecetteDetails('${recette.id}')">📄</button>
-        </td>
-      </tr>
-    `).join('');
-  }
+// Calculer le coût d'une recette
+function calculerCoutRecette(recette) {
+  return recette.ingredients.reduce((total, ing) => total + ing.cout, 0);
 }
 
 // Ajouter une recette
@@ -36,22 +11,13 @@ function showAddRecetteForm() {
         <span class="modal-close" onclick="closeModal('modal-add-recette')">&times;</span>
         <h3>Ajouter une recette</h3>
         <form id="form-add-recette">
-          <label>
-            Nom :
-            <input type="text" name="Nom" required>
-          </label>
-          <label>
-            Style :
-            <input type="text" name="Style" required>
-          </label>
-          <label>
-            Degré alcoolique :
-            <input type="number" name="Degré alcoolique" step="0.1" required>
-          </label>
-          <label>
-            Volume (L) :
-            <input type="number" name="Volume (L)" step="0.1" required>
-          </label>
+          <label>Nom: <input type="text" name="nom" required></label>
+          <label>Style: <input type="text" name="style" required></label>
+          <label>ABV cible (%): <input type="number" name="abv_cible" step="0.1" required></label>
+          <label>Volume (L): <input type="number" name="volume" step="0.1" required></label>
+          <label>Coût calculé (€): <input type="text" id="recette-cout-calcule" readonly></label>
+          <label>Coût manuel (€): <input type="number" id="recette-cout-manual" step="0.01"></label>
+          <button type="button" id="recette-reset-cout" style="display: none;">Réinitialiser</button>
           <button type="submit">Ajouter</button>
         </form>
       </div>
@@ -63,151 +29,85 @@ function showAddRecetteForm() {
   document.getElementById('form-add-recette').addEventListener('submit', (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
-    const recette = Object.fromEntries(formData.entries());
-    recette.id = `Recette::${recette.Nom}`;
-    recette.Ingrédients = [];
-
-    const recettes = JSON.parse(localStorage.getItem('recettes')) || [];
-    recettes.push(recette);
-    localStorage.setItem('recettes', JSON.stringify(recettes));
-    e.target.reset();
+    const recette = {
+      id: `rec_${Date.now()}`,
+      nom: formData.get('nom'),
+      style: formData.get('style'),
+      abv_cible: parseFloat(formData.get('abv_cible')),
+      volume: parseFloat(formData.get('volume')),
+      ingredients: [],
+      cout_calcule: 0,
+      cout_manual: formData.get('recette-cout-manual') || null,
+      cout_override: !!formData.get('recette-cout-manual')
+    };
+    ajouterRecette(recette);
     closeModal('modal-add-recette');
-    renderRecettes(recettes);
   });
 }
 
-// Afficher les détails d'une recette
-function showRecetteDetails(id) {
+function ajouterRecette(recette) {
   const recettes = JSON.parse(localStorage.getItem('recettes')) || [];
-  const recette = recettes.find(r => r.id === id);
+  recettes.push(recette);
+  localStorage.setItem('recettes', JSON.stringify(recettes));
+  renderRecettes();
+}
 
+// Mettre à jour le coût manuel
+function updateCoutManual(recetteId, coutManual) {
+  const recettes = JSON.parse(localStorage.getItem('recettes')) || [];
+  const recette = recettes.find(r => r.id === recetteId);
   if (recette) {
-    const formHtml = `
-      <div class="modal" id="modal-recette-details">
-        <div class="modal-content">
-          <span class="modal-close" onclick="closeModal('modal-recette-details')">&times;</span>
-          <h3>Détails de la recette : ${recette.Nom}</h3>
-          <div>
-            <h4>Ingrédients</h4>
-            <table id="recette-ingredients-table">
-              <thead>
-                <tr>
-                  <th>Type</th>
-                  <th>Nom</th>
-                  <th>Spécification</th>
-                  <th>Quantité (g)</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${recette.Ingrédients.map(ingredient => `
-                  <tr>
-                    <td>${ingredient.Type}</td>
-                    <td>${ingredient.Nom}</td>
-                    <td>${ingredient.Spec}</td>
-                    <td>${ingredient.Quantité} g</td>
-                    <td>
-                      <button onclick="removeIngredientFromRecette('${recette.id}', '${ingredient.id}')">🗑️</button>
-                    </td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-            <button class="action-btn" onclick="showAddIngredientToRecetteForm('${recette.id}')">
-              <i class="fas fa-plus"></i> Ajouter un ingrédient
-            </button>
-          </div>
-        </div>
-      </div>
-    `;
-    document.body.insertAdjacentHTML('beforeend', formHtml);
-    document.getElementById('modal-recette-details').style.display = 'block';
+    recette.cout_manual = parseFloat(coutManual);
+    recette.cout_override = true;
+    localStorage.setItem('recettes', JSON.stringify(recettes));
+    renderRecettes();
   }
 }
 
 // Ajouter un ingrédient à une recette
 function showAddIngredientToRecetteForm(recetteId) {
   const stocks = JSON.parse(localStorage.getItem('stocks')) || [];
-
   const formHtml = `
     <div class="modal" id="modal-add-ingredient-to-recette">
       <div class="modal-content">
         <span class="modal-close" onclick="closeModal('modal-add-ingredient-to-recette')">&times;</span>
-        <h3>Ajouter un ingrédient à la recette</h3>
+        <h3>Ajouter un ingrédient</h3>
         <form id="form-add-ingredient-to-recette">
-          <label>
-            Ingrédient :
-            <select name="IngredientId" required>
-              ${stocks.map(stock => `
-                <option value="${stock.id}" data-type="${stock.Type}" data-spec="${stock.Spec}">
-                  ${stock.Type} - ${stock.Nom} (${stock.Spec})
-                </option>
-              `).join('')}
+          <label>Ingrédient:
+            <select name="ingredient_id" required>
+              ${stocks.map(stock => `<option value="${stock.id}">${stock.type} - ${stock.nom}</option>`).join('')}
             </select>
           </label>
-          <label>
-            Quantité (g) :
-            <input type="number" name="Quantité" step="0.01" required>
-          </label>
-          <input type="hidden" name="RecetteId" value="${recetteId}">
+          <label>Quantité (g): <input type="number" name="quantite" step="0.01" required></label>
+          <input type="hidden" name="recette_id" value="${recetteId}">
           <button type="submit">Ajouter</button>
         </form>
       </div>
     </div>
   `;
-
   document.body.insertAdjacentHTML('beforeend', formHtml);
   document.getElementById('modal-add-ingredient-to-recette').style.display = 'block';
 
   document.getElementById('form-add-ingredient-to-recette').addEventListener('submit', (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
-    const ingredientId = formData.get('IngredientId');
-    const quantité = parseFloat(formData.get('Quantité'));
-    const recetteId = formData.get('RecetteId');
-
-    const stocks = JSON.parse(localStorage.getItem('stocks')) || [];
+    const ingredientId = formData.get('ingredient_id');
+    const quantite = parseFloat(formData.get('quantite'));
+    const stock = stocks.find(s => s.id === ingredientId);
     const recettes = JSON.parse(localStorage.getItem('recettes')) || [];
-
-    const ingredient = stocks.find(stock => stock.id === ingredientId);
     const recette = recettes.find(r => r.id === recetteId);
 
-    if (ingredient && recette) {
-      recette.Ingrédients.push({
-        id: ingredient.id,
-        Type: ingredient.Type,
-        Nom: ingredient.Nom,
-        Spec: ingredient.Spec,
-        Quantité: quantité
-      });
+    recette.ingredients.push({
+      ingredient_id: ingredientId,
+      nom: stock.nom,
+      quantite: quantite,
+      prix_kg: stock.prix_kg,
+      cout: (quantite * stock.prix_kg) / 1000
+    });
 
-      localStorage.setItem('recettes', JSON.stringify(recettes));
-      closeModal('modal-add-ingredient-to-recette');
-      showRecetteDetails(recetteId);
-    }
+    recette.cout_calcule = calculerCoutRecette(recette);
+    localStorage.setItem('recettes', JSON.stringify(recettes));
+    closeModal('modal-add-ingredient-to-recette');
+    showRecetteDetails(recetteId);
   });
 }
-
-// Supprimer un ingrédient d'une recette
-function removeIngredientFromRecette(recetteId, ingredientId) {
-  const recettes = JSON.parse(localStorage.getItem('recettes')) || [];
-  const recette = recettes.find(r => r.id === recetteId);
-
-  if (recette) {
-    recette.Ingrédients = recette.Ingrédients.filter(ingredient => ingredient.id !== ingredientId);
-    localStorage.setItem('recettes', JSON.stringify(recettes));
-    showRecetteDetails(recetteId);
-  }
-}
-
-// Fonction pour fermer les modales
-function closeModal(modalId) {
-  const modal = document.getElementById(modalId);
-  if (modal) {
-    modal.style.display = 'none';
-    modal.remove();
-  }
-}
-
-// Charger les recettes au démarrage
-document.addEventListener('DOMContentLoaded', loadRecettes);
