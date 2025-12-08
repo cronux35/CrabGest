@@ -1,0 +1,14 @@
+[
+  {
+    "id": "hist_001",
+    "date": "2025-12-08T09:15:00",
+    "type": "ajout",
+    "ingredient_id": "malt_pale_25",
+    "quantite": 5000,
+    "lot": "LOT20251201",
+    "utilisateur": "François",
+    "notes": "Achat chez MaltShop",
+    "stock_avant": 10000,
+    "stock_apres": 15000
+  }
+]

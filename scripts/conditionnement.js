@@ -1,7 +1,4 @@
-function genLot() {
-  return 'LOT-' + Date.now();
-}
-
+// Ajouter un conditionnement
 function showAddConditionnementForm() {
   const recettes = JSON.parse(localStorage.getItem('recettes')) || [];
   const formHtml = `
@@ -10,19 +7,15 @@ function showAddConditionnementForm() {
         <span class="modal-close" onclick="closeModal('modal-add-conditionnement')">&times;</span>
         <h3>Ajouter un conditionnement</h3>
         <form id="form-add-conditionnement">
-          <label>
-            Recette :
-            <select name="RecetteId" required>
-              ${recettes.map(recette => `
-                <option value="${recette.id}">${recette.Nom}</option>
-              `).join('')}
+          <label>Recette:
+            <select name="recette_id" required>
+              ${recettes.map(r => `<option value="${r.id}">${r.nom}</option>`).join('')}
             </select>
           </label>
-          <label>Volume (L) : <input type="number" name="volume_total" step="0.01" required></label>
-          <label>Fûts : <input type="number" name="futs"></label>
-          <label>Bouteilles 33cl : <input type="number" name="bouteilles_33"></label>
-          <label>Bouteilles 75cl : <input type="number" name="bouteilles_75"></label>
-          <label>Canettes 44cl : <input type="number" name="canettes_44"></label>
+          <label>Volume total (L): <input type="number" name="volume" step="0.1" required></label>
+          <label>ABV final (%): <input type="number" name="abv_final" step="0.1" required></label>
+          <label>Bouteilles 33cl: <input type="number" name="bouteilles_33cl"></label>
+          <label>Bouteilles 75cl: <input type="number" name="bouteilles_75cl"></label>
           <button type="submit">Ajouter</button>
         </form>
       </div>
@@ -34,15 +27,25 @@ function showAddConditionnementForm() {
   document.getElementById('form-add-conditionnement').addEventListener('submit', (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
-    const entry = Object.fromEntries(formData.entries());
-    entry.date = new Date().toISOString().split('T')[0];
-    entry.lot = genLot();
-
-    const conditionnement = JSON.parse(localStorage.getItem('conditionnement')) || [];
-    conditionnement.push(entry);
-    localStorage.setItem('conditionnement', JSON.stringify(conditionnement));
-    e.target.reset();
+    const conditionnement = {
+      recette_id: formData.get('recette_id'),
+      volume: parseFloat(formData.get('volume')),
+      abv_final: parseFloat(formData.get('abv_final')),
+      contenants: {
+        bouteilles_33cl: parseInt(formData.get('bouteilles_33cl')) || 0,
+        bouteilles_75cl: parseInt(formData.get('bouteilles_75cl')) || 0
+      }
+    };
+    ajouterConditionnement(conditionnement);
     closeModal('modal-add-conditionnement');
-    location.reload();
   });
+}
+
+function ajouterConditionnement(conditionnement) {
+  const conditionnements = JSON.parse(localStorage.getItem('conditionnements')) || [];
+  conditionnement.id = `cond_${Date.now()}`;
+  conditionnement.date = new Date().toISOString();
+  conditionnements.push(conditionnement);
+  localStorage.setItem('conditionnements', JSON.stringify(conditionnements));
+  renderConditionnements();
 }

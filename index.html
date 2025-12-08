@@ -8,6 +8,8 @@
   <link rel="stylesheet" href="./styles/main.css">
   <link rel="stylesheet" href="./styles/theme.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 </head>
 <body>
   <header class="app-header">
@@ -31,16 +33,14 @@
       <button id="menu-conditionnement" class="menu-btn">
         <i class="fas fa-wine-bottle"></i> Conditionnement
       </button>
-      <button id="menu-ventes" class="menu-btn">
-        <i class="fas fa-shopping-cart"></i> Ventes
-      </button>
-      <button id="menu-douane" class="menu-btn">
-        <i class="fas fa-file-invoice"></i> Déclaration douane
+      <button id="menu-historique" class="menu-btn">
+        <i class="fas fa-history"></i> Historique
       </button>
     </nav>
   </header>
 
   <main class="app-main">
+    <!-- Section Gestion des stocks -->
     <section id="section-stocks" class="app-section active">
       <h2><i class="fas fa-boxes"></i> Gestion des stocks</h2>
       <div class="section-toolbar">
@@ -66,6 +66,7 @@
       </table>
     </section>
 
+    <!-- Section Gestion des recettes -->
     <section id="section-recettes" class="app-section">
       <h2><i class="fas fa-book"></i> Gestion des recettes</h2>
       <div class="section-toolbar">
@@ -80,6 +81,7 @@
             <th>Style</th>
             <th>Degré alcoolique</th>
             <th>Volume (L)</th>
+            <th>Coût</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -87,6 +89,7 @@
       </table>
     </section>
 
+    <!-- Section Suivi de fermentation -->
     <section id="section-fermentation" class="app-section">
       <h2><i class="fas fa-beer"></i> Suivi de fermentation</h2>
       <div class="section-toolbar">
@@ -95,8 +98,12 @@
         </button>
       </div>
       <div class="fermentation-charts">
-        <canvas id="densite-chart"></canvas>
-        <canvas id="temperature-chart"></canvas>
+        <div class="chart-container">
+          <canvas id="densite-chart"></canvas>
+        </div>
+        <div class="chart-container">
+          <canvas id="temperature-chart"></canvas>
+        </div>
       </div>
       <table id="fermentation-table">
         <thead>
@@ -105,7 +112,7 @@
             <th>Bière</th>
             <th>Densité</th>
             <th>Température</th>
-            <th>pH</th>
+            <th>Type</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -113,6 +120,7 @@
       </table>
     </section>
 
+    <!-- Section Conditionnement -->
     <section id="section-conditionnement" class="app-section">
       <h2><i class="fas fa-wine-bottle"></i> Conditionnement</h2>
       <div class="section-toolbar">
@@ -126,11 +134,8 @@
             <th>Date</th>
             <th>Bière</th>
             <th>Volume (L)</th>
-            <th>Fûts</th>
-            <th>Bouteilles 33cl</th>
-            <th>Bouteilles 75cl</th>
-            <th>Canettes 44cl</th>
-            <th>Lot</th>
+            <th>ABV final</th>
+            <th>Contenants</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -138,60 +143,24 @@
       </table>
     </section>
 
-    <section id="section-ventes" class="app-section">
-      <h2><i class="fas fa-shopping-cart"></i> Ventes</h2>
+    <!-- Section Historique des stocks -->
+    <section id="section-historique" class="app-section">
+      <h2><i class="fas fa-history"></i> Historique des stocks</h2>
       <div class="section-toolbar">
-        <button class="action-btn" onclick="showAddVenteForm()">
-          <i class="fas fa-plus"></i> Ajouter une vente
-        </button>
+        <input type="text" id="search-historique" placeholder="Filtrer par ingrédient ou lot...">
       </div>
-      <table id="ventes-table">
+      <table id="historique-table">
         <thead>
           <tr>
             <th>Date</th>
-            <th>Client</th>
-            <th>Produit</th>
-            <th>Quantité</th>
-            <th>Prix unitaire</th>
-            <th>Total</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </section>
-
-    <section id="section-douane" class="app-section">
-      <h2><i class="fas fa-file-invoice"></i> Déclaration douane</h2>
-      <p class="section-description">
-        Générez votre déclaration pour les droits d'accises à partir des données de conditionnement et de ventes.
-      </p>
-      <div class="douane-tools">
-        <select id="douane-periode">
-          <option>Mois en cours</option>
-          <option>Mois dernier</option>
-          <option>Trimestre en cours</option>
-        </select>
-        <button class="action-btn" onclick="generateDouaneReport()">
-          <i class="fas fa-file-pdf"></i> Générer le rapport
-        </button>
-        <button class="action-btn" onclick="exportDouaneData()">
-          <i class="fas fa-file-export"></i> Exporter pour la douane
-        </button>
-      </div>
-      <div id="douane-summary">
-        <h3>Récapitulatif</h3>
-        <p>Volume total conditionné : <span id="douane-volume">0 L</span></p>
-        <p>Droits d'accises estimés : <span id="douane-droits">0 €</span></p>
-      </div>
-      <table id="douane-table">
-        <thead>
-          <tr>
-            <th>Lot</th>
             <th>Type</th>
-            <th>Volume (L)</th>
-            <th>Degré alcoolique</th>
-            <th>Droits (€)</th>
+            <th>Ingrédient</th>
+            <th>Lot</th>
+            <th>Quantité</th>
+            <th>Stock avant</th>
+            <th>Stock après</th>
+            <th>Utilisateur</th>
+            <th>Notes</th>
           </tr>
         </thead>
         <tbody></tbody>
@@ -199,56 +168,11 @@
     </section>
   </main>
 
-  <!-- Modales -->
-  <div id="modal-add-ingredient" class="modal">
-    <div class="modal-content">
-      <span class="modal-close" onclick="closeModal('modal-add-ingredient')">&times;</span>
-      <h3>Ajouter un ingrédient</h3>
-      <form id="form-add-ingredient">
-        <label>
-          Type :
-          <select name="Type" required>
-            <option value="Malt">Malt</option>
-            <option value="Houblon">Houblon</option>
-            <option value="Levure">Levure</option>
-            <option value="Autre">Autre</option>
-          </select>
-        </label>
-        <label>
-          Nom :
-          <input type="text" name="Nom" required>
-        </label>
-        <label>
-          Fournisseur :
-          <input type="text" name="Fournisseur" required>
-        </label>
-        <label>
-          Numéro de lot :
-          <input type="text" name="Numéro de lot">
-        </label>
-        <label>
-          Quantité initiale (g) :
-          <input type="number" name="Qté initiale (g)" step="0.01" required>
-        </label>
-        <label>
-          Péremption :
-          <input type="date" name="Peremption">
-        </label>
-        <label>
-          Spécification :
-          <input type="text" name="Spec">
-        </label>
-        <button type="submit">Ajouter</button>
-      </form>
-    </div>
-  </div>
-
+  <!-- Scripts -->
   <script src="./scripts/app.js"></script>
   <script src="./scripts/stocks.js"></script>
   <script src="./scripts/recettes.js"></script>
   <script src="./scripts/fermentation.js"></script>
   <script src="./scripts/conditionnement.js"></script>
-  <script src="./scripts/ventes.js"></script>
-  <script src="./scripts/douane.js"></script>
 </body>
 </html>
