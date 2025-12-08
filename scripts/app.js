@@ -1,34 +1,38 @@
-document.addEventListener('DOMContentLoaded', () => {
-  // Gestion du menu hamburger
-  document.getElementById('menu-toggle').addEventListener('click', () => {
-    document.getElementById('main-menu').classList.toggle('active');
-  });
+// Initialisation des données locales si absentes
+function initData() {
+    const defaultData = {
+        stocks: [
+            { id: 1, type: "Malt", nom: "Pilsen", lot: "2023-001", quantite: 10000, fournisseur: "Château", specification: "3.5 EBC" },
+            { id: 2, type: "Houblon", nom: "Citra", lot: "2023-002", quantite: 500, fournisseur: "Hops France", specification: "13.4 %AA" }
+        ],
+        recettes: [],
+        fermentations: [],
+        conditionnements: [],
+        ventes: [],
+        clients: [],
+        declarations_douanes: [],
+        historique_stocks: []
+    };
 
-  // Gestion du menu principal
-  const menuButtons = document.querySelectorAll('.menu-btn');
-  if (menuButtons) {
-    menuButtons.forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.app-section').forEach(section => {
-          section.classList.remove('active');
-        });
-        document.querySelectorAll('.menu-btn').forEach(b => {
-          b.classList.remove('active');
-        });
-        const sectionId = btn.id.replace('menu-', 'section-');
-        const section = document.getElementById(sectionId);
-        if (section) {
-          section.classList.add('active');
+    for (const [key, value] of Object.entries(defaultData)) {
+        if (!localStorage.getItem(key)) {
+            localStorage.setItem(key, JSON.stringify(value));
         }
-        btn.classList.add('active');
-        // Fermer le menu hamburger après sélection
-        document.getElementById('main-menu').classList.remove('active');
-      });
-    });
-  }
-});
-
-// Fonction pour fermer les modales
-function closeModal(modalId) {
-  document.getElementById(modalId).style.display = 'none';
+    }
 }
+
+// Charger les données au démarrage
+document.addEventListener('DOMContentLoaded', () => {
+    initData();
+    chargerDonnees();
+
+    // Gestion des onglets
+    document.querySelectorAll('.tab-button').forEach(button => {
+        button.addEventListener('click', () => {
+            document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            button.classList.add('active');
+            document.getElementById(button.dataset.tab).classList.add('active');
+        });
+    });
+});
