@@ -1,178 +1,158 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CrabStock – Gestion de brasserie</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-  <link rel="stylesheet" href="./styles/main.css">
-  <link rel="stylesheet" href="./styles/theme.css">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CrabGest - Gestion de Brasserie</title>
+    <link rel="stylesheet" href="styles/theme.css">
+    <link rel="stylesheet" href="styles/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
 </head>
 <body>
-  <header class="app-header">
-    <div class="header-content">
-      <img src="./assets/logo_crab.png" alt="Logo CRAB" class="logo">
-      <h1>CrabStock</h1>
-      <button id="menu-toggle" class="menu-toggle">
-        <i class="fas fa-bars"></i>
-      </button>
-    </div>
-    <nav class="main-menu" id="main-menu">
-      <button id="menu-stocks" class="menu-btn active">
-        <i class="fas fa-boxes"></i> Gestion des stocks
-      </button>
-      <button id="menu-recettes" class="menu-btn">
-        <i class="fas fa-book"></i> Gestion des recettes
-      </button>
-      <button id="menu-fermentation" class="menu-btn">
-        <i class="fas fa-beer"></i> Suivi de fermentation
-      </button>
-      <button id="menu-conditionnement" class="menu-btn">
-        <i class="fas fa-wine-bottle"></i> Conditionnement
-      </button>
-      <button id="menu-historique" class="menu-btn">
-        <i class="fas fa-history"></i> Historique
-      </button>
+    <header>
+        <h1>CrabGest</h1>
+        <img src="assets/images/crab-logo.png" alt="Logo CRAB" class="logo">
+    </header>
+
+    <nav class="tabs">
+        <button class="tab-button active" data-tab="stocks">Stocks</button>
+        <button class="tab-button" data-tab="recettes">Recettes</button>
+        <button class="tab-button" data-tab="fermentation">Fermentation</button>
+        <button class="tab-button" data-tab="conditionnement">Conditionnement</button>
+        <button class="tab-button" data-tab="ventes">Ventes</button>
+        <button class="tab-button" data-tab="douane">Douane</button>
     </nav>
-  </header>
 
-  <main class="app-main">
-    <!-- Section Gestion des stocks -->
-    <section id="section-stocks" class="app-section active">
-      <h2><i class="fas fa-boxes"></i> Gestion des stocks</h2>
-      <div class="section-toolbar">
-        <button class="action-btn" onclick="showAddIngredientForm()">
-          <i class="fas fa-plus"></i> Ajouter un ingrédient
-        </button>
-        <input type="text" id="search-stocks" placeholder="Rechercher...">
-      </div>
-      <table id="stocks-table">
-        <thead>
-          <tr>
-            <th>Type</th>
-            <th>Nom</th>
-            <th>Lot</th>
-            <th>Qté restante</th>
-            <th>Fournisseur</th>
-            <th>Spécification</th>
-            <th>Péremption</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </section>
+    <main>
+        <!-- Stocks -->
+        <section id="stocks" class="tab active">
+            <h2>Gestion des Stocks</h2>
+            <div class="card">
+                <div class="form-group">
+                    <select id="select-ingredient" class="form-control"></select>
+                    <select id="select-biere" class="form-control"></select>
+                    <input type="number" id="quantite-retrait" class="form-control" placeholder="Quantité (g)">
+                    <button onclick="retirerStock()" class="btn btn-primary">Retirer du stock</button>
+                </div>
+                <div class="table-responsive">
+                    <table id="table-stocks" class="table"></table>
+                </div>
+                <div class="card">
+                    <select id="select-biere-historique" class="form-control" onchange="afficherHistoriqueParBiere(this.value)"></select>
+                    <div class="table-responsive">
+                        <table id="historique-biere" class="table"></table>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-    <!-- Section Gestion des recettes -->
-    <section id="section-recettes" class="app-section">
-      <h2><i class="fas fa-book"></i> Gestion des recettes</h2>
-      <div class="section-toolbar">
-        <button class="action-btn" onclick="showAddRecetteForm()">
-          <i class="fas fa-plus"></i> Ajouter une recette
-        </button>
-      </div>
-      <table id="recettes-table">
-        <thead>
-          <tr>
-            <th>Nom</th>
-            <th>Style</th>
-            <th>Degré alcoolique</th>
-            <th>Volume (L)</th>
-            <th>Coût</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </section>
+        <!-- Recettes -->
+        <section id="recettes" class="tab">
+            <h2>Gestion des Recettes</h2>
+            <div class="card">
+                <div class="form-group">
+                    <input type="text" id="nom-recette" class="form-control" placeholder="Nom de la recette">
+                    <input type="text" id="style-recette" class="form-control" placeholder="Style">
+                    <input type="number" id="degre-recette" class="form-control" placeholder="Degré alcoolique">
+                    <input type="number" id="volume-recette" class="form-control" placeholder="Volume (L)">
+                    <button onclick="ajouterRecette()" class="btn btn-primary">Ajouter Recette</button>
+                </div>
+                <div class="table-responsive">
+                    <table id="table-recettes" class="table"></table>
+                </div>
+            </div>
+        </section>
 
-    <!-- Section Suivi de fermentation -->
-    <section id="section-fermentation" class="app-section">
-      <h2><i class="fas fa-beer"></i> Suivi de fermentation</h2>
-      <div class="section-toolbar">
-        <button class="action-btn" onclick="showAddFermentationForm()">
-          <i class="fas fa-plus"></i> Ajouter un suivi
-        </button>
-      </div>
-      <div class="fermentation-charts">
-        <div class="chart-container">
-          <canvas id="densite-chart"></canvas>
-        </div>
-        <div class="chart-container">
-          <canvas id="temperature-chart"></canvas>
-        </div>
-      </div>
-      <table id="fermentation-table">
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Bière</th>
-            <th>Densité</th>
-            <th>Température</th>
-            <th>Type</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </section>
+        <!-- Fermentation -->
+        <section id="fermentation" class="tab">
+            <h2>Suivi de Fermentation</h2>
+            <div class="card">
+                <div class="form-group">
+                    <select id="select-biere-fermentation" class="form-control" onchange="afficherSuiviFermentation(this.value)"></select>
+                    <div class="fermentation-actions">
+                        <input type="datetime-local" id="date-action" class="form-control">
+                        <select id="type-action" class="form-control">
+                            <option value="densite">Densité (SG)</option>
+                            <option value="temperature">Température (°C)</option>
+                            <option value="purge">Purge (mL)</option>
+                            <option value="pression">Pression (bars)</option>
+                            <option value="dry_hopping">Dry Hopping (g)</option>
+                        </select>
+                        <input type="number" id="valeur-action" class="form-control" placeholder="Valeur">
+                        <button onclick="ajouterActionFermentation()" class="btn btn-primary">Ajouter Action</button>
+                    </div>
+                    <canvas id="fermentationChart" class="chart"></canvas>
+                </div>
+        </section>
 
-    <!-- Section Conditionnement -->
-    <section id="section-conditionnement" class="app-section">
-      <h2><i class="fas fa-wine-bottle"></i> Conditionnement</h2>
-      <div class="section-toolbar">
-        <button class="action-btn" onclick="showAddConditionnementForm()">
-          <i class="fas fa-plus"></i> Ajouter un conditionnement
-        </button>
-      </div>
-      <table id="conditionnement-table">
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Bière</th>
-            <th>Volume (L)</th>
-            <th>ABV final</th>
-            <th>Contenants</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </section>
+        <!-- Conditionnement -->
+        <section id="conditionnement" class="tab">
+            <h2>Conditionnement</h2>
+            <div class="card">
+                <div class="form-group">
+                    <select id="select-biere-conditionnement" class="form-control"></select>
+                    <input type="number" id="volume-conditionne" class="form-control" placeholder="Volume (L)">
+                    <input type="number" id="abv-final" class="form-control" placeholder="ABV final">
+                    <select id="type-contenant" class="form-control">
+                        <option value="bouteille_33cl">Bouteille 33cl</option>
+                        <option value="bouteille_50cl">Bouteille 50cl</option>
+                        <option value="bouteille_75cl">Bouteille 75cl</option>
+                        <option value="canette_44cl">Canette 44cl</option>
+                    </select>
+                    <input type="number" id="quantite-contenant" class="form-control" placeholder="Quantité">
+                    <button onclick="ajouterConditionnement()" class="btn btn-primary">Conditionner</button>
+                </div>
+                <div class="table-responsive">
+                    <table id="table-conditionnements" class="table"></table>
+                </div>
+            </div>
+        </section>
 
-    <!-- Section Historique des stocks -->
-    <section id="section-historique" class="app-section">
-      <h2><i class="fas fa-history"></i> Historique des stocks</h2>
-      <div class="section-toolbar">
-        <input type="text" id="search-historique" placeholder="Filtrer par ingrédient ou lot...">
-      </div>
-      <table id="historique-table">
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Type</th>
-            <th>Ingrédient</th>
-            <th>Lot</th>
-            <th>Quantité</th>
-            <th>Stock avant</th>
-            <th>Stock après</th>
-            <th>Utilisateur</th>
-            <th>Notes</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </section>
-  </main>
+        <!-- Ventes -->
+        <section id="ventes" class="tab">
+            <h2>Gestion des Ventes</h2>
+            <div class="card">
+                <div class="form-group">
+                    <select id="select-conditionnement" class="form-control"></select>
+                    <input type="number" id="quantite-vente" class="form-control" placeholder="Quantité">
+                    <input type="number" id="prix-vente" class="form-control" placeholder="Prix unitaire">
+                    <input type="text" id="nom-client" class="form-control" placeholder="Nom du client">
+                    <button onclick="ajouterVente()" class="btn btn-primary">Enregistrer Vente</button>
+                </div>
+                <div class="table-responsive">
+                    <table id="table-ventes" class="table"></table>
+                </div>
+            </div>
+        </section>
 
-  <!-- Scripts -->
-  <script src="./scripts/app.js"></script>
-  <script src="./scripts/stocks.js"></script>
-  <script src="./scripts/recettes.js"></script>
-  <script src="./scripts/fermentation.js"></script>
-  <script src="./scripts/conditionnement.js"></script>
+        <!-- Douane -->
+        <section id="douane" class="tab">
+            <h2>Déclarations Douanières</h2>
+            <div class="card">
+                <div class="form-group">
+                    <select id="select-mois-douane" class="form-control">
+                        <option value="2025-12">Décembre 2025</option>
+                    </select>
+                    <button onclick="genererDeclarationDouane()" class="btn btn-primary">Générer Déclaration</button>
+                </div>
+                <div class="table-responsive">
+                    <table id="table-douane" class="table"></table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>© 2025 CrabGest - Association CRAB</p>
+    </footer>
+
+    <script src="scripts/app.js"></script>
+    <script src="scripts/stocks.js"></script>
+    <script src="scripts/recettes.js"></script>
+    <script src="scripts/fermentation.js"></script>
+    <script src="scripts/conditionnement.js"></script>
+    <script src="scripts/ventes.js"></script>
+    <script src="scripts/douane.js"></script>
 </body>
 </html>

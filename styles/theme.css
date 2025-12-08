@@ -1,4 +1,138 @@
-/* Peut être utilisé pour des surcharges spécifiques */
+:root {
+    /* Couleurs CRAB (version sombre) */
+    --crab-orange: #ff6600;
+    --crab-jaune: #ffcc00;
+    --crab-gris-fonce: #222222;
+    --crab-gris-clair: #333333;
+    --crab-blanc: #f5f5f5;
+    --crab-alerte: #ff3333;
+
+    /* Polices */
+    --font-principal: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
 body {
-  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><circle cx="20" cy="20" r="1" fill="%23FFD300" opacity="0.1"/><circle cx="80" cy="40" r="1" fill="%23FFD300" opacity="0.1"/><circle cx="40" cy="80" r="1" fill="%23FFD300" opacity="0.1"/></svg>');
+    background-color: var(--crab-gris-fonce);
+    color: var(--crab-blanc);
+    font-family: var(--font-principal);
+    margin: 0;
+    padding: 0;
+    line-height: 1.6;
+}
+
+header {
+    background-color: var(--crab-gris-clair);
+    padding: 1rem;
+    text-align: center;
+    border-bottom: 3px solid var(--crab-orange);
+}
+
+.logo {
+    max-width: 100px;
+    margin-top: 0.5rem;
+}
+
+.tabs {
+    display: flex;
+    background-color: var(--crab-gris-clair);
+    padding: 0.5rem;
+    overflow-x: auto;
+}
+
+.tab-button {
+    flex: 1;
+    padding: 0.75rem;
+    margin: 0 0.25rem;
+    background-color: var(--crab-gris-fonce);
+    color: var(--crab-blanc);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.tab-button.active {
+    background-color: var(--crab-orange);
+}
+
+main {
+    padding: 1rem;
+}
+
+.card {
+    background-color: var(--crab-gris-clair);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-control {
+    width: 100%;
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
+    border: 1px solid #555;
+    border-radius: 4px;
+    background-color: var(--crab-gris-fonce);
+    color: var(--crab-blanc);
+}
+
+.btn {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.3s;
+}
+
+.btn-primary {
+    background-color: var(--crab-orange);
+    color: var(--crab-blanc);
+}
+
+.btn-primary:hover {
+    background-color: var(--crab-jaune);
+    color: var(--crab-gris-fonce);
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1rem;
+}
+
+.table th, .table td {
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid #555;
+}
+
+.table th {
+    background-color: var(--crab-orange);
+    color: var(--crab-blanc);
+}
+
+.chart {
+    background-color: var(--crab-gris-fonce);
+    border-radius: 4px;
+    padding: 1rem;
+    margin-top: 1rem;
+}
+
+footer {
+    text-align: center;
+    padding: 1rem;
+    background-color: var(--crab-gris-clair);
+    margin-top: 1rem;
+}
+
+/* Alertes visuelles */
+.stock-negatif {
+    color: var(--crab-alerte);
+    font-weight: bold;
 }
