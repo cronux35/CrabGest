@@ -24,15 +24,24 @@ function initData() {
 // Charger les données au démarrage
 document.addEventListener('DOMContentLoaded', () => {
     initData();
-    chargerDonnees();
+
+    // Charger les données initiales
+    if (typeof chargerDonnees === 'function') {
+        chargerDonnees();
+    }
 
     // Gestion des onglets
-    document.querySelectorAll('.tab-button').forEach(button => {
-        button.addEventListener('click', () => {
-            document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            button.classList.add('active');
-            document.getElementById(button.dataset.tab).classList.add('active');
+    const tabButtons = document.querySelectorAll('.tab-button');
+    if (tabButtons.length > 0) {
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                button.classList.add('active');
+                const tabId = button.getAttribute('data-tab');
+                const tab = document.getElementById(tabId);
+                if (tab) tab.classList.add('active');
+            });
         });
-    });
+    }
 });

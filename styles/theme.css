@@ -28,8 +28,7 @@ header {
 }
 
 .logo {
-    max-width: 100px;
-    margin-top: 0.5rem;
+    margin: 0.5rem auto;
 }
 
 .tabs {

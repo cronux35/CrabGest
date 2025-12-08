@@ -12,7 +12,7 @@
 <body>
     <header>
         <h1>CrabGest</h1>
-        <img src="assets/images/crab-logo.png" alt="Logo CRAB" class="logo">
+        <div class="logo" style="width: 100px; height: 50px; background-color: var(--crab-orange); margin: 0 auto; border-radius: 5px;"></div>
     </header>
 
     <nav class="tabs">
@@ -82,7 +82,9 @@
                         <input type="number" id="valeur-action" class="form-control" placeholder="Valeur">
                         <button onclick="ajouterActionFermentation()" class="btn btn-primary">Ajouter Action</button>
                     </div>
-                    <canvas id="fermentationChart" class="chart"></canvas>
+                    <div style="height: 300px;">
+                        <canvas id="fermentationChart" class="chart"></canvas>
+                    </div>
                 </div>
         </section>
 
@@ -147,6 +149,7 @@
         <p>© 2025 CrabGest - Association CRAB</p>
     </footer>
 
+    <!-- Scripts chargés à la fin du body -->
     <script src="scripts/app.js"></script>
     <script src="scripts/stocks.js"></script>
     <script src="scripts/recettes.js"></script>
