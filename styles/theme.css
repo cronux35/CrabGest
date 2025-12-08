@@ -1,18 +1,19 @@
 :root {
-    /* Couleurs CRAB (version sombre) */
-    --crab-orange: #ff6600;
-    --crab-jaune: #ffcc00;
-    --crab-gris-fonce: #222222;
-    --crab-gris-clair: #333333;
-    --crab-blanc: #f5f5f5;
-    --crab-alerte: #ff3333;
+    /* Couleurs inspirées du logo (jaune/noir) */
+    --crab-jaune: #FFD700;  /* Jaune or */
+    --crab-jaune-clair: #FFE87C;  /* Jaune clair */
+    --crab-noir: #1a1a1a;  /* Noir profond */
+    --crab-gris-fonce: #2a2a2a;  /* Gris très foncé */
+    --crab-gris-clair: #3a3a3a;  /* Gris clair pour les cartes */
+    --crab-blanc: #f5f5f5;  /* Blanc cassé pour le texte */
+    --crab-alerte: #ff4444;  /* Rouge pour les alertes */
 
     /* Polices */
     --font-principal: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 body {
-    background-color: var(--crab-gris-fonce);
+    background-color: var(--crab-noir);
     color: var(--crab-blanc);
     font-family: var(--font-principal);
     margin: 0;
@@ -21,19 +22,23 @@ body {
 }
 
 header {
-    background-color: var(--crab-gris-clair);
+    background-color: var(--crab-gris-fonce);
     padding: 1rem;
     text-align: center;
-    border-bottom: 3px solid var(--crab-orange);
+    border-bottom: 3px solid var(--crab-jaune);
 }
 
 .logo {
+    width: 100px;
+    height: 50px;
+    background-color: var(--crab-jaune);
     margin: 0.5rem auto;
+    border-radius: 5px;
 }
 
 .tabs {
     display: flex;
-    background-color: var(--crab-gris-clair);
+    background-color: var(--crab-gris-fonce);
     padding: 0.5rem;
     overflow-x: auto;
 }
@@ -51,7 +56,9 @@ header {
 }
 
 .tab-button.active {
-    background-color: var(--crab-orange);
+    background-color: var(--crab-jaune);
+    color: var(--crab-noir);
+    font-weight: bold;
 }
 
 main {
@@ -63,7 +70,8 @@ main {
     border-radius: 8px;
     padding: 1rem;
     margin-bottom: 1rem;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--crab-jaune);
 }
 
 .form-group {
@@ -74,10 +82,15 @@ main {
     width: 100%;
     padding: 0.5rem;
     margin-bottom: 0.5rem;
-    border: 1px solid #555;
+    border: 1px solid var(--crab-jaune);
     border-radius: 4px;
     background-color: var(--crab-gris-fonce);
     color: var(--crab-blanc);
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--crab-jaune-clair);
 }
 
 .btn {
@@ -86,17 +99,18 @@ main {
     border-radius: 4px;
     cursor: pointer;
     font-weight: bold;
-    transition: background-color 0.3s;
+    transition: all 0.3s;
 }
 
 .btn-primary {
-    background-color: var(--crab-orange);
-    color: var(--crab-blanc);
+    background-color: var(--crab-jaune);
+    color: var(--crab-noir);
 }
 
 .btn-primary:hover {
-    background-color: var(--crab-jaune);
-    color: var(--crab-gris-fonce);
+    background-color: var(--crab-jaune-clair);
+    color: var(--crab-noir);
+    transform: translateY(-1px);
 }
 
 .table {
@@ -108,12 +122,17 @@ main {
 .table th, .table td {
     padding: 0.75rem;
     text-align: left;
-    border-bottom: 1px solid #555;
+    border-bottom: 1px solid var(--crab-gris-fonce);
 }
 
 .table th {
-    background-color: var(--crab-orange);
-    color: var(--crab-blanc);
+    background-color: var(--crab-jaune);
+    color: var(--crab-noir);
+    font-weight: bold;
+}
+
+.table tr:nth-child(even) {
+    background-color: rgba(255, 215, 0, 0.1);
 }
 
 .chart {
@@ -121,17 +140,27 @@ main {
     border-radius: 4px;
     padding: 1rem;
     margin-top: 1rem;
+    border: 1px solid var(--crab-jaune);
 }
 
 footer {
     text-align: center;
     padding: 1rem;
-    background-color: var(--crab-gris-clair);
+    background-color: var(--crab-gris-fonce);
     margin-top: 1rem;
+    border-top: 1px solid var(--crab-jaune);
 }
 
 /* Alertes visuelles */
 .stock-negatif {
     color: var(--crab-alerte);
     font-weight: bold;
+    background-color: rgba(255, 68, 68, 0.1);
+    padding: 0.2rem 0.4rem;
+    border-radius: 3px;
+}
+
+/* Effet survol sur les lignes du tableau */
+.table tr:hover {
+    background-color: rgba(255, 215, 0, 0.15);
 }

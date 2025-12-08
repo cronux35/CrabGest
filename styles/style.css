@@ -37,7 +37,7 @@
     content: "⚠️ ";
 }
 
-/* Mobile */
+/* Style pour les boutons et inputs sur mobile */
 @media (max-width: 480px) {
     .tab-button {
         padding: 0.5rem;
@@ -47,4 +47,35 @@
     .form-control {
         padding: 0.4rem;
     }
+
+    .btn {
+        padding: 0.4rem 0.8rem;
+    }
+}
+
+/* Animation pour les boutons */
+.btn {
+    transition: transform 0.2s, background-color 0.3s;
+}
+
+.btn:active {
+    transform: translateY(0);
+}
+
+/* Style pour les titres des sections */
+h1, h2, h3 {
+    color: var(--crab-jaune);
+    border-bottom: 1px solid var(--crab-jaune);
+    padding-bottom: 0.3rem;
+    margin-bottom: 1rem;
+}
+
+/* Style pour les sélecteurs */
+select.form-control {
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23FFD700'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.5rem center;
+    background-size: 1em;
+    padding-right: 2rem;
 }
