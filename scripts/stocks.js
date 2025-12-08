@@ -13,6 +13,72 @@ async function loadStocks() {
   }
 }
 
+function showAddIngredientForm() {
+  const formHtml = `
+    <div class="modal" id="modal-add-ingredient">
+      <div class="modal-content">
+        <span class="modal-close" onclick="closeModal('modal-add-ingredient')">&times;</span>
+        <h3>Ajouter un ingrédient</h3>
+        <form id="form-add-ingredient">
+          <label>
+            Type :
+            <select name="Type" required>
+              <option value="Malt">Malt</option>
+              <option value="Houblon">Houblon</option>
+              <option value="Levure">Levure</option>
+              <option value="Autre">Autre</option>
+            </select>
+          </label>
+          <label>
+            Nom :
+            <input type="text" name="Nom" required>
+          </label>
+          <label>
+            Fournisseur :
+            <input type="text" name="Fournisseur" required>
+          </label>
+          <label>
+            Numéro de lot :
+            <input type="text" name="Numéro de lot">
+          </label>
+          <label>
+            Quantité initiale (g) :
+            <input type="number" name="Qté initiale (g)" step="0.01" required>
+          </label>
+          <label>
+            Péremption :
+            <input type="date" name="Peremption">
+          </label>
+          <label>
+            Spécification :
+            <input type="text" name="Spec">
+          </label>
+          <button type="submit">Ajouter</button>
+        </form>
+      </div>
+    </div>
+  `;
+  document.body.insertAdjacentHTML('beforeend', formHtml);
+  document.getElementById('modal-add-ingredient').style.display = 'block';
+
+  document.getElementById('form-add-ingredient').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const stock = Object.fromEntries(formData.entries());
+    stock.id = `${stock.Type}::${stock.Fournisseur}::${stock.Nom}::${stock['Numéro de lot'] || 'no-lot'}`;
+    stock['Qté utilisée (g)'] = 0;
+    stock['Qté restante'] = parseFloat(stock['Qté initiale (g)']);
+
+    const stocks = JSON.parse(localStorage.getItem('stocks')) || [];
+    stocks.push(stock);
+    localStorage.setItem('stocks', JSON.stringify(stocks));
+    e.target.reset();
+    closeModal('modal-add-ingredient');
+    renderStocks(stocks);
+  });
+}
+
+
 function showSortirStockForm(id) {
   const stocks = JSON.parse(localStorage.getItem('stocks')) || [];
   const stock = stocks.find(s => s.id === id);
@@ -222,6 +288,7 @@ function sortIngredientsFromStock(recetteId) {
 
 // Charger les stocks au démarrage
 document.addEventListener('DOMContentLoaded', loadStocks);
+
 
 
 
