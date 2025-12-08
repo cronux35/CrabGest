@@ -12,7 +12,15 @@ function ajouterConditionnement() {
 
     const conditionnements = JSON.parse(localStorage.getItem('conditionnements'));
     const id = conditionnements.length > 0 ? Math.max(...conditionnements.map(c => c.id)) + 1 : 1;
-    conditionnements.push({ id, id_biere: parseInt(idBiere), volume_litres: volume, abv, type_contenant: typeContenant, quantite });
+    conditionnements.push({
+        id,
+        id_biere: parseInt(idBiere),
+        volume_litres: volume,
+        abv,
+        type_contenant: typeContenant,
+        quantite,
+        date: new Date().toISOString()
+    });
     localStorage.setItem('conditionnements', JSON.stringify(conditionnements));
 
     alert(`Conditionnement enregistré.`);

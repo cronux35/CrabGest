@@ -15,7 +15,12 @@ function genererDeclarationDouane() {
 
     // Calcul des droits (exemple: 1€/L/°)
     const droits = Object.values(bièresDeclarees).reduce((total, b) => total + b.volume * b.abv, 0);
-    declarations.push({ mois, bières: bièresDeclarees, montant_total_droits: droits });
+    declarations.push({
+        mois,
+        bières: bièresDeclarees,
+        montant_total_droits: droits,
+        date: new Date().toISOString()
+    });
     localStorage.setItem('declarations_douanes', JSON.stringify(declarations));
 
     alert(`Déclaration pour ${mois} générée. Montant des droits: ${droits} €.`);

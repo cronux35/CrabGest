@@ -11,7 +11,14 @@ function ajouterVente() {
 
     const ventes = JSON.parse(localStorage.getItem('ventes'));
     const id = ventes.length > 0 ? Math.max(...ventes.map(v => v.id)) + 1 : 1;
-    ventes.push({ id, id_conditionnement: parseInt(idConditionnement), quantite, prix_unitaire: prix, client: { nom: nomClient } });
+    ventes.push({
+        id,
+        id_conditionnement: parseInt(idConditionnement),
+        quantite,
+        prix_unitaire: prix,
+        client: { nom: nomClient },
+        date: new Date().toISOString()
+    });
     localStorage.setItem('ventes', JSON.stringify(ventes));
 
     // Générer facture
