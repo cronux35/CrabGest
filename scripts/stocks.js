@@ -13,7 +13,6 @@ async function loadStocks() {
   }
 }
 
-// Afficher les stocks dans le tableau
 function renderStocks(stocks) {
   const tbody = document.querySelector('#stocks-table tbody');
   if (tbody) {
@@ -44,6 +43,7 @@ function renderStocks(stocks) {
           <td>
             <button onclick="editStock('${stock.id}')">✏️</button>
             <button onclick="confirmDeleteStock('${stock.id}')">🗑️</button>
+            <button onclick="showSortirStockForm('${stock.id}')">📤</button>
           </td>
         </tr>
       `;
@@ -171,5 +171,6 @@ function sortIngredientsFromStock(recetteId) {
 
 // Charger les stocks au démarrage
 document.addEventListener('DOMContentLoaded', loadStocks);
+
 
 
