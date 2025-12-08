@@ -13,6 +13,57 @@ async function loadStocks() {
   }
 }
 
+function showSortirStockForm(id) {
+  const stocks = JSON.parse(localStorage.getItem('stocks')) || [];
+  const stock = stocks.find(s => s.id === id);
+
+  if (stock) {
+    const formHtml = `
+      <div class="modal" id="modal-sortir-stock">
+        <div class="modal-content">
+          <span class="modal-close" onclick="closeModal('modal-sortir-stock')">&times;</span>
+          <h3>Sortir du stock</h3>
+          <p>Ingrédient : ${stock.Type} - ${stock.Nom}</p>
+          <form id="form-sortir-stock">
+            <label>
+              Quantité à sortir (g) :
+              <input type="number" name="Quantité" step="0.01" required>
+            </label>
+            <input type="hidden" name="StockId" value="${stock.id}">
+            <button type="submit">Sortir du stock</button>
+          </form>
+        </div>
+      </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', formHtml);
+    document.getElementById('modal-sortir-stock').style.display = 'block';
+
+    document.getElementById('form-sortir-stock').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const quantité = parseFloat(formData.get('Quantité'));
+      const stockId = formData.get('StockId');
+
+      sortirStock(stockId, quantité);
+      closeModal('modal-sortir-stock');
+    });
+  }
+}
+
+function sortirStock(id, quantité) {
+  let stocks = JSON.parse(localStorage.getItem('stocks')) || [];
+  const stock = stocks.find(s => s.id === id);
+
+  if (stock) {
+    stock['Qté utilisée (g)'] += quantité;
+    stock['Qté restante'] -= quantité;
+
+    localStorage.setItem('stocks', JSON.stringify(stocks));
+    renderStocks(stocks);
+  }
+}
+
+
 function renderStocks(stocks) {
   const tbody = document.querySelector('#stocks-table tbody');
   if (tbody) {
@@ -171,6 +222,7 @@ function sortIngredientsFromStock(recetteId) {
 
 // Charger les stocks au démarrage
 document.addEventListener('DOMContentLoaded', loadStocks);
+
 
 
 
