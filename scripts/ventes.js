@@ -9,11 +9,14 @@ function ajouterVente() {
         return;
     }
 
+    const conditionnements = JSON.parse(localStorage.getItem('conditionnements'));
+    const conditionnement = conditionnements.find(c => c.id == idConditionnement);
     const ventes = JSON.parse(localStorage.getItem('ventes'));
     const id = ventes.length > 0 ? Math.max(...ventes.map(v => v.id)) + 1 : 1;
     ventes.push({
         id,
         id_conditionnement: parseInt(idConditionnement),
+        nom_conditionnement: conditionnement.nom_biere,
         quantite,
         prix_unitaire: prix,
         client: { nom: nomClient },
@@ -26,8 +29,41 @@ function ajouterVente() {
     const doc = new jsPDF();
     doc.text(`Facture #${id}`, 10, 10);
     doc.text(`Client: ${nomClient}`, 10, 20);
-    doc.text(`Montant: ${quantite * prix} €`, 10, 30);
+    doc.text(`Produit: ${conditionnement.nom_biere} (${quantite} x ${prix}€)`, 10, 30);
+    doc.text(`Total: ${quantite * prix}€`, 10, 40);
     doc.save(`facture_${id}.pdf`);
 
+    afficherVentes();
     alert(`Vente enregistrée et facture générée.`);
 }
+
+function afficherVentes() {
+    const ventes = JSON.parse(localStorage.getItem('ventes'));
+    const tbody = document.querySelector('#table-ventes tbody');
+    if (tbody) {
+        tbody.innerHTML = ventes.map(vente =>
+            `<tr>
+                <td>${vente.id}</td>
+                <td>${vente.nom_conditionnement}</td>
+                <td>${vente.quantite}</td>
+                <td>${vente.prix_unitaire}€</td>
+                <td>${vente.client.nom}</td>
+            </tr>`
+        ).join('');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const conditionnements = JSON.parse(localStorage.getItem('conditionnements'));
+    const selectConditionnement = document.getElementById('select-conditionnement');
+    if (selectConditionnement) {
+        selectConditionnement.innerHTML = '<option value="">-- Conditionnement --</option>';
+        conditionnements.forEach(cond => {
+            const option = document.createElement('option');
+            option.value = cond.id;
+            option.textContent = `${cond.nom_biere} (${cond.volume_litres}L, ${cond.abv}°)`;
+            selectConditionnement.appendChild(option);
+        });
+    }
+    afficherVentes();
+});

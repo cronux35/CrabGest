@@ -21,3 +21,24 @@ function ajouterRecette() {
     document.getElementById('volume-recette').value = '';
     chargerDonnees();
 }
+
+function afficherRecettes() {
+    const recettes = JSON.parse(localStorage.getItem('recettes'));
+    const tbody = document.querySelector('#table-recettes tbody');
+    if (tbody) {
+        tbody.innerHTML = recettes.map(recette =>
+            `<tr>
+                <td>${recette.id}</td>
+                <td>${recette.nom}</td>
+                <td>${recette.style}</td>
+                <td>${recette.degre_alcool}°</td>
+                <td>${recette.volume_litres}L</td>
+            </tr>`
+        ).join('');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    afficherRecettes();
+    chargerDonnees();
+});
