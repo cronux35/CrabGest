@@ -1,4 +1,4 @@
-// Gestion des modales
+// Gestion des modales (version corrigée et testée)
 let currentEditId = null;
 let currentEditType = null;
 let currentDeleteCallback = null;
@@ -26,6 +26,7 @@ window.addEventListener('click', (event) => {
         closeModal(event.target.id);
     }
 });
+
 // Ouvrir modale d'édition (version corrigée)
 function openEditModal(type, id, data) {
     currentEditType = type;
@@ -102,7 +103,6 @@ function saveEdit() {
     closeModal('editModal');
 }
 
-
 // Ouvrir modale de suppression
 function openDeleteModal(message, callback) {
     document.getElementById('deleteModalMessage').textContent = message;
@@ -114,11 +114,13 @@ function openDeleteModal(message, callback) {
 document.getElementById('confirmDelete').addEventListener('click', () => {
     if (currentDeleteCallback) {
         currentDeleteCallback();
+        currentDeleteCallback = null; // Réinitialiser le callback
     }
     closeModal('deleteModal');
 });
 
 // Annuler la suppression
 document.getElementById('cancelDelete').addEventListener('click', () => {
+    currentDeleteCallback = null; // Réinitialiser le callback
     closeModal('deleteModal');
 });

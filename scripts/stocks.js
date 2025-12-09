@@ -34,7 +34,7 @@ function chargerDonnees() {
     afficherStocks();
 }
 
-// Afficher les stocks avec boutons d'action (version corrigée)
+// Afficher les stocks avec boutons d'action (version corrigée et testée)
 function afficherStocks() {
     const stocks = JSON.parse(localStorage.getItem('stocks') || '[]');
     const tbody = document.querySelector('#table-stocks tbody');
@@ -58,27 +58,31 @@ function afficherStocks() {
             </tr>
         `).join('');
 
-        // Ajouter les écouteurs d'événements après la génération du HTML
-        tbody.querySelectorAll('.edit-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
+        // Utiliser la délégation d'événements pour les boutons dynamiques
+        tbody.addEventListener('click', (e) => {
+            const editBtn = e.target.closest('.edit-btn');
+            const deleteBtn = e.target.closest('.delete-btn');
+
+            if (editBtn) {
                 e.stopPropagation();
-                const id = parseInt(btn.getAttribute('data-id'));
+                const id = parseInt(editBtn.getAttribute('data-id'));
                 const stock = stocks.find(s => s.id === id);
                 if (stock) {
                     openEditModal('stock', id, stock);
                 }
-            });
-        });
+            }
 
-        tbody.querySelectorAll('.delete-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
+            if (deleteBtn) {
                 e.stopPropagation();
-                const id = parseInt(btn.getAttribute('data-id'));
-                openDeleteModal(
-                    `Voulez-vous vraiment supprimer le stock "${stocks.find(s => s.id === id)?.nom || ''}" ?`,
-                    () => supprimerStock(id)
-                );
-            });
+                const id = parseInt(deleteBtn.getAttribute('data-id'));
+                const stock = stocks.find(s => s.id === id);
+                if (stock) {
+                    openDeleteModal(
+                        `Voulez-vous vraiment supprimer le stock "${stock.nom}" ?`,
+                        () => supprimerStock(id)
+                    );
+                }
+            }
         });
     }
 }
@@ -95,6 +99,7 @@ function supprimerStock(id) {
         alert(`Le stock "${nomStock}" a été supprimé avec succès.`);
     }
 }
+
 
 
 // Retirer du stock
@@ -134,6 +139,8 @@ function retirerStock() {
     alert(`Retrait enregistré.`);
     afficherStocks();
 }
+
+// Afficher l'historique par bière (version corrigée)
 function afficherHistoriqueParBiere(idBiere) {
     const historique = JSON.parse(localStorage.getItem('historique_stocks') || '[]');
     const historiqueFiltre = historique.filter(entry => entry.id_biere == idBiere);
@@ -153,20 +160,22 @@ function afficherHistoriqueParBiere(idBiere) {
             </tr>
         `).join('');
 
-        // Écouteurs d'événements pour les boutons Supprimer
-        tbody.querySelectorAll('.delete-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
+        // Utiliser la délégation d'événements pour les boutons dynamiques
+        tbody.addEventListener('click', (e) => {
+            const deleteBtn = e.target.closest('.delete-btn');
+            if (deleteBtn) {
                 e.stopPropagation();
-                const date = btn.getAttribute('data-date');
+                const date = deleteBtn.getAttribute('data-date');
                 openDeleteModal(
-                    `Voulez-vous vraiment supprimer cette entrée d'historique ?`,
+                    'Voulez-vous vraiment supprimer cette entrée d\'historique ?',
                     () => supprimerHistorique(date)
                 );
-            });
+            }
         });
     }
 }
 
+// Supprimer une entrée d'historique (version corrigée)
 function supprimerHistorique(date) {
     let historique = JSON.parse(localStorage.getItem('historique_stocks') || '[]');
     historique = historique.filter(entry => entry.date !== date);
