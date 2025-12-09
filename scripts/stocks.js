@@ -34,7 +34,7 @@ function chargerDonnees() {
     afficherStocks();
 }
 
-// Afficher les stocks avec boutons d'action (version corrigée et testée)
+// Afficher les stocks avec boutons d'action (version alternative)
 function afficherStocks() {
     const stocks = JSON.parse(localStorage.getItem('stocks') || '[]');
     const tbody = document.querySelector('#table-stocks tbody');
@@ -48,40 +48,30 @@ function afficherStocks() {
                 <td>${stock.fournisseur || ''}</td>
                 <td>${stock.specification || '-'}</td>
                 <td>
-                    <button class="action-btn edit-btn" data-id="${stock.id}" title="Éditer">
+                    <button class="action-btn edit-btn" data-id="${stock.id}" id="edit-${stock.id}" title="Éditer">
                         <i class="material-icons">edit</i>
                     </button>
-                    <button class="action-btn delete-btn" data-id="${stock.id}" title="Supprimer">
+                    <button class="action-btn delete-btn" data-id="${stock.id}" id="delete-${stock.id}" title="Supprimer">
                         <i class="material-icons">delete</i>
                     </button>
                 </td>
             </tr>
         `).join('');
 
-        // Utiliser la délégation d'événements pour les boutons dynamiques
-        tbody.addEventListener('click', (e) => {
-            const editBtn = e.target.closest('.edit-btn');
-            const deleteBtn = e.target.closest('.delete-btn');
+        // Attacher les écouteurs d'événements aux boutons
+        stocks.forEach(stock => {
+            const editBtn = document.getElementById(`edit-${stock.id}`);
+            const deleteBtn = document.getElementById(`delete-${stock.id}`);
 
             if (editBtn) {
-                e.stopPropagation();
-                const id = parseInt(editBtn.getAttribute('data-id'));
-                const stock = stocks.find(s => s.id === id);
-                if (stock) {
-                    openEditModal('stock', id, stock);
-                }
+                editBtn.onclick = () => openEditModal('stock', stock.id, stock);
             }
 
             if (deleteBtn) {
-                e.stopPropagation();
-                const id = parseInt(deleteBtn.getAttribute('data-id'));
-                const stock = stocks.find(s => s.id === id);
-                if (stock) {
-                    openDeleteModal(
-                        `Voulez-vous vraiment supprimer le stock "${stock.nom}" ?`,
-                        () => supprimerStock(id)
-                    );
-                }
+                deleteBtn.onclick = () => openDeleteModal(
+                    `Voulez-vous vraiment supprimer le stock "${stock.nom}" ?`,
+                    () => supprimerStock(stock.id)
+                );
             }
         });
     }
@@ -99,6 +89,7 @@ function supprimerStock(id) {
         alert(`Le stock "${nomStock}" a été supprimé avec succès.`);
     }
 }
+
 
 
 
@@ -140,35 +131,33 @@ function retirerStock() {
     afficherStocks();
 }
 
-// Afficher l'historique par bière (version corrigée)
+// Afficher l'historique par bière (version alternative)
 function afficherHistoriqueParBiere(idBiere) {
     const historique = JSON.parse(localStorage.getItem('historique_stocks') || '[]');
     const historiqueFiltre = historique.filter(entry => entry.id_biere == idBiere);
     const tbody = document.querySelector('#historique-biere tbody');
     if (tbody) {
-        tbody.innerHTML = historiqueFiltre.map(entry => `
+        tbody.innerHTML = historiqueFiltre.map((entry, index) => `
             <tr data-date="${entry.date}">
                 <td>${new Date(entry.date).toLocaleString()}</td>
                 <td>${entry.ingredient || ''}</td>
                 <td>${entry.quantite || 0}g</td>
                 <td>${entry.notes || ''}</td>
                 <td>
-                    <button class="action-btn delete-btn" data-date="${entry.date}" title="Supprimer">
+                    <button class="action-btn delete-btn" id="delete-historique-${index}" title="Supprimer">
                         <i class="material-icons">delete</i>
                     </button>
                 </td>
             </tr>
         `).join('');
 
-        // Utiliser la délégation d'événements pour les boutons dynamiques
-        tbody.addEventListener('click', (e) => {
-            const deleteBtn = e.target.closest('.delete-btn');
+        // Attacher les écouteurs d'événements aux boutons
+        historiqueFiltre.forEach((entry, index) => {
+            const deleteBtn = document.getElementById(`delete-historique-${index}`);
             if (deleteBtn) {
-                e.stopPropagation();
-                const date = deleteBtn.getAttribute('data-date');
-                openDeleteModal(
+                deleteBtn.onclick = () => openDeleteModal(
                     'Voulez-vous vraiment supprimer cette entrée d\'historique ?',
-                    () => supprimerHistorique(date)
+                    () => supprimerHistorique(entry.date)
                 );
             }
         });
@@ -183,6 +172,7 @@ function supprimerHistorique(date) {
     const biereId = document.getElementById('select-biere-historique')?.value;
     if (biereId) afficherHistoriqueParBiere(biereId);
 }
+
 
 
 // Appeler chargerDonnees une fois le DOM chargé

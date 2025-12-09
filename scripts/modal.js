@@ -1,4 +1,4 @@
-// Gestion des modales (version corrigée et testée)
+// Gestion des modales (version alternative)
 let currentEditId = null;
 let currentEditType = null;
 let currentDeleteCallback = null;
@@ -27,7 +27,7 @@ window.addEventListener('click', (event) => {
     }
 });
 
-// Ouvrir modale d'édition (version corrigée)
+// Ouvrir modale d'édition (version alternative)
 function openEditModal(type, id, data) {
     currentEditType = type;
     currentEditId = id;
@@ -75,7 +75,7 @@ function openEditModal(type, id, data) {
     openModal('editModal');
 }
 
-// Sauvegarder les modifications (version corrigée)
+// Sauvegarder les modifications (version alternative)
 function saveEdit() {
     if (!currentEditType || currentEditId === null) {
         console.error("Type ou ID manquant pour la sauvegarde.");
@@ -114,13 +114,13 @@ function openDeleteModal(message, callback) {
 document.getElementById('confirmDelete').addEventListener('click', () => {
     if (currentDeleteCallback) {
         currentDeleteCallback();
-        currentDeleteCallback = null; // Réinitialiser le callback
+        currentDeleteCallback = null;
     }
     closeModal('deleteModal');
 });
 
 // Annuler la suppression
 document.getElementById('cancelDelete').addEventListener('click', () => {
-    currentDeleteCallback = null; // Réinitialiser le callback
+    currentDeleteCallback = null;
     closeModal('deleteModal');
 });
