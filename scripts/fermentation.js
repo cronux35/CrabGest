@@ -1,5 +1,5 @@
 function afficherSuiviFermentation(idBiere) {
-    const fermentations = JSON.parse(localStorage.getItem('fermentations'));
+    const fermentations = JSON.parse(localStorage.getItem('fermentations') || '[]');
     const data = fermentations.filter(f => f.id_biere == idBiere);
 
     // Graphique
@@ -31,17 +31,17 @@ function afficherSuiviFermentation(idBiere) {
 }
 
 function ajouterActionFermentation() {
-    const idBiere = document.getElementById('select-biere-fermentation').value;
-    const type = document.getElementById('type-action').value;
-    const valeur = parseFloat(document.getElementById('valeur-action').value);
-    const date = document.getElementById('date-action').value || new Date().toISOString();
+    const idBiere = document.getElementById('select-biere-fermentation')?.value;
+    const type = document.getElementById('type-action')?.value;
+    const valeur = parseFloat(document.getElementById('valeur-action')?.value);
+    const date = document.getElementById('date-action')?.value || new Date().toISOString();
 
     if (!idBiere || isNaN(valeur)) {
         alert("Veuillez remplir tous les champs.");
         return;
     }
 
-    const fermentations = JSON.parse(localStorage.getItem('fermentations'));
+    const fermentations = JSON.parse(localStorage.getItem('fermentations') || '[]');
     const id = fermentations.length > 0 ? Math.max(...fermentations.map(f => f.id || 0)) + 1 : 1;
     fermentations.push({ id, id_biere: parseInt(idBiere), type, valeur, date });
     localStorage.setItem('fermentations', JSON.stringify(fermentations));

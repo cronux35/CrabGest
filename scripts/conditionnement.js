@@ -1,23 +1,23 @@
 function ajouterConditionnement() {
-    const idBiere = document.getElementById('select-biere-conditionnement').value;
-    const volume = parseFloat(document.getElementById('volume-conditionne').value);
-    const abv = parseFloat(document.getElementById('abv-final').value);
-    const typeContenant = document.getElementById('type-contenant').value;
-    const quantite = parseInt(document.getElementById('quantite-contenant').value);
+    const idBiere = document.getElementById('select-biere-conditionnement')?.value;
+    const volume = parseFloat(document.getElementById('volume-conditionne')?.value);
+    const abv = parseFloat(document.getElementById('abv-final')?.value);
+    const typeContenant = document.getElementById('type-contenant')?.value;
+    const quantite = parseInt(document.getElementById('quantite-contenant')?.value);
 
     if (!idBiere || isNaN(volume) || isNaN(abv) || isNaN(quantite)) {
         alert("Veuillez remplir tous les champs.");
         return;
     }
 
-    const recettes = JSON.parse(localStorage.getItem('recettes'));
+    const recettes = JSON.parse(localStorage.getItem('recettes') || '[]');
     const biere = recettes.find(b => b.id == idBiere);
-    const conditionnements = JSON.parse(localStorage.getItem('conditionnements'));
+    const conditionnements = JSON.parse(localStorage.getItem('conditionnements') || '[]');
     const id = conditionnements.length > 0 ? Math.max(...conditionnements.map(c => c.id)) + 1 : 1;
     conditionnements.push({
         id,
         id_biere: parseInt(idBiere),
-        nom_biere: biere.nom,
+        nom_biere: biere?.nom || 'Inconnu',
         volume_litres: volume,
         abv,
         type_contenant: typeContenant,
@@ -26,44 +26,44 @@ function ajouterConditionnement() {
     });
     localStorage.setItem('conditionnements', JSON.stringify(conditionnements));
 
-    afficherConditionnements();
+    if (typeof afficherConditionnements === 'function') afficherConditionnements();
     alert(`Conditionnement enregistré.`);
 }
 
 function afficherConditionnements() {
-    const conditionnements = JSON.parse(localStorage.getItem('conditionnements'));
+    const conditionnements = JSON.parse(localStorage.getItem('conditionnements') || '[]');
     const tbody = document.querySelector('#table-conditionnements tbody');
     if (tbody) {
-        tbody.innerHTML = conditionnements.map(cond =>
-            `<tr>
-                <td>${cond.id}</td>
-                <td>${cond.nom_biere}</td>
-                <td>${cond.volume_litres}L</td>
-                <td>${cond.abv}°</td>
-                <td>${cond.type_contenant}</td>
-                <td>${cond.quantite}</td>
+        tbody.innerHTML = conditionnements.map(cond => `
+            <tr>
+                <td>${cond.id || ''}</td>
+                <td>${cond.nom_biere || ''}</td>
+                <td>${cond.volume_litres || 0}L</td>
+                <td>${cond.abv || 0}°</td>
+                <td>${cond.type_contenant || ''}</td>
+                <td>${cond.quantite || 0}</td>
                 <td>
-                    <button class="action-btn" onclick="openEditModal('conditionnement', ${cond.id}, ${JSON.stringify(cond).replace(/"/g, '&quot;')})">
+                    <button class="action-btn" onclick="openEditModal('conditionnement', ${cond.id}, '${JSON.stringify(cond).replace(/'/g, "\\'")}')">
                         <i class="material-icons">edit</i>
                     </button>
                     <button class="action-btn delete" onclick="openDeleteModal('Voulez-vous vraiment supprimer ce conditionnement ?', () => supprimerConditionnement(${cond.id}))">
                         <i class="material-icons">delete</i>
                     </button>
                 </td>
-            </tr>`
-        ).join('');
+            </tr>
+        `).join('');
     }
 }
 
 function supprimerConditionnement(id) {
-    let conditionnements = JSON.parse(localStorage.getItem('conditionnements'));
-    conditionnements = conditionnements.filter(cond => cond.id !== id);
+    let conditionnements = JSON.parse(localStorage.getItem('conditionnements') || '[]');
+    conditionnements = conditionnements.filter(cond => cond.id != id);
     localStorage.setItem('conditionnements', JSON.stringify(conditionnements));
-    afficherConditionnements();
+    if (typeof afficherConditionnements === 'function') afficherConditionnements();
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    const recettes = JSON.parse(localStorage.getItem('recettes'));
+    const recettes = JSON.parse(localStorage.getItem('recettes') || '[]');
     const selectBiereConditionnement = document.getElementById('select-biere-conditionnement');
     if (selectBiereConditionnement) {
         selectBiereConditionnement.innerHTML = '<option value="">-- Bière --</option>';
@@ -74,5 +74,5 @@ document.addEventListener('DOMContentLoaded', () => {
             selectBiereConditionnement.appendChild(option);
         });
     }
-    afficherConditionnements();
+    if (typeof afficherConditionnements === 'function') afficherConditionnements();
 });

@@ -34,17 +34,27 @@ function openEditModal(type, id, data) {
     const form = document.getElementById('editForm');
     form.innerHTML = '';
 
+    // Convertir data en objet si c'est une chaîne JSON
+    if (typeof data === 'string') {
+        try {
+            data = JSON.parse(data.replace(/&quot;/g, '"'));
+        } catch (e) {
+            console.error("Erreur de parsing des données:", e);
+            return;
+        }
+    }
+
     // Personnaliser le formulaire selon le type
     if (type === 'stock') {
         document.getElementById('editModalTitle').textContent = 'Éditer un stock';
         form.innerHTML = `
             <div class="form-group">
                 <label for="edit-type">Type</label>
-                <input type="text" id="edit-type" class="form-control" value="${data.type}">
+                <input type="text" id="edit-type" class="form-control" value="${data.type || ''}">
             </div>
             <div class="form-group">
                 <label for="edit-nom">Nom</label>
-                <input type="text" id="edit-nom" class="form-control" value="${data.nom}">
+                <input type="text" id="edit-nom" class="form-control" value="${data.nom || ''}">
             </div>
             <div class="form-group">
                 <label for="edit-lot">Lot</label>
@@ -52,61 +62,38 @@ function openEditModal(type, id, data) {
             </div>
             <div class="form-group">
                 <label for="edit-quantite">Quantité</label>
-                <input type="number" id="edit-quantite" class="form-control" value="${data.quantite}">
+                <input type="number" id="edit-quantite" class="form-control" value="${data.quantite || 0}">
             </div>
             <div class="form-group">
                 <label for="edit-fournisseur">Fournisseur</label>
-                <input type="text" id="edit-fournisseur" class="form-control" value="${data.fournisseur}">
+                <input type="text" id="edit-fournisseur" class="form-control" value="${data.fournisseur || ''}">
             </div>
             <div class="form-group">
                 <label for="edit-specification">Spécification</label>
                 <input type="text" id="edit-specification" class="form-control" value="${data.specification || ''}">
             </div>
-            <button onclick="saveEdit()" class="btn btn-primary">Enregistrer</button>
+            <button type="button" onclick="saveEdit()" class="btn btn-primary">Enregistrer</button>
         `;
     } else if (type === 'recette') {
         document.getElementById('editModalTitle').textContent = 'Éditer une recette';
         form.innerHTML = `
             <div class="form-group">
                 <label for="edit-nom">Nom</label>
-                <input type="text" id="edit-nom" class="form-control" value="${data.nom}">
+                <input type="text" id="edit-nom" class="form-control" value="${data.nom || ''}">
             </div>
             <div class="form-group">
                 <label for="edit-style">Style</label>
-                <input type="text" id="edit-style" class="form-control" value="${data.style}">
+                <input type="text" id="edit-style" class="form-control" value="${data.style || ''}">
             </div>
             <div class="form-group">
                 <label for="edit-degre">Degré alcoolique</label>
-                <input type="number" id="edit-degre" class="form-control" value="${data.degre_alcool}">
+                <input type="number" id="edit-degre" class="form-control" value="${data.degre_alcool || 0}">
             </div>
             <div class="form-group">
                 <label for="edit-volume">Volume (L)</label>
-                <input type="number" id="edit-volume" class="form-control" value="${data.volume_litres}">
+                <input type="number" id="edit-volume" class="form-control" value="${data.volume_litres || 0}">
             </div>
-            <button onclick="saveEdit()" class="btn btn-primary">Enregistrer</button>
-        `;
-    } else if (type === 'fermentation') {
-        document.getElementById('editModalTitle').textContent = 'Éditer une action de fermentation';
-        form.innerHTML = `
-            <div class="form-group">
-                <label for="edit-date">Date</label>
-                <input type="datetime-local" id="edit-date" class="form-control" value="${new Date(data.date).toISOString().slice(0, 16)}">
-            </div>
-            <div class="form-group">
-                <label for="edit-type">Type</label>
-                <select id="edit-type" class="form-control">
-                    <option value="densite" ${data.type === 'densite' ? 'selected' : ''}>Densité (SG)</option>
-                    <option value="temperature" ${data.type === 'temperature' ? 'selected' : ''}>Température (°C)</option>
-                    <option value="purge" ${data.type === 'purge' ? 'selected' : ''}>Purge (mL)</option>
-                    <option value="pression" ${data.type === 'pression' ? 'selected' : ''}>Pression (bars)</option>
-                    <option value="dry_hopping" ${data.type === 'dry_hopping' ? 'selected' : ''}>Dry Hopping (g)</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="edit-valeur">Valeur</label>
-                <input type="number" id="edit-valeur" class="form-control" value="${data.valeur}">
-            </div>
-            <button onclick="saveEdit()" class="btn btn-primary">Enregistrer</button>
+            <button type="button" onclick="saveEdit()" class="btn btn-primary">Enregistrer</button>
         `;
     }
 
@@ -129,7 +116,7 @@ function saveEdit() {
                 specification: document.getElementById('edit-specification').value
             };
             localStorage.setItem('stocks', JSON.stringify(stocks));
-            afficherStocks();
+            if (typeof afficherStocks === 'function') afficherStocks();
         }
     } else if (currentEditType === 'recette') {
         const recettes = JSON.parse(localStorage.getItem('recettes'));
@@ -143,20 +130,7 @@ function saveEdit() {
                 volume_litres: parseFloat(document.getElementById('edit-volume').value)
             };
             localStorage.setItem('recettes', JSON.stringify(recettes));
-            afficherRecettes();
-        }
-    } else if (currentEditType === 'fermentation') {
-        const fermentations = JSON.parse(localStorage.getItem('fermentations'));
-        const index = fermentations.findIndex(f => f.id === currentEditId);
-        if (index !== -1) {
-            fermentations[index] = {
-                ...fermentations[index],
-                date: document.getElementById('edit-date').value,
-                type: document.getElementById('edit-type').value,
-                valeur: parseFloat(document.getElementById('edit-valeur').value)
-            };
-            localStorage.setItem('fermentations', JSON.stringify(fermentations));
-            afficherSuiviFermentation(fermentations[index].id_biere);
+            if (typeof afficherRecettes === 'function') afficherRecettes();
         }
     }
 

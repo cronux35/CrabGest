@@ -28,10 +28,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const menuBurger = document.getElementById('menuBurger');
     const mainNav = document.getElementById('mainNav');
 
-    menuBurger.addEventListener('click', () => {
-        menuBurger.classList.toggle('active');
-        mainNav.classList.toggle('active');
-    });
+    if (menuBurger && mainNav) {
+        menuBurger.addEventListener('click', () => {
+            menuBurger.classList.toggle('active');
+            mainNav.classList.toggle('active');
+        });
+    }
 
     // Gestion des onglets
     const tabButtons = document.querySelectorAll('.tab-button');
@@ -46,7 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (tab) tab.classList.add('active');
 
                 // Fermer le menu burger après sélection sur mobile
-                if (window.innerWidth <= 768) {
+                if (window.innerWidth <= 768 && menuBurger && mainNav) {
                     menuBurger.classList.remove('active');
                     mainNav.classList.remove('active');
                 }
