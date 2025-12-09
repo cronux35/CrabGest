@@ -1,7 +1,7 @@
 // Charger les données des stocks et recettes
 function chargerDonnees() {
-    const stocks = JSON.parse(localStorage.getItem('stocks'));
-    const recettes = JSON.parse(localStorage.getItem('recettes'));
+    const stocks = JSON.parse(localStorage.getItem('stocks') || '[]');
+    const recettes = JSON.parse(localStorage.getItem('recettes') || '[]');
 
     // Charger les ingrédients
     const selectIngredient = document.getElementById('select-ingredient');
@@ -36,42 +36,42 @@ function chargerDonnees() {
 
 // Afficher les stocks avec boutons d'action
 function afficherStocks() {
-    const stocks = JSON.parse(localStorage.getItem('stocks'));
+    const stocks = JSON.parse(localStorage.getItem('stocks') || '[]');
     const tbody = document.querySelector('#table-stocks tbody');
     if (tbody) {
-        tbody.innerHTML = stocks.map(stock =>
-            `<tr>
-                <td>${stock.type}</td>
-                <td>${stock.nom}</td>
+        tbody.innerHTML = stocks.map(stock => `
+            <tr>
+                <td>${stock.type || ''}</td>
+                <td>${stock.nom || ''}</td>
                 <td>${stock.lot || '-'}</td>
-                <td class="${stock.quantite < 0 ? 'stock-negatif' : ''}">${stock.quantite}g</td>
-                <td>${stock.fournisseur}</td>
+                <td class="${stock.quantite < 0 ? 'stock-negatif' : ''}">${stock.quantite || 0}g</td>
+                <td>${stock.fournisseur || ''}</td>
                 <td>${stock.specification || '-'}</td>
                 <td>
-                    <button class="action-btn" onclick="openEditModal('stock', ${stock.id}, ${JSON.stringify(stock).replace(/"/g, '&quot;')})">
+                    <button class="action-btn" onclick="openEditModal('stock', ${stock.id}, '${JSON.stringify(stock).replace(/'/g, "\\'")}')">
                         <i class="material-icons">edit</i>
                     </button>
                     <button class="action-btn delete" onclick="openDeleteModal('Voulez-vous vraiment supprimer ce stock ?', () => supprimerStock(${stock.id}))">
                         <i class="material-icons">delete</i>
                     </button>
                 </td>
-            </tr>`
-        ).join('');
+            </tr>
+        `).join('');
     }
 }
 
 // Retirer du stock
 function retirerStock() {
-    const idIngredient = document.getElementById('select-ingredient').value;
-    const idBiere = document.getElementById('select-biere').value;
-    const quantite = parseFloat(document.getElementById('quantite-retrait').value);
+    const idIngredient = document.getElementById('select-ingredient')?.value;
+    const idBiere = document.getElementById('select-biere')?.value;
+    const quantite = parseFloat(document.getElementById('quantite-retrait')?.value);
 
     if (!idIngredient || !idBiere || isNaN(quantite) || quantite <= 0) {
         alert("Veuillez remplir tous les champs.");
         return;
     }
 
-    let stocks = JSON.parse(localStorage.getItem('stocks'));
+    let stocks = JSON.parse(localStorage.getItem('stocks') || '[]');
     const stockIndex = stocks.findIndex(s => s.id == idIngredient);
     if (stockIndex !== -1) {
         stocks[stockIndex].quantite -= quantite;
@@ -80,7 +80,7 @@ function retirerStock() {
 
     // Ajouter à l'historique
     const ingredient = stocks[stockIndex];
-    let historique = JSON.parse(localStorage.getItem('historique_stocks'));
+    let historique = JSON.parse(localStorage.getItem('historique_stocks') || '[]');
     historique.push({
         date: new Date().toISOString(),
         type: "retrait",
@@ -100,41 +100,41 @@ function retirerStock() {
 
 // Supprimer un stock
 function supprimerStock(id) {
-    let stocks = JSON.parse(localStorage.getItem('stocks'));
-    stocks = stocks.filter(stock => stock.id !== id);
+    let stocks = JSON.parse(localStorage.getItem('stocks') || '[]');
+    stocks = stocks.filter(stock => stock.id != id);
     localStorage.setItem('stocks', JSON.stringify(stocks));
     afficherStocks();
 }
 
 // Afficher l'historique par bière
 function afficherHistoriqueParBiere(idBiere) {
-    const historique = JSON.parse(localStorage.getItem('historique_stocks'));
+    const historique = JSON.parse(localStorage.getItem('historique_stocks') || '[]');
     const historiqueFiltre = historique.filter(entry => entry.id_biere == idBiere);
     const tbody = document.querySelector('#historique-biere tbody');
     if (tbody) {
-        tbody.innerHTML = historiqueFiltre.map(entry =>
-            `<tr>
+        tbody.innerHTML = historiqueFiltre.map(entry => `
+            <tr>
                 <td>${new Date(entry.date).toLocaleString()}</td>
-                <td>${entry.ingredient}</td>
-                <td>${entry.quantite}g</td>
-                <td>${entry.notes}</td>
+                <td>${entry.ingredient || ''}</td>
+                <td>${entry.quantite || 0}g</td>
+                <td>${entry.notes || ''}</td>
                 <td>
-                    <button class="action-btn delete" onclick="openDeleteModal('Voulez-vous vraiment supprimer cette entrée ?', () => supprimerHistorique(${entry.date}))">
+                    <button class="action-btn delete" onclick="openDeleteModal('Voulez-vous vraiment supprimer cette entrée ?', () => supprimerHistorique('${entry.date}'))">
                         <i class="material-icons">delete</i>
                     </button>
                 </td>
-            </tr>`
-        ).join('');
+            </tr>
+        `).join('');
     }
 }
 
 // Supprimer une entrée d'historique
 function supprimerHistorique(date) {
-    let historique = JSON.parse(localStorage.getItem('historique_stocks'));
+    let historique = JSON.parse(localStorage.getItem('historique_stocks') || '[]');
     historique = historique.filter(entry => entry.date !== date);
     localStorage.setItem('historique_stocks', JSON.stringify(historique));
-    const biereId = document.getElementById('select-biere-historique').value;
-    afficherHistoriqueParBiere(biereId);
+    const biereId = document.getElementById('select-biere-historique')?.value;
+    if (biereId) afficherHistoriqueParBiere(biereId);
 }
 
 // Appeler chargerDonnees une fois le DOM chargé
