@@ -26,22 +26,18 @@ window.addEventListener('click', (event) => {
         closeModal(event.target.id);
     }
 });
-
-// Ouvrir modale d'édition
+// Ouvrir modale d'édition (version corrigée)
 function openEditModal(type, id, data) {
     currentEditType = type;
     currentEditId = id;
     const form = document.getElementById('editForm');
     form.innerHTML = '';
 
-    // Convertir data en objet si c'est une chaîne JSON
-    if (typeof data === 'string') {
-        try {
-            data = JSON.parse(data.replace(/&quot;/g, '"'));
-        } catch (e) {
-            console.error("Erreur de parsing des données:", e);
-            return;
-        }
+    // Vérifier que data est un objet valide
+    if (typeof data !== 'object' || data === null) {
+        console.error("Données invalides pour l'édition:", data);
+        alert("Erreur : données corrompues. Veuillez actualiser la page.");
+        return;
     }
 
     // Personnaliser le formulaire selon le type
@@ -50,23 +46,23 @@ function openEditModal(type, id, data) {
         form.innerHTML = `
             <div class="form-group">
                 <label for="edit-type">Type</label>
-                <input type="text" id="edit-type" class="form-control" value="${data.type || ''}">
+                <input type="text" id="edit-type" class="form-control" value="${data.type || ''}" required>
             </div>
             <div class="form-group">
                 <label for="edit-nom">Nom</label>
-                <input type="text" id="edit-nom" class="form-control" value="${data.nom || ''}">
+                <input type="text" id="edit-nom" class="form-control" value="${data.nom || ''}" required>
             </div>
             <div class="form-group">
                 <label for="edit-lot">Lot</label>
                 <input type="text" id="edit-lot" class="form-control" value="${data.lot || ''}">
             </div>
             <div class="form-group">
-                <label for="edit-quantite">Quantité</label>
-                <input type="number" id="edit-quantite" class="form-control" value="${data.quantite || 0}">
+                <label for="edit-quantite">Quantité (g)</label>
+                <input type="number" id="edit-quantite" class="form-control" value="${data.quantite || 0}" min="0" required>
             </div>
             <div class="form-group">
                 <label for="edit-fournisseur">Fournisseur</label>
-                <input type="text" id="edit-fournisseur" class="form-control" value="${data.fournisseur || ''}">
+                <input type="text" id="edit-fournisseur" class="form-control" value="${data.fournisseur || ''}" required>
             </div>
             <div class="form-group">
                 <label for="edit-specification">Spécification</label>
@@ -74,37 +70,20 @@ function openEditModal(type, id, data) {
             </div>
             <button type="button" onclick="saveEdit()" class="btn btn-primary">Enregistrer</button>
         `;
-    } else if (type === 'recette') {
-        document.getElementById('editModalTitle').textContent = 'Éditer une recette';
-        form.innerHTML = `
-            <div class="form-group">
-                <label for="edit-nom">Nom</label>
-                <input type="text" id="edit-nom" class="form-control" value="${data.nom || ''}">
-            </div>
-            <div class="form-group">
-                <label for="edit-style">Style</label>
-                <input type="text" id="edit-style" class="form-control" value="${data.style || ''}">
-            </div>
-            <div class="form-group">
-                <label for="edit-degre">Degré alcoolique</label>
-                <input type="number" id="edit-degre" class="form-control" value="${data.degre_alcool || 0}">
-            </div>
-            <div class="form-group">
-                <label for="edit-volume">Volume (L)</label>
-                <input type="number" id="edit-volume" class="form-control" value="${data.volume_litres || 0}">
-            </div>
-            <button type="button" onclick="saveEdit()" class="btn btn-primary">Enregistrer</button>
-        `;
     }
-
     openModal('editModal');
 }
 
-// Sauvegarder les modifications
+// Sauvegarder les modifications (version corrigée)
 function saveEdit() {
+    if (!currentEditType || currentEditId === null) {
+        console.error("Type ou ID manquant pour la sauvegarde.");
+        return;
+    }
+
     if (currentEditType === 'stock') {
-        const stocks = JSON.parse(localStorage.getItem('stocks'));
-        const index = stocks.findIndex(s => s.id == currentEditId);
+        const stocks = JSON.parse(localStorage.getItem('stocks') || '[]');
+        const index = stocks.findIndex(s => s.id === currentEditId);
         if (index !== -1) {
             stocks[index] = {
                 ...stocks[index],
@@ -116,26 +95,13 @@ function saveEdit() {
                 specification: document.getElementById('edit-specification').value
             };
             localStorage.setItem('stocks', JSON.stringify(stocks));
-            if (typeof afficherStocks === 'function') afficherStocks();
-        }
-    } else if (currentEditType === 'recette') {
-        const recettes = JSON.parse(localStorage.getItem('recettes'));
-        const index = recettes.findIndex(r => r.id == currentEditId);
-        if (index !== -1) {
-            recettes[index] = {
-                ...recettes[index],
-                nom: document.getElementById('edit-nom').value,
-                style: document.getElementById('edit-style').value,
-                degre_alcool: parseFloat(document.getElementById('edit-degre').value),
-                volume_litres: parseFloat(document.getElementById('edit-volume').value)
-            };
-            localStorage.setItem('recettes', JSON.stringify(recettes));
-            if (typeof afficherRecettes === 'function') afficherRecettes();
+            afficherStocks();
+            alert("Stock mis à jour avec succès !");
         }
     }
-
     closeModal('editModal');
 }
+
 
 // Ouvrir modale de suppression
 function openDeleteModal(message, callback) {

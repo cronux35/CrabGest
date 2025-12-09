@@ -244,3 +244,61 @@ footer {
     word-wrap: normal;
     direction: ltr;
 }
+
+/* Styles pour les boutons d'action */
+.action-btn {
+    background: none;
+    border: none;
+    color: var(--crab-blanc);
+    cursor: pointer;
+    padding: 0.5rem;
+    margin: 0 0.25rem;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.action-btn.edit-btn {
+    background-color: var(--crab-jaune);
+    color: var(--crab-noir);
+}
+
+.action-btn.edit-btn:hover {
+    background-color: var(--crab-jaune-clair);
+    transform: scale(1.05);
+}
+
+.action-btn.delete-btn {
+    background-color: var(--crab-alerte);
+    color: white;
+}
+
+.action-btn.delete-btn:hover {
+    background-color: #ff3333;
+    transform: scale(1.05);
+}
+
+/* Tooltips pour les boutons */
+.action-btn[title] {
+    position: relative;
+}
+
+.action-btn[title]:hover::after {
+    content: attr(title);
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: var(--crab-gris-fonce);
+    color: var(--crab-blanc);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    z-index: 10;
+    margin-top: 0.5rem;
+}
