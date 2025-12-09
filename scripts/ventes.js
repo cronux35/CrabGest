@@ -48,9 +48,24 @@ function afficherVentes() {
                 <td>${vente.quantite}</td>
                 <td>${vente.prix_unitaire}€</td>
                 <td>${vente.client.nom}</td>
+                <td>
+                    <button class="action-btn" onclick="openEditModal('vente', ${vente.id}, ${JSON.stringify(vente).replace(/"/g, '&quot;')})">
+                        <i class="material-icons">edit</i>
+                    </button>
+                    <button class="action-btn delete" onclick="openDeleteModal('Voulez-vous vraiment supprimer cette vente ?', () => supprimerVente(${vente.id}))">
+                        <i class="material-icons">delete</i>
+                    </button>
+                </td>
             </tr>`
         ).join('');
     }
+}
+
+function supprimerVente(id) {
+    let ventes = JSON.parse(localStorage.getItem('ventes'));
+    ventes = ventes.filter(vente => vente.id !== id);
+    localStorage.setItem('ventes', JSON.stringify(ventes));
+    afficherVentes();
 }
 
 document.addEventListener('DOMContentLoaded', () => {

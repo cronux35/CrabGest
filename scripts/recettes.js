@@ -19,7 +19,7 @@ function ajouterRecette() {
     document.getElementById('style-recette').value = '';
     document.getElementById('degre-recette').value = '';
     document.getElementById('volume-recette').value = '';
-    chargerDonnees();
+    afficherRecettes();
 }
 
 function afficherRecettes() {
@@ -33,12 +33,24 @@ function afficherRecettes() {
                 <td>${recette.style}</td>
                 <td>${recette.degre_alcool}°</td>
                 <td>${recette.volume_litres}L</td>
+                <td>
+                    <button class="action-btn" onclick="openEditModal('recette', ${recette.id}, ${JSON.stringify(recette).replace(/"/g, '&quot;')})">
+                        <i class="material-icons">edit</i>
+                    </button>
+                    <button class="action-btn delete" onclick="openDeleteModal('Voulez-vous vraiment supprimer cette recette ?', () => supprimerRecette(${recette.id}))">
+                        <i class="material-icons">delete</i>
+                    </button>
+                </td>
             </tr>`
         ).join('');
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+function supprimerRecette(id) {
+    let recettes = JSON.parse(localStorage.getItem('recettes'));
+    recettes = recettes.filter(recette => recette.id !== id);
+    localStorage.setItem('recettes', JSON.stringify(recettes));
     afficherRecettes();
-    chargerDonnees();
-});
+}
+
+document.addEventListener('DOMContentLoaded', afficherRecettes);

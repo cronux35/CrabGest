@@ -47,10 +47,22 @@ function afficherDeclarations() {
                     <td>${b.volume}L</td>
                     <td>${b.abv}°</td>
                     <td>${b.droits}€</td>
+                    <td>
+                        <button class="action-btn delete" onclick="openDeleteModal('Voulez-vous vraiment supprimer cette déclaration ?', () => supprimerDeclaration('${dec.mois}', ${b.id_biere}))">
+                            <i class="material-icons">delete</i>
+                        </button>
+                    </td>
                 </tr>`
             )
         ).join('');
     }
+}
+
+function supprimerDeclaration(mois, idBiere) {
+    let declarations = JSON.parse(localStorage.getItem('declarations_douanes'));
+    declarations = declarations.filter(dec => !(dec.mois === mois && dec.bières.some(b => b.id_biere === idBiere)));
+    localStorage.setItem('declarations_douanes', JSON.stringify(declarations));
+    afficherDeclarations();
 }
 
 document.addEventListener('DOMContentLoaded', afficherDeclarations);

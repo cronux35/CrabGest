@@ -42,9 +42,37 @@ function afficherConditionnements() {
                 <td>${cond.abv}°</td>
                 <td>${cond.type_contenant}</td>
                 <td>${cond.quantite}</td>
+                <td>
+                    <button class="action-btn" onclick="openEditModal('conditionnement', ${cond.id}, ${JSON.stringify(cond).replace(/"/g, '&quot;')})">
+                        <i class="material-icons">edit</i>
+                    </button>
+                    <button class="action-btn delete" onclick="openDeleteModal('Voulez-vous vraiment supprimer ce conditionnement ?', () => supprimerConditionnement(${cond.id}))">
+                        <i class="material-icons">delete</i>
+                    </button>
+                </td>
             </tr>`
         ).join('');
     }
 }
 
-document.addEventListener('DOMContentLoaded', afficherConditionnements);
+function supprimerConditionnement(id) {
+    let conditionnements = JSON.parse(localStorage.getItem('conditionnements'));
+    conditionnements = conditionnements.filter(cond => cond.id !== id);
+    localStorage.setItem('conditionnements', JSON.stringify(conditionnements));
+    afficherConditionnements();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const recettes = JSON.parse(localStorage.getItem('recettes'));
+    const selectBiereConditionnement = document.getElementById('select-biere-conditionnement');
+    if (selectBiereConditionnement) {
+        selectBiereConditionnement.innerHTML = '<option value="">-- Bière --</option>';
+        recettes.forEach(biere => {
+            const option = document.createElement('option');
+            option.value = biere.id;
+            option.textContent = biere.nom;
+            selectBiereConditionnement.appendChild(option);
+        });
+    }
+    afficherConditionnements();
+});

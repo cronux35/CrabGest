@@ -42,7 +42,8 @@ function ajouterActionFermentation() {
     }
 
     const fermentations = JSON.parse(localStorage.getItem('fermentations'));
-    fermentations.push({ id_biere: parseInt(idBiere), type, valeur, date });
+    const id = fermentations.length > 0 ? Math.max(...fermentations.map(f => f.id || 0)) + 1 : 1;
+    fermentations.push({ id, id_biere: parseInt(idBiere), type, valeur, date });
     localStorage.setItem('fermentations', JSON.stringify(fermentations));
 
     alert(`Action "${type}" ajoutée.`);
