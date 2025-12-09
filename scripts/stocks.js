@@ -34,7 +34,7 @@ function chargerDonnees() {
     afficherStocks();
 }
 
-// Afficher les stocks avec boutons d'action
+// Afficher les stocks avec boutons d'action (version corrigée)
 function afficherStocks() {
     const stocks = JSON.parse(localStorage.getItem('stocks') || '[]');
     const tbody = document.querySelector('#table-stocks tbody');
@@ -48,10 +48,10 @@ function afficherStocks() {
                 <td>${stock.fournisseur || ''}</td>
                 <td>${stock.specification || '-'}</td>
                 <td>
-                    <button class="action-btn edit-btn" data-id="${stock.id}">
+                    <button class="action-btn edit-btn" data-id="${stock.id}" title="Éditer">
                         <i class="material-icons">edit</i>
                     </button>
-                    <button class="action-btn delete-btn" data-id="${stock.id}">
+                    <button class="action-btn delete-btn" data-id="${stock.id}" title="Supprimer">
                         <i class="material-icons">delete</i>
                     </button>
                 </td>
@@ -59,20 +59,40 @@ function afficherStocks() {
         `).join('');
 
         // Ajouter les écouteurs d'événements après la génération du HTML
-        document.querySelectorAll('.edit-btn').forEach(btn => {
+        tbody.querySelectorAll('.edit-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                const id = parseInt(e.target.closest('button').getAttribute('data-id'));
+                e.stopPropagation();
+                const id = parseInt(btn.getAttribute('data-id'));
                 const stock = stocks.find(s => s.id === id);
-                openEditModal('stock', id, stock);
+                if (stock) {
+                    openEditModal('stock', id, stock);
+                }
             });
         });
 
-        document.querySelectorAll('.delete-btn').forEach(btn => {
+        tbody.querySelectorAll('.delete-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                const id = parseInt(e.target.closest('button').getAttribute('data-id'));
-                openDeleteModal('Voulez-vous vraiment supprimer ce stock ?', () => supprimerStock(id));
+                e.stopPropagation();
+                const id = parseInt(btn.getAttribute('data-id'));
+                openDeleteModal(
+                    `Voulez-vous vraiment supprimer le stock "${stocks.find(s => s.id === id)?.nom || ''}" ?`,
+                    () => supprimerStock(id)
+                );
             });
         });
+    }
+}
+
+// Supprimer un stock (version corrigée)
+function supprimerStock(id) {
+    let stocks = JSON.parse(localStorage.getItem('stocks') || '[]');
+    const stockIndex = stocks.findIndex(s => s.id === id);
+    if (stockIndex !== -1) {
+        const nomStock = stocks[stockIndex].nom;
+        stocks = stocks.filter(stock => stock.id !== id);
+        localStorage.setItem('stocks', JSON.stringify(stocks));
+        afficherStocks();
+        alert(`Le stock "${nomStock}" a été supprimé avec succès.`);
     }
 }
 
@@ -114,38 +134,39 @@ function retirerStock() {
     alert(`Retrait enregistré.`);
     afficherStocks();
 }
-
-// Supprimer un stock
-function supprimerStock(id) {
-    let stocks = JSON.parse(localStorage.getItem('stocks') || '[]');
-    stocks = stocks.filter(stock => stock.id != id);
-    localStorage.setItem('stocks', JSON.stringify(stocks));
-    afficherStocks();
-}
-
-// Afficher l'historique par bière
 function afficherHistoriqueParBiere(idBiere) {
     const historique = JSON.parse(localStorage.getItem('historique_stocks') || '[]');
     const historiqueFiltre = historique.filter(entry => entry.id_biere == idBiere);
     const tbody = document.querySelector('#historique-biere tbody');
     if (tbody) {
         tbody.innerHTML = historiqueFiltre.map(entry => `
-            <tr>
+            <tr data-date="${entry.date}">
                 <td>${new Date(entry.date).toLocaleString()}</td>
                 <td>${entry.ingredient || ''}</td>
                 <td>${entry.quantite || 0}g</td>
                 <td>${entry.notes || ''}</td>
                 <td>
-                    <button class="action-btn delete" onclick="openDeleteModal('Voulez-vous vraiment supprimer cette entrée ?', () => supprimerHistorique('${entry.date}'))">
+                    <button class="action-btn delete-btn" data-date="${entry.date}" title="Supprimer">
                         <i class="material-icons">delete</i>
                     </button>
                 </td>
             </tr>
         `).join('');
+
+        // Écouteurs d'événements pour les boutons Supprimer
+        tbody.querySelectorAll('.delete-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const date = btn.getAttribute('data-date');
+                openDeleteModal(
+                    `Voulez-vous vraiment supprimer cette entrée d'historique ?`,
+                    () => supprimerHistorique(date)
+                );
+            });
+        });
     }
 }
 
-// Supprimer une entrée d'historique
 function supprimerHistorique(date) {
     let historique = JSON.parse(localStorage.getItem('historique_stocks') || '[]');
     historique = historique.filter(entry => entry.date !== date);
@@ -153,6 +174,7 @@ function supprimerHistorique(date) {
     const biereId = document.getElementById('select-biere-historique')?.value;
     if (biereId) afficherHistoriqueParBiere(biereId);
 }
+
 
 // Appeler chargerDonnees une fois le DOM chargé
 document.addEventListener('DOMContentLoaded', chargerDonnees);
