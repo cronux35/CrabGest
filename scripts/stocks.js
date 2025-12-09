@@ -40,7 +40,7 @@ function afficherStocks() {
     const tbody = document.querySelector('#table-stocks tbody');
     if (tbody) {
         tbody.innerHTML = stocks.map(stock => `
-            <tr>
+            <tr data-id="${stock.id}">
                 <td>${stock.type || ''}</td>
                 <td>${stock.nom || ''}</td>
                 <td>${stock.lot || '-'}</td>
@@ -48,17 +48,34 @@ function afficherStocks() {
                 <td>${stock.fournisseur || ''}</td>
                 <td>${stock.specification || '-'}</td>
                 <td>
-                    <button class="action-btn" onclick="openEditModal('stock', ${stock.id}, '${JSON.stringify(stock).replace(/'/g, "\\'")}')">
+                    <button class="action-btn edit-btn" data-id="${stock.id}">
                         <i class="material-icons">edit</i>
                     </button>
-                    <button class="action-btn delete" onclick="openDeleteModal('Voulez-vous vraiment supprimer ce stock ?', () => supprimerStock(${stock.id}))">
+                    <button class="action-btn delete-btn" data-id="${stock.id}">
                         <i class="material-icons">delete</i>
                     </button>
                 </td>
             </tr>
         `).join('');
+
+        // Ajouter les écouteurs d'événements après la génération du HTML
+        document.querySelectorAll('.edit-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const id = parseInt(e.target.closest('button').getAttribute('data-id'));
+                const stock = stocks.find(s => s.id === id);
+                openEditModal('stock', id, stock);
+            });
+        });
+
+        document.querySelectorAll('.delete-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const id = parseInt(e.target.closest('button').getAttribute('data-id'));
+                openDeleteModal('Voulez-vous vraiment supprimer ce stock ?', () => supprimerStock(id));
+            });
+        });
     }
 }
+
 
 // Retirer du stock
 function retirerStock() {
