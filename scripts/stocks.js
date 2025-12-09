@@ -34,7 +34,7 @@ function chargerDonnees() {
     afficherStocks();
 }
 
-// Afficher les stocks avec boutons d'action (version alternative)
+// Afficher les stocks avec boutons d'action
 function afficherStocks() {
     const stocks = JSON.parse(localStorage.getItem('stocks') || '[]');
     const tbody = document.querySelector('#table-stocks tbody');
@@ -47,51 +47,108 @@ function afficherStocks() {
                 <td class="${stock.quantite < 0 ? 'stock-negatif' : ''}">${stock.quantite || 0}g</td>
                 <td>${stock.fournisseur || ''}</td>
                 <td>${stock.specification || '-'}</td>
+                <td>${stock.annee_recolte || '-'}</td>
+                <td>${stock.conditionnement || 'non spécifié'}</td>
                 <td>
-                    <button class="action-btn edit-btn" data-id="${stock.id}" id="edit-${stock.id}" title="Éditer">
+                    <button class="action-btn edit-btn" data-id="${stock.id}" title="Éditer">
                         <i class="material-icons">edit</i>
                     </button>
-                    <button class="action-btn delete-btn" data-id="${stock.id}" id="delete-${stock.id}" title="Supprimer">
+                    <button class="action-btn delete-btn" data-id="${stock.id}" title="Supprimer">
                         <i class="material-icons">delete</i>
                     </button>
+                    ${stock.notes ? `<button class="action-btn notes-btn" data-id="${stock.id}" title="Voir les notes">
+                        <i class="material-icons">info</i>
+                    </button>` : ''}
                 </td>
             </tr>
         `).join('');
 
         // Attacher les écouteurs d'événements aux boutons
-        stocks.forEach(stock => {
-            const editBtn = document.getElementById(`edit-${stock.id}`);
-            const deleteBtn = document.getElementById(`delete-${stock.id}`);
+        tbody.querySelectorAll('.edit-btn').forEach(btn => {
+            btn.onclick = () => {
+                const id = parseInt(btn.getAttribute('data-id'));
+                const stock = stocks.find(s => s.id === id);
+                if (stock) openEditModal('stock', id, stock);
+            };
+        });
 
-            if (editBtn) {
-                editBtn.onclick = () => openEditModal('stock', stock.id, stock);
-            }
-
-            if (deleteBtn) {
-                deleteBtn.onclick = () => openDeleteModal(
-                    `Voulez-vous vraiment supprimer le stock "${stock.nom}" ?`,
-                    () => supprimerStock(stock.id)
+        tbody.querySelectorAll('.delete-btn').forEach(btn => {
+            btn.onclick = () => {
+                const id = parseInt(btn.getAttribute('data-id'));
+                const stock = stocks.find(s => s.id === id);
+                if (stock) openDeleteModal(
+                    `Voulez-vous vraiment supprimer l'ingrédient "${stock.nom}" ?`,
+                    () => supprimerStock(id)
                 );
-            }
+            };
+        });
+
+        tbody.querySelectorAll('.notes-btn').forEach(btn => {
+            btn.onclick = () => {
+                const id = parseInt(btn.getAttribute('data-id'));
+                const stock = stocks.find(s => s.id === id);
+                if (stock) alert(`Notes pour ${stock.nom}:\n${stock.notes}`);
+            };
         });
     }
 }
 
-// Supprimer un stock (version corrigée)
-function supprimerStock(id) {
-    let stocks = JSON.parse(localStorage.getItem('stocks') || '[]');
-    const stockIndex = stocks.findIndex(s => s.id === id);
-    if (stockIndex !== -1) {
-        const nomStock = stocks[stockIndex].nom;
-        stocks = stocks.filter(stock => stock.id !== id);
-        localStorage.setItem('stocks', JSON.stringify(stocks));
-        afficherStocks();
-        alert(`Le stock "${nomStock}" a été supprimé avec succès.`);
-    }
+// Ouvrir la modale d'ajout d'ingrédient
+function ouvrirModalAjoutIngredient() {
+    openEditModal('stock', null, {
+        type: "",
+        nom: "",
+        lot: "",
+        quantite: 0,
+        fournisseur: "",
+        specification: "",
+        annee_recolte: null,
+        pourcentage_aa: null,
+        conditionnement: "",
+        notes: ""
+    });
 }
 
+// Ajouter un nouvel ingrédient
+function ajouterIngredient() {
+    const type = document.getElementById('edit-type').value;
+    const nom = document.getElementById('edit-nom').value;
+    const lot = document.getElementById('edit-lot').value;
+    const quantite = parseFloat(document.getElementById('edit-quantite').value);
+    const fournisseur = document.getElementById('edit-fournisseur').value;
+    const specification = document.getElementById('edit-specification').value;
+    const annee = document.getElementById('edit-annee').value;
+    const conditionnement = document.getElementById('edit-conditionnement').value;
+    const notes = document.getElementById('edit-notes').value;
 
+    if (!type || !nom || !fournisseur || isNaN(quantite)) {
+        alert("Veuillez remplir tous les champs obligatoires.");
+        return;
+    }
 
+    const stocks = JSON.parse(localStorage.getItem('stocks') || '[]');
+    const id = stocks.length > 0 ? Math.max(...stocks.map(s => s.id)) + 1 : 1;
+
+    const nouvelIngredient = {
+        id,
+        type,
+        nom,
+        lot,
+        quantite,
+        fournisseur,
+        specification: (type === 'Malt' || type === 'Houblon') ? specification : null,
+        annee_recolte: type === 'Houblon' ? parseInt(annee) || null : null,
+        pourcentage_aa: type === 'Houblon' ? parseFloat(specification) || null : null,
+        conditionnement: conditionnement || 'non spécifié',
+        notes
+    };
+
+    stocks.push(nouvelIngredient);
+    localStorage.setItem('stocks', JSON.stringify(stocks));
+    afficherStocks();
+    closeModal('editModal');
+    alert(`L'ingrédient "${nom}" a été ajouté avec succès.`);
+}
 
 // Retirer du stock
 function retirerStock() {
@@ -100,7 +157,7 @@ function retirerStock() {
     const quantite = parseFloat(document.getElementById('quantite-retrait')?.value);
 
     if (!idIngredient || !idBiere || isNaN(quantite) || quantite <= 0) {
-        alert("Veuillez remplir tous les champs.");
+        alert("Veuillez sélectionner un ingrédient, une bière et une quantité valide.");
         return;
     }
 
@@ -127,44 +184,57 @@ function retirerStock() {
     });
     localStorage.setItem('historique_stocks', JSON.stringify(historique));
 
-    alert(`Retrait enregistré.`);
+    alert(`Retrait de ${quantite}g de ${ingredient.nom} pour la bière #${idBiere} enregistré.`);
     afficherStocks();
 }
 
-// Afficher l'historique par bière (version alternative)
+// Supprimer un stock
+function supprimerStock(id) {
+    let stocks = JSON.parse(localStorage.getItem('stocks') || '[]');
+    const stockIndex = stocks.findIndex(s => s.id === id);
+    if (stockIndex !== -1) {
+        const nomStock = stocks[stockIndex].nom;
+        stocks = stocks.filter(stock => stock.id !== id);
+        localStorage.setItem('stocks', JSON.stringify(stocks));
+        afficherStocks();
+        alert(`L'ingrédient "${nomStock}" a été supprimé avec succès.`);
+    }
+}
+
+// Afficher l'historique par bière
 function afficherHistoriqueParBiere(idBiere) {
     const historique = JSON.parse(localStorage.getItem('historique_stocks') || '[]');
     const historiqueFiltre = historique.filter(entry => entry.id_biere == idBiere);
     const tbody = document.querySelector('#historique-biere tbody');
     if (tbody) {
-        tbody.innerHTML = historiqueFiltre.map((entry, index) => `
+        tbody.innerHTML = historiqueFiltre.map(entry => `
             <tr data-date="${entry.date}">
                 <td>${new Date(entry.date).toLocaleString()}</td>
                 <td>${entry.ingredient || ''}</td>
                 <td>${entry.quantite || 0}g</td>
                 <td>${entry.notes || ''}</td>
                 <td>
-                    <button class="action-btn delete-btn" id="delete-historique-${index}" title="Supprimer">
+                    <button class="action-btn delete-btn" data-date="${entry.date}" title="Supprimer">
                         <i class="material-icons">delete</i>
                     </button>
                 </td>
             </tr>
         `).join('');
 
-        // Attacher les écouteurs d'événements aux boutons
-        historiqueFiltre.forEach((entry, index) => {
-            const deleteBtn = document.getElementById(`delete-historique-${index}`);
-            if (deleteBtn) {
-                deleteBtn.onclick = () => openDeleteModal(
+        // Attacher les écouteurs d'événements aux boutons Supprimer
+        tbody.querySelectorAll('.delete-btn').forEach(btn => {
+            btn.onclick = () => {
+                const date = btn.getAttribute('data-date');
+                openDeleteModal(
                     'Voulez-vous vraiment supprimer cette entrée d\'historique ?',
-                    () => supprimerHistorique(entry.date)
+                    () => supprimerHistorique(date)
                 );
-            }
+            };
         });
     }
 }
 
-// Supprimer une entrée d'historique (version corrigée)
+// Supprimer une entrée d'historique
 function supprimerHistorique(date) {
     let historique = JSON.parse(localStorage.getItem('historique_stocks') || '[]');
     historique = historique.filter(entry => entry.date !== date);
@@ -172,8 +242,6 @@ function supprimerHistorique(date) {
     const biereId = document.getElementById('select-biere-historique')?.value;
     if (biereId) afficherHistoriqueParBiere(biereId);
 }
-
-
 
 // Appeler chargerDonnees une fois le DOM chargé
 document.addEventListener('DOMContentLoaded', chargerDonnees);
