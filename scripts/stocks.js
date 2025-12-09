@@ -34,7 +34,7 @@ function chargerDonnees() {
     afficherStocks();
 }
 
-// Afficher les stocks
+// Afficher les stocks avec boutons d'action
 function afficherStocks() {
     const stocks = JSON.parse(localStorage.getItem('stocks'));
     const tbody = document.querySelector('#table-stocks tbody');
@@ -47,6 +47,14 @@ function afficherStocks() {
                 <td class="${stock.quantite < 0 ? 'stock-negatif' : ''}">${stock.quantite}g</td>
                 <td>${stock.fournisseur}</td>
                 <td>${stock.specification || '-'}</td>
+                <td>
+                    <button class="action-btn" onclick="openEditModal('stock', ${stock.id}, ${JSON.stringify(stock).replace(/"/g, '&quot;')})">
+                        <i class="material-icons">edit</i>
+                    </button>
+                    <button class="action-btn delete" onclick="openDeleteModal('Voulez-vous vraiment supprimer ce stock ?', () => supprimerStock(${stock.id}))">
+                        <i class="material-icons">delete</i>
+                    </button>
+                </td>
             </tr>`
         ).join('');
     }
@@ -90,6 +98,14 @@ function retirerStock() {
     afficherStocks();
 }
 
+// Supprimer un stock
+function supprimerStock(id) {
+    let stocks = JSON.parse(localStorage.getItem('stocks'));
+    stocks = stocks.filter(stock => stock.id !== id);
+    localStorage.setItem('stocks', JSON.stringify(stocks));
+    afficherStocks();
+}
+
 // Afficher l'historique par bière
 function afficherHistoriqueParBiere(idBiere) {
     const historique = JSON.parse(localStorage.getItem('historique_stocks'));
@@ -102,9 +118,23 @@ function afficherHistoriqueParBiere(idBiere) {
                 <td>${entry.ingredient}</td>
                 <td>${entry.quantite}g</td>
                 <td>${entry.notes}</td>
+                <td>
+                    <button class="action-btn delete" onclick="openDeleteModal('Voulez-vous vraiment supprimer cette entrée ?', () => supprimerHistorique(${entry.date}))">
+                        <i class="material-icons">delete</i>
+                    </button>
+                </td>
             </tr>`
         ).join('');
     }
+}
+
+// Supprimer une entrée d'historique
+function supprimerHistorique(date) {
+    let historique = JSON.parse(localStorage.getItem('historique_stocks'));
+    historique = historique.filter(entry => entry.date !== date);
+    localStorage.setItem('historique_stocks', JSON.stringify(historique));
+    const biereId = document.getElementById('select-biere-historique').value;
+    afficherHistoriqueParBiere(biereId);
 }
 
 // Appeler chargerDonnees une fois le DOM chargé
