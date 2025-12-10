@@ -2,8 +2,33 @@
 function initData() {
     const defaultData = {
         stocks: [
-            { id: 1, type: "Malt", nom: "Pilsen", lot: "2023-001", quantite: 10000, fournisseur: "Château", specification: "3.5 EBC" },
-            { id: 2, type: "Houblon", nom: "Citra", lot: "2023-002", quantite: 500, fournisseur: "Hops France", specification: "13.4 %AA" }
+            {
+                "id": 1,
+                "type": "Malt",
+                "nom": "Pilsen",
+                "lot": "2023-001",
+                "quantite": 10000,
+                "fournisseur": "Château",
+                "specification": "3.5 EBC",
+                "annee_recolte": null,
+                "pourcentage_aa": null,
+                "notes": "Malt de base pour les bières blondes et IPA. Stocké dans un endroit sec.",
+                "conditionnement": "Sac de 25 kg"
+            },
+            {
+                "id": 2,
+                "type": "Malt",
+                "nom": "Munich",
+                "lot": "2023-002",
+                "quantite": 24400,
+                "fournisseur": "Château",
+                "specification": "25 EBC",
+                "annee_recolte": null,
+                "pourcentage_aa": null,
+                "notes": "Malt caramelisé pour les bières ambrées. À utiliser avec modération.",
+                "conditionnement": "Sac de 25 kg"
+            }
+            // Ajoute les 40 autres ingrédients ici (voir le JSON complet plus haut)
         ],
         recettes: [],
         fermentations: [],
@@ -36,23 +61,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Gestion des onglets
-    const tabButtons = document.querySelectorAll('.tab-button');
-    if (tabButtons.length > 0) {
-        tabButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
-                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                button.classList.add('active');
-                const tabId = button.getAttribute('data-tab');
-                const tab = document.getElementById(tabId);
-                if (tab) tab.classList.add('active');
-
-                // Fermer le menu burger après sélection sur mobile
-                if (window.innerWidth <= 768 && menuBurger && mainNav) {
-                    menuBurger.classList.remove('active');
-                    mainNav.classList.remove('active');
-                }
-            });
+    document.querySelectorAll('.tab-button').forEach(button => {
+        button.addEventListener('click', () => {
+            document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            button.classList.add('active');
+            const tabId = button.getAttribute('data-tab');
+            document.getElementById(tabId).classList.add('active');
         });
-    }
+    });
+
+    // Charger les données initiales
+    if (typeof chargerDonnees === 'function') chargerDonnees();
 });
