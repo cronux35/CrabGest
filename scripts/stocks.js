@@ -34,64 +34,6 @@ function chargerDonnees() {
     afficherStocks();
 }
 
-// Afficher les stocks avec boutons d'action
-function afficherStocks() {
-    const stocks = JSON.parse(localStorage.getItem('stocks') || '[]');
-    const tbody = document.querySelector('#table-stocks tbody');
-    if (tbody) {
-        tbody.innerHTML = stocks.map(stock => `
-            <tr data-id="${stock.id}">
-                <td>${stock.type || ''}</td>
-                <td>${stock.nom || ''}</td>
-                <td>${stock.lot || '-'}</td>
-                <td class="${stock.quantite < 0 ? 'stock-negatif' : ''}">${stock.quantite || 0}g</td>
-                <td>${stock.fournisseur || ''}</td>
-                <td>${stock.specification || '-'}</td>
-                <td>${stock.annee_recolte || '-'}</td>
-                <td>${stock.conditionnement || 'non spécifié'}</td>
-                <td>
-                    <button class="action-btn edit-btn" data-id="${stock.id}" title="Éditer">
-                        <i class="material-icons">edit</i>
-                    </button>
-                    <button class="action-btn delete-btn" data-id="${stock.id}" title="Supprimer">
-                        <i class="material-icons">delete</i>
-                    </button>
-                    ${stock.notes ? `<button class="action-btn notes-btn" data-id="${stock.id}" title="Voir les notes">
-                        <i class="material-icons">info</i>
-                    </button>` : ''}
-                </td>
-            </tr>
-        `).join('');
-
-        // Attacher les écouteurs d'événements aux boutons
-        tbody.querySelectorAll('.edit-btn').forEach(btn => {
-            btn.onclick = () => {
-                const id = parseInt(btn.getAttribute('data-id'));
-                const stock = stocks.find(s => s.id === id);
-                if (stock) openEditModal('stock', id, stock);
-            };
-        });
-
-        tbody.querySelectorAll('.delete-btn').forEach(btn => {
-            btn.onclick = () => {
-                const id = parseInt(btn.getAttribute('data-id'));
-                const stock = stocks.find(s => s.id === id);
-                if (stock) openDeleteModal(
-                    `Voulez-vous vraiment supprimer l'ingrédient "${stock.nom}" ?`,
-                    () => supprimerStock(id)
-                );
-            };
-        });
-
-        tbody.querySelectorAll('.notes-btn').forEach(btn => {
-            btn.onclick = () => {
-                const id = parseInt(btn.getAttribute('data-id'));
-                const stock = stocks.find(s => s.id === id);
-                if (stock) alert(`Notes pour ${stock.nom}:\n${stock.notes}`);
-            };
-        });
-    }
-}
 
 // Ouvrir la modale d'ajout d'ingrédient
 function ouvrirModalAjoutIngredient() {
@@ -108,6 +50,66 @@ function ouvrirModalAjoutIngredient() {
         notes: ""
     });
 }
+
+// Afficher les stocks avec boutons d'action (version définitive)
+function afficherStocks() {
+    const stocks = JSON.parse(localStorage.getItem('stocks') || '[]');
+    const tbody = document.querySelector('#table-stocks tbody');
+    if (tbody) {
+        tbody.innerHTML = stocks.map(stock => `
+            <tr data-id="${stock.id}">
+                <td>${stock.type || ''}</td>
+                <td>${stock.nom || ''}</td>
+                <td>${stock.lot || '-'}</td>
+                <td class="${stock.quantite < 0 ? 'stock-negatif' : ''}">${stock.quantite || 0}g</td>
+                <td>${stock.fournisseur || ''}</td>
+                <td>${stock.specification || '-'}</td>
+                <td>${stock.annee_recolte || '-'}</td>
+                <td>${stock.conditionnement || 'non spécifié'}</td>
+                <td>
+                    <button class="action-btn edit-btn" data-id="${stock.id}" data-action="edit" title="Éditer">
+                        <i class="material-icons">edit</i>
+                    </button>
+                    <button class="action-btn delete-btn" data-id="${stock.id}" data-action="delete" title="Supprimer">
+                        <i class="material-icons">delete</i>
+                    </button>
+                    ${stock.notes ? `<button class="action-btn notes-btn" data-id="${stock.id}" data-action="notes" title="Voir les notes">
+                        <i class="material-icons">info</i>
+                    </button>` : ''}
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    // Utiliser la délégation d'événements sur le tbody
+    document.querySelector('#table-stocks tbody').addEventListener('click', (e) => {
+        const target = e.target.closest('button');
+        if (!target) return;
+
+        const action = target.getAttribute('data-action');
+        const id = parseInt(target.getAttribute('data-id'));
+        const stocks = JSON.parse(localStorage.getItem('stocks') || '[]');
+        const stock = stocks.find(s => s.id === id);
+
+        if (!stock) return;
+
+        switch (action) {
+            case 'edit':
+                openEditModal('stock', id, stock);
+                break;
+            case 'delete':
+                openDeleteModal(
+                    `Voulez-vous vraiment supprimer l'ingrédient "${stock.nom}" ?`,
+                    () => supprimerStock(id)
+                );
+                break;
+            case 'notes':
+                alert(`Notes pour ${stock.nom}:\n${stock.notes}`);
+                break;
+        }
+    });
+}
+
 
 // Ajouter un nouvel ingrédient
 function ajouterIngredient() {
@@ -188,7 +190,7 @@ function retirerStock() {
     afficherStocks();
 }
 
-// Supprimer un stock
+// Supprimer un stock (version définitive)
 function supprimerStock(id) {
     let stocks = JSON.parse(localStorage.getItem('stocks') || '[]');
     const stockIndex = stocks.findIndex(s => s.id === id);
