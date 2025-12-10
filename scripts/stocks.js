@@ -34,6 +34,67 @@ function chargerDonnees() {
     afficherStocks();
 }
 
+// Afficher les stocks avec boutons d'action
+function afficherStocks() {
+    const stocks = JSON.parse(localStorage.getItem('stocks') || '[]');
+    const tbody = document.querySelector('#table-stocks tbody');
+    if (tbody) {
+        tbody.innerHTML = stocks.map(stock => `
+            <tr data-id="${stock.id}">
+                <td>${stock.type || ''}</td>
+                <td>${stock.nom || ''}</td>
+                <td>${stock.lot || '-'}</td>
+                <td class="${stock.quantite < 0 ? 'stock-negatif' : ''}">${stock.quantite || 0}g</td>
+                <td>${stock.fournisseur || ''}</td>
+                <td>${stock.specification || '-'}</td>
+                <td>${stock.annee_recolte || '-'}</td>
+                <td>${stock.conditionnement || 'non spécifié'}</td>
+                <td>
+                    <button class="action-btn edit-btn" data-action="edit" data-id="${stock.id}" title="Éditer">
+                        <i class="material-icons">edit</i>
+                    </button>
+                    <button class="action-btn delete-btn" data-action="delete" data-id="${stock.id}" title="Supprimer">
+                        <i class="material-icons">delete</i>
+                    </button>
+                    ${stock.notes ? `<button class="action-btn notes-btn" data-action="notes" data-id="${stock.id}" title="Voir les notes">
+                        <i class="material-icons">info</i>
+                    </button>` : ''}
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    // Délégation d'événements pour les boutons dynamiques
+    const stocksTable = document.querySelector('#table-stocks tbody');
+    if (stocksTable) {
+        stocksTable.addEventListener('click', (e) => {
+            const target = e.target.closest('button');
+            if (!target) return;
+
+            const action = target.getAttribute('data-action');
+            const id = parseInt(target.getAttribute('data-id'));
+            const stocks = JSON.parse(localStorage.getItem('stocks') || '[]');
+            const stock = stocks.find(s => s.id === id);
+
+            if (!stock) return;
+
+            switch (action) {
+                case 'edit':
+                    openEditModal('stock', id, stock);
+                    break;
+                case 'delete':
+                    openDeleteModal(
+                        `Voulez-vous vraiment supprimer l'ingrédient "${stock.nom}" ?`,
+                        () => supprimerStock(id)
+                    );
+                    break;
+                case 'notes':
+                    alert(`Notes pour ${stock.nom}:\n${stock.notes}`);
+                    break;
+            }
+        });
+    }
+}
 
 // Ouvrir la modale d'ajout d'ingrédient
 function ouvrirModalAjoutIngredient() {
@@ -50,66 +111,6 @@ function ouvrirModalAjoutIngredient() {
         notes: ""
     });
 }
-
-// Afficher les stocks avec boutons d'action (version définitive)
-function afficherStocks() {
-    const stocks = JSON.parse(localStorage.getItem('stocks') || '[]');
-    const tbody = document.querySelector('#table-stocks tbody');
-    if (tbody) {
-        tbody.innerHTML = stocks.map(stock => `
-            <tr data-id="${stock.id}">
-                <td>${stock.type || ''}</td>
-                <td>${stock.nom || ''}</td>
-                <td>${stock.lot || '-'}</td>
-                <td class="${stock.quantite < 0 ? 'stock-negatif' : ''}">${stock.quantite || 0}g</td>
-                <td>${stock.fournisseur || ''}</td>
-                <td>${stock.specification || '-'}</td>
-                <td>${stock.annee_recolte || '-'}</td>
-                <td>${stock.conditionnement || 'non spécifié'}</td>
-                <td>
-                    <button class="action-btn edit-btn" data-id="${stock.id}" data-action="edit" title="Éditer">
-                        <i class="material-icons">edit</i>
-                    </button>
-                    <button class="action-btn delete-btn" data-id="${stock.id}" data-action="delete" title="Supprimer">
-                        <i class="material-icons">delete</i>
-                    </button>
-                    ${stock.notes ? `<button class="action-btn notes-btn" data-id="${stock.id}" data-action="notes" title="Voir les notes">
-                        <i class="material-icons">info</i>
-                    </button>` : ''}
-                </td>
-            </tr>
-        `).join('');
-    }
-
-    // Utiliser la délégation d'événements sur le tbody
-    document.querySelector('#table-stocks tbody').addEventListener('click', (e) => {
-        const target = e.target.closest('button');
-        if (!target) return;
-
-        const action = target.getAttribute('data-action');
-        const id = parseInt(target.getAttribute('data-id'));
-        const stocks = JSON.parse(localStorage.getItem('stocks') || '[]');
-        const stock = stocks.find(s => s.id === id);
-
-        if (!stock) return;
-
-        switch (action) {
-            case 'edit':
-                openEditModal('stock', id, stock);
-                break;
-            case 'delete':
-                openDeleteModal(
-                    `Voulez-vous vraiment supprimer l'ingrédient "${stock.nom}" ?`,
-                    () => supprimerStock(id)
-                );
-                break;
-            case 'notes':
-                alert(`Notes pour ${stock.nom}:\n${stock.notes}`);
-                break;
-        }
-    });
-}
-
 
 // Ajouter un nouvel ingrédient
 function ajouterIngredient() {
@@ -152,6 +153,55 @@ function ajouterIngredient() {
     alert(`L'ingrédient "${nom}" a été ajouté avec succès.`);
 }
 
+// Sauvegarder les modifications
+function saveEdit() {
+    if (!currentEditType || currentEditId === null) {
+        console.error("Type ou ID manquant pour la sauvegarde.");
+        return;
+    }
+
+    if (currentEditType === 'stock') {
+        const stocks = JSON.parse(localStorage.getItem('stocks') || '[]');
+        const index = stocks.findIndex(s => s.id === currentEditId);
+        if (index !== -1) {
+            const type = document.getElementById('edit-type').value;
+            const specification = document.getElementById('edit-specification').value;
+            const annee = document.getElementById('edit-annee').value;
+
+            stocks[index] = {
+                ...stocks[index],
+                type: type,
+                nom: document.getElementById('edit-nom').value,
+                lot: document.getElementById('edit-lot').value,
+                quantite: parseFloat(document.getElementById('edit-quantite').value),
+                fournisseur: document.getElementById('edit-fournisseur').value,
+                specification: (type === 'Malt' || type === 'Houblon') ? specification : null,
+                annee_recolte: type === 'Houblon' ? parseInt(annee) || null : null,
+                pourcentage_aa: type === 'Houblon' ? parseFloat(specification) || null : null,
+                conditionnement: document.getElementById('edit-conditionnement').value,
+                notes: document.getElementById('edit-notes').value
+            };
+            localStorage.setItem('stocks', JSON.stringify(stocks));
+            afficherStocks();
+            alert("Ingrédient mis à jour avec succès !");
+        }
+    }
+    closeModal('editModal');
+}
+
+// Supprimer un stock
+function supprimerStock(id) {
+    let stocks = JSON.parse(localStorage.getItem('stocks') || '[]');
+    const stockIndex = stocks.findIndex(s => s.id === id);
+    if (stockIndex !== -1) {
+        const nomStock = stocks[stockIndex].nom;
+        stocks = stocks.filter(stock => stock.id !== id);
+        localStorage.setItem('stocks', JSON.stringify(stocks));
+        afficherStocks();
+        alert(`L'ingrédient "${nomStock}" a été supprimé avec succès.`);
+    }
+}
+
 // Retirer du stock
 function retirerStock() {
     const idIngredient = document.getElementById('select-ingredient')?.value;
@@ -190,19 +240,6 @@ function retirerStock() {
     afficherStocks();
 }
 
-// Supprimer un stock (version définitive)
-function supprimerStock(id) {
-    let stocks = JSON.parse(localStorage.getItem('stocks') || '[]');
-    const stockIndex = stocks.findIndex(s => s.id === id);
-    if (stockIndex !== -1) {
-        const nomStock = stocks[stockIndex].nom;
-        stocks = stocks.filter(stock => stock.id !== id);
-        localStorage.setItem('stocks', JSON.stringify(stocks));
-        afficherStocks();
-        alert(`L'ingrédient "${nomStock}" a été supprimé avec succès.`);
-    }
-}
-
 // Afficher l'historique par bière
 function afficherHistoriqueParBiere(idBiere) {
     const historique = JSON.parse(localStorage.getItem('historique_stocks') || '[]');
@@ -216,22 +253,23 @@ function afficherHistoriqueParBiere(idBiere) {
                 <td>${entry.quantite || 0}g</td>
                 <td>${entry.notes || ''}</td>
                 <td>
-                    <button class="action-btn delete-btn" data-date="${entry.date}" title="Supprimer">
+                    <button class="action-btn delete-btn" data-action="delete" data-date="${entry.date}" title="Supprimer">
                         <i class="material-icons">delete</i>
                     </button>
                 </td>
             </tr>
         `).join('');
 
-        // Attacher les écouteurs d'événements aux boutons Supprimer
-        tbody.querySelectorAll('.delete-btn').forEach(btn => {
-            btn.onclick = () => {
-                const date = btn.getAttribute('data-date');
+        // Délégation d'événements pour les boutons Supprimer
+        tbody.addEventListener('click', (e) => {
+            const target = e.target.closest('button[data-action="delete"]');
+            if (target) {
+                const date = target.getAttribute('data-date');
                 openDeleteModal(
                     'Voulez-vous vraiment supprimer cette entrée d\'historique ?',
                     () => supprimerHistorique(date)
                 );
-            };
+            }
         });
     }
 }

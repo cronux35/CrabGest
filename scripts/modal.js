@@ -1,4 +1,4 @@
-// Gestion des modales (version définitive)
+// Gestion des modales
 let currentEditId = null;
 let currentEditType = null;
 let currentDeleteCallback = null;
@@ -31,7 +31,7 @@ window.addEventListener('click', (event) => {
     }
 });
 
-// Ouvrir modale d'édition (version définitive)
+// Ouvrir modale d'édition
 function openEditModal(type, id, data) {
     currentEditType = type;
     currentEditId = id;
@@ -115,7 +115,7 @@ function openEditModal(type, id, data) {
     openModal('editModal');
 }
 
-// Ouvrir modale de suppression (version définitive)
+// Ouvrir modale de suppression
 function openDeleteModal(message, callback) {
     const modal = document.getElementById('deleteModal');
     const messageElement = document.getElementById('deleteModalMessage');
