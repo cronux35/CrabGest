@@ -178,41 +178,39 @@
 </section>
 
 
-        <!-- Conditionnement -->
-        <section id="conditionnement" class="tab">
-            <h2>Conditionnement</h2>
-            <div class="card">
-                <div class="form-group">
-                    <select id="select-biere-conditionnement" class="form-control"></select>
-                    <input type="number" id="volume-conditionne" class="form-control" placeholder="Volume (L)">
-                    <input type="number" id="abv-final" class="form-control" placeholder="ABV final">
-                    <select id="type-contenant" class="form-control">
-                        <option value="bouteille_33cl">Bouteille 33cl</option>
-                        <option value="bouteille_50cl">Bouteille 50cl</option>
-                        <option value="bouteille_75cl">Bouteille 75cl</option>
-                        <option value="canette_44cl">Canette 44cl</option>
-                    </select>
-                    <input type="number" id="quantite-contenant" class="form-control" placeholder="Quantité">
-                    <button onclick="ajouterConditionnement()" class="btn btn-primary">Conditionner</button>
-                </div>
-                <div class="table-responsive">
-                    <table id="table-conditionnements" class="table">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Bière</th>
-                                <th>Volume (L)</th>
-                                <th>ABV</th>
-                                <th>Contenant</th>
-                                <th>Quantité</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
+<!-- Conditionnement -->
+<section id="conditionnement" class="tab">
+    <h2>Conditionnement</h2>
+    <div class="card">
+        <div class="form-group">
+            <select id="select-biere-conditionnement" class="form-control"></select>
+            <input type="number" id="volume-conditionne" class="form-control" placeholder="Volume total conditionné (L)" step="0.01">
+            <input type="number" id="abv-final" class="form-control" placeholder="ABV final" step="0.1">
+            <select id="type-contenant" class="form-control"></select>
+            <input type="number" id="quantite-contenant" class="form-control" placeholder="Quantité" step="1">
+            <button onclick="ajouterConditionnement()" class="btn btn-primary">Conditionner</button>
+        </div>
+        <div class="table-responsive">
+            <table id="table-conditionnements" class="table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Bière</th>
+                        <th>Volume déclaré (L)</th>
+                        <th>ABV</th>
+                        <th>Contenant</th>
+                        <th>Quantité</th>
+                        <th>Volume conditionné (L)</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
 
         <!-- Ventes -->
         <section id="ventes" class="tab">
