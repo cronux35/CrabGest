@@ -517,16 +517,41 @@ footer {
     min-width: 150px;
 }
 
+.chart-container {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    margin: 20px 0;
+}
+
 #fermentationChart {
     width: 100%;
     height: 100%;
-    background-color: var(--crab-gris-fonce);
-    border-radius: 4px;
-    padding: 10px;
-    border: 1px solid var(--crab-jaune);
 }
 
 /* Style pour le tableau des actions de fermentation */
 #fermentation-actions-table {
     margin-bottom: 20px;
+}
+
+/* Style pour les inputs de type number */
+input[type="number"] {
+    -moz-appearance: textfield;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* Style pour les libellés modifiés */
+#type-action option[value="densite"] {
+    font-weight: bold;
+    color: rgb(75, 192, 192);
+}
+
+#type-action option[value="temperature"] {
+    font-weight: bold;
+    color: rgb(255, 99, 132);
 }
