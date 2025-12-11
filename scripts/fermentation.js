@@ -1,76 +1,216 @@
-// fermentation.js - Version corrigée complète
+// fermentation.js - Version complète et corrigée
 let fermentationChart = null;
 
-// Charger les bières dans le sélecteur de fermentation
+// 1. Charger les bières dans le sélecteur
 async function chargerSelecteurBieresFermentation() {
     try {
         const bieres = await loadData('bieres').catch(() => []);
-        const selectBiereFermentation = document.getElementById('select-biere-fermentation');
-        if (selectBiereFermentation) {
-            selectBiereFermentation.innerHTML = '<option value="">-- Sélectionner une bière --</option>';
+        const select = document.getElementById('select-biere-fermentation');
+        if (select) {
+            select.innerHTML = '<option value="">-- Sélectionner une bière --</option>';
             bieres.forEach(biere => {
                 const option = document.createElement('option');
                 option.value = biere.id;
                 option.textContent = biere.nom;
-                selectBiereFermentation.appendChild(option);
+                select.appendChild(option);
             });
         }
     } catch (error) {
-        console.error("Erreur lors du chargement des bières pour la fermentation:", error);
+        console.error("Erreur chargement bières:", error);
     }
 }
 
-// Calculer les limites dynamiques pour les échelles
+// 2. Calculer les limites des échelles
 function calculerLimitesEchelles(densites, temperatures) {
-    let minGravite = 0.800;
-    let maxGravite = 1.150;
+    const limites = {
+        gravite: { min: 0.800, max: 1.150 },
+        temperature: { min: 0, max: 40 }
+    };
 
     if (densites.length > 0) {
-        const graviteValues = densites.map(d => d.valeur);
-        const minGraviteData = Math.min(...graviteValues);
-        const maxGraviteData = Math.max(...graviteValues);
-        const margeGravite = Math.max(0.010, 0.05 * (maxGraviteData - minGraviteData));
-        minGravite = Math.max(0.800, minGraviteData - margeGravite);
-        maxGravite = Math.min(1.150, maxGraviteData + margeGravite);
+        const values = densites.map(d => d.valeur);
+        const marge = Math.max(0.010, 0.05 * (Math.max(...values) - Math.min(...values)));
+        limites.gravite.min = Math.max(0.800, Math.min(...values) - marge);
+        limites.gravite.max = Math.min(1.150, Math.max(...values) + marge);
     }
-
-    let minTemperature = 0;
-    let maxTemperature = 40;
 
     if (temperatures.length > 0) {
-        const tempValues = temperatures.map(t => t.valeur);
-        const minTempData = Math.min(...tempValues);
-        const maxTempData = Math.max(...tempValues);
-        const margeTemp = Math.max(2, 0.1 * (maxTempData - minTempData));
-        minTemperature = Math.max(0, minTempData - margeTemp);
-        maxTemperature = Math.min(40, maxTempData + margeTemp);
+        const values = temperatures.map(t => t.valeur);
+        const marge = Math.max(2, 0.1 * (Math.max(...values) - Math.min(...values)));
+        limites.temperature.min = Math.max(0, Math.min(...values) - marge);
+        limites.temperature.max = Math.min(40, Math.max(...values) + marge);
     }
 
+    return limites;
+}
+
+// 3. Préparer les données pour le graphique
+function preparerDonneesGraphique(data) {
+    const densites = data.filter(a => a.type === 'densite');
+    const temperatures = data.filter(a => a.type === 'temperature');
+
+    // Créer une liste de toutes les dates uniques
+    const toutesLesDates = [...new Set([
+        ...densites.map(d => new Date(d.date).getTime()),
+        ...temperatures.map(t => new Date(t.date).getTime())
+    ])].sort((a, b) => a - b);
+
     return {
-        gravite: { min: minGravite, max: maxGravite },
-        temperature: { min: minTemperature, max: maxTemperature }
+        dates: toutesLesDates,
+        densites: densites.map(d => ({
+            date: new Date(d.date).getTime(),
+            valeur: d.valeur
+        })),
+        temperatures: temperatures.map(t => ({
+            date: new Date(t.date).getTime(),
+            valeur: t.valeur
+        }))
     };
 }
 
-// Afficher le suivi de fermentation pour une bière sélectionnée
+// 4. Afficher le graphique (version corrigée)
+function afficherGraphiqueFermentation(preparedData, nomBiere) {
+    const ctx = document.getElementById('fermentationChart');
+    if (!ctx) return;
+
+    // Détruire l'ancien graphique s'il existe
+    if (fermentationChart) {
+        fermentationChart.destroy();
+    }
+
+    // Calculer les limites des échelles
+    const limites = calculerLimitesEchelles(
+        preparedData.densites,
+        preparedData.temperatures
+    );
+
+    // Créer le nouveau graphique
+    fermentationChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            datasets: [
+                {
+                    label: 'Gravité (SG)',
+                    data: preparedData.densites,
+                    parsing: {
+                        xAxisKey: 'date',
+                        yAxisKey: 'valeur'
+                    },
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    tension: 0.1,
+                    yAxisID: 'y',
+                    pointRadius: 4
+                },
+                {
+                    label: 'Température (°C)',
+                    data: preparedData.temperatures,
+                    parsing: {
+                        xAxisKey: 'date',
+                        yAxisKey: 'valeur'
+                    },
+                    borderColor: 'rgb(255, 99, 132)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    tension: 0.1,
+                    yAxisID: 'y1',
+                    pointRadius: 4
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: {
+                    display: true,
+                    text: `Fermentation - ${nomBiere}`,
+                    font: { size: 16 }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: (context) => {
+                            return `${context.dataset.label}: ${context.parsed.y.toFixed(context.dataset.label.includes('Gravité') ? 3 : 1)}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    type: 'linear',
+                    position: 'left',
+                    title: {
+                        display: true,
+                        text: 'Gravité (SG)'
+                    },
+                    min: limites.gravite.min,
+                    max: limites.gravite.max,
+                    ticks: {
+                        stepSize: 0.010,
+                        callback: (value) => value.toFixed(3)
+                    }
+                },
+                y1: {
+                    type: 'linear',
+                    position: 'right',
+                    title: {
+                        display: true,
+                        text: 'Température (°C)'
+                    },
+                    min: limites.temperature.min,
+                    max: limites.temperature.max,
+                    ticks: {
+                        stepSize: 2,
+                        callback: (value) => `${value.toFixed(1)}°C`
+                    },
+                    grid: {
+                        drawOnChartArea: false
+                    }
+                },
+                x: {
+                    type: 'time',
+                    time: {
+                        unit: 'hour',
+                        displayFormats: {
+                            hour: 'HH:mm',
+                            day: 'ddd DD MMM',
+                            week: 'DD MMM'
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Temps'
+                    },
+                    ticks: {
+                        autoSkip: true,
+                        maxTicksLimit: 10
+                    }
+                }
+            }
+        }
+    });
+}
+
+// 5. Afficher le suivi complet
 async function afficherSuiviFermentation(idBiere) {
     try {
-        const fermentations = await loadData('fermentations').catch(() => []);
+        const data = await loadData('fermentations').catch(() => []);
         const biere = await loadItemById('bieres', idBiere).catch(() => null);
-        const data = fermentations.filter(f => f.id_biere == idBiere);
+        const fermentationData = data.filter(f => f.id_biere == idBiere);
 
-        // Afficher les actions de fermentation dans un tableau
-        const actionsTable = document.getElementById('fermentation-actions-table');
-        if (actionsTable) {
-            const tbody = actionsTable.querySelector('tbody');
+        // Mettre à jour le tableau des actions
+        const table = document.getElementById('fermentation-actions-table');
+        if (table) {
+            const tbody = table.querySelector('tbody');
             if (tbody) {
-                tbody.innerHTML = data.map(action => `
+                tbody.innerHTML = fermentationData.map(action => `
                     <tr>
                         <td>${new Date(action.date).toLocaleString()}</td>
                         <td>${action.type === 'densite' ? 'Gravité' : action.type}</td>
                         <td>${action.valeur}</td>
                         <td>
-                            <button class="action-btn delete-btn" onclick="supprimerActionFermentation(${action.id})" title="Supprimer">
+                            <button class="action-btn delete-btn"
+                                   onclick="supprimerActionFermentation(${action.id})"
+                                   title="Supprimer">
                                 <i class="material-icons">delete</i>
                             </button>
                         </td>
@@ -79,190 +219,15 @@ async function afficherSuiviFermentation(idBiere) {
             }
         }
 
-        // Mettre à jour le graphique
-        afficherGraphiqueFermentation(data, biere ? biere.nom : 'Bière inconnue');
+        // Préparer et afficher le graphique
+        const preparedData = preparerDonneesGraphique(fermentationData);
+        afficherGraphiqueFermentation(preparedData, biere ? biere.nom : 'Bière inconnue');
     } catch (error) {
-        console.error("Erreur lors de l'affichage du suivi de fermentation:", error);
+        console.error("Erreur affichage fermentation:", error);
     }
 }
 
-// Afficher le graphique de fermentation avec échelle de temps complète
-function afficherGraphiqueFermentation(data, nomBiere) {
-    // Filtrer et trier les données
-    const densites = data.filter(a => a.type === 'densite').sort((a, b) => new Date(a.date) - new Date(b.date));
-    const temperatures = data.filter(a => a.type === 'temperature').sort((a, b) => new Date(a.date) - new Date(b.date));
-
-    // Calculer les limites dynamiques
-    const limites = calculerLimitesEchelles(densites, temperatures);
-
-    // Préparer les données pour le graphique
-    const toutesLesDates = [...densites, ...temperatures]
-        .map(a => new Date(a.date))
-        .sort((a, b) => a - b);
-
-    // Créer un mapping entre les dates et leurs positions
-    const datesUniques = [...new Set(toutesLesDates.map(d => d.getTime()))]
-        .map(t => new Date(t))
-        .sort((a, b) => a - b);
-
-    const ctx = document.getElementById('fermentationChart');
-    if (ctx) {
-        // Détruire le graphique existant s'il y en a un
-        if (fermentationChart) {
-            fermentationChart.destroy();
-            fermentationChart = null;
-        }
-
-        // Créer un nouveau graphique avec échelle de temps complète
-        fermentationChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: datesUniques.map(date => date.getTime()), // Utiliser des timestamps pour l'axe X
-                datasets: [
-                    {
-                        label: 'Gravité (SG)',
-                        data: datesUniques.map(date => {
-                            const point = densites.find(d => new Date(d.date).getTime() === date.getTime());
-                            return point ? point.valeur : null;
-                        }),
-                        borderColor: 'rgb(75, 192, 192)',
-                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                        tension: 0.1,
-                        fill: true,
-                        yAxisID: 'y',
-                        pointRadius: 4,
-                        pointHoverRadius: 6
-                    },
-                    {
-                        label: 'Température (°C)',
-                        data: datesUniques.map(date => {
-                            const point = temperatures.find(t => new Date(t.date).getTime() === date.getTime());
-                            return point ? point.valeur : null;
-                        }),
-                        borderColor: 'rgb(255, 99, 132)',
-                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                        tension: 0.1,
-                        fill: true,
-                        yAxisID: 'y1',
-                        pointRadius: 4,
-                        pointHoverRadius: 6
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    title: {
-                        display: true,
-                        text: `Suivi de fermentation - ${nomBiere}`,
-                        font: { size: 16 }
-                    },
-                    legend: { position: 'top' },
-                    tooltip: {
-                        mode: 'index',
-                        intersect: false,
-                        callbacks: {
-                            label: function(context) {
-                                let label = context.dataset.label || '';
-                                if (label) label += ': ';
-                                if (context.parsed.y !== null) {
-                                    label += context.dataset.label === 'Gravité (SG)' ?
-                                        context.parsed.y.toFixed(3) :
-                                        context.parsed.y.toFixed(1);
-                                }
-                                return label;
-                            },
-                            title: function(tooltipItems) {
-                                const date = new Date(tooltipItems[0].parsed.x);
-                                return date.toLocaleString();
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    y: {
-                        type: 'linear',
-                        display: true,
-                        position: 'left',
-                        title: {
-                            display: true,
-                            text: 'Gravité (SG)',
-                            color: 'rgb(75, 192, 192)'
-                        },
-                        min: limites.gravite.min,
-                        max: limites.gravite.max,
-                        ticks: {
-                            stepSize: 0.010,
-                            callback: function(value) {
-                                return value.toFixed(3);
-                            }
-                        },
-                        grid: { drawOnChartArea: true }
-                    },
-                    y1: {
-                        type: 'linear',
-                        display: true,
-                        position: 'right',
-                        title: {
-                            display: true,
-                            text: 'Température (°C)',
-                            color: 'rgb(255, 99, 132)'
-                        },
-                        min: limites.temperature.min,
-                        max: limites.temperature.max,
-                        ticks: {
-                            stepSize: 2,
-                            callback: function(value) {
-                                return value.toFixed(1) + '°C';
-                            }
-                        },
-                        grid: { drawOnChartArea: false }
-                    },
-                    x: {
-                        type: 'time',
-                        time: {
-                            unit: 'hour',
-                            displayFormats: {
-                                hour: 'HH:mm',
-                                day: 'ddd DD MMM',
-                                week: 'DD MMM',
-                                month: 'MMM YYYY'
-                            },
-                            tooltipFormat: 'DD MMM YYYY HH:mm:ss'
-                        },
-                        title: {
-                            display: true,
-                            text: 'Temps'
-                        },
-                        ticks: {
-                            source: 'data',
-                            autoSkip: true,
-                            maxTicksLimit: 10,
-                            maxRotation: 45,
-                            minRotation: 45,
-                            callback: function(value, index, values) {
-                                if (values.length <= 10 || index % Math.max(1, Math.floor(values.length / 10)) === 0) {
-                                    const date = new Date(value);
-                                    return date.toLocaleString([], {
-                                        hour: '2-digit',
-                                        minute: '2-digit',
-                                        day: 'numeric',
-                                        month: 'short'
-                                    });
-                                }
-                                return '';
-                            }
-                        },
-                        grid: { display: true }
-                    }
-                }
-            }
-        });
-    }
-}
-
-// Ajouter une action de fermentation
+// 6. Ajouter une action
 async function ajouterActionFermentation() {
     const idBiere = document.getElementById('select-biere-fermentation').value;
     const date = document.getElementById('date-action').value;
@@ -270,106 +235,85 @@ async function ajouterActionFermentation() {
     const valeur = parseFloat(document.getElementById('valeur-action').value);
 
     if (!idBiere || !type || isNaN(valeur)) {
-        alert("Veuillez sélectionner une bière, un type d'action et une valeur valide.");
+        alert("Veuillez sélectionner une bière, un type et une valeur valide");
         return;
     }
 
-    // Validations des valeurs
-    if (type === 'densite') {
-        if (valeur < 0.800 || valeur > 1.150) {
-            alert("La gravité doit être comprise entre 0.800 et 1.150.");
-            return;
-        }
-    } else if (type === 'temperature') {
-        if (valeur < 0 || valeur > 40) {
-            alert("La température doit être comprise entre 0°C et 40°C.");
-            return;
-        }
+    // Validations
+    if (type === 'densite' && (valeur < 0.800 || valeur > 1.150)) {
+        alert("La gravité doit être entre 0.800 et 1.150");
+        return;
+    }
+    if (type === 'temperature' && (valeur < 0 || valeur > 40)) {
+        alert("La température doit être entre 0°C et 40°C");
+        return;
     }
 
     try {
-        const nouvelleAction = {
+        await addItem('fermentations', {
             id_biere: parseInt(idBiere),
             date: date || new Date().toISOString(),
             type: type,
             valeur: valeur
-        };
+        });
 
-        await addItem('fermentations', nouvelleAction);
-
-        // Réinitialiser le champ de valeur
         document.getElementById('valeur-action').value = '';
-
-        // Rafraîchir l'affichage
         afficherSuiviFermentation(idBiere);
-
-        alert(`Action de ${type === 'densite' ? 'gravité' : type} enregistrée avec succès.`);
     } catch (error) {
-        console.error("Erreur lors de l'ajout de l'action de fermentation:", error);
-        alert("Une erreur est survenue lors de l'enregistrement.");
+        console.error("Erreur ajout action:", error);
+        alert("Erreur lors de l'enregistrement");
     }
 }
 
-// Supprimer une action de fermentation
+// 7. Supprimer une action
 async function supprimerActionFermentation(id) {
     try {
         const action = await loadItemById('fermentations', id);
         if (!action) return;
 
-        if (confirm(`Voulez-vous vraiment supprimer cette action de ${action.type === 'densite' ? 'gravité' : action.type} ?`)) {
+        if (confirm(`Supprimer cette action de ${action.type} ?`)) {
             await deleteItem('fermentations', id);
             afficherSuiviFermentation(action.id_biere);
         }
     } catch (error) {
-        console.error("Erreur lors de la suppression de l'action de fermentation:", error);
-        alert("Une erreur est survenue lors de la suppression.");
+        console.error("Erreur suppression:", error);
+        alert("Erreur lors de la suppression");
     }
 }
 
-// Initialisation
+// 8. Initialisation
 document.addEventListener('DOMContentLoaded', function() {
     chargerSelecteurBieresFermentation();
 
-    // Écouteur pour le changement de bière sélectionnée
-    const selectBiereFermentation = document.getElementById('select-biere-fermentation');
-    if (selectBiereFermentation) {
-        selectBiereFermentation.addEventListener('change', function() {
-            const idBiere = this.value;
-            if (idBiere) {
-                afficherSuiviFermentation(idBiere);
-            } else {
-                // Effacer le graphique si aucune bière n'est sélectionnée
-                const ctx = document.getElementById('fermentationChart');
-                if (ctx && fermentationChart) {
-                    fermentationChart.destroy();
-                    fermentationChart = null;
-                }
+    const select = document.getElementById('select-biere-fermentation');
+    if (select) {
+        select.addEventListener('change', function() {
+            if (this.value) {
+                afficherSuiviFermentation(this.value);
+            } else if (fermentationChart) {
+                fermentationChart.destroy();
+                fermentationChart = null;
             }
         });
     }
 
-    // Configuration des inputs pour les valeurs décimales
-    const valeurActionInput = document.getElementById('valeur-action');
-    if (valeurActionInput) {
-        valeurActionInput.step = 'any';
-
-        // Écouteur pour changer le placeholder en fonction du type sélectionné
-        const typeActionSelect = document.getElementById('type-action');
-        if (typeActionSelect) {
-            typeActionSelect.addEventListener('change', function() {
+    // Configuration des inputs
+    const valeurInput = document.getElementById('valeur-action');
+    if (valeurInput) {
+        valeurInput.step = 'any';
+        const typeSelect = document.getElementById('type-action');
+        if (typeSelect) {
+            typeSelect.addEventListener('change', function() {
                 const type = this.value;
                 if (type === 'densite') {
-                    valeurActionInput.placeholder = 'Ex: 1.050';
-                    valeurActionInput.step = '0.001';
+                    valeurInput.placeholder = 'Ex: 1.050';
+                    valeurInput.step = '0.001';
                 } else if (type === 'temperature') {
-                    valeurActionInput.placeholder = 'Ex: 20.0';
-                    valeurActionInput.step = '0.1';
-                } else if (type === 'pression') {
-                    valeurActionInput.placeholder = 'Ex: 1.5';
-                    valeurActionInput.step = '0.1';
+                    valeurInput.placeholder = 'Ex: 20.0';
+                    valeurInput.step = '0.1';
                 } else {
-                    valeurActionInput.placeholder = 'Valeur';
-                    valeurActionInput.step = 'any';
+                    valeurInput.placeholder = 'Valeur';
+                    valeurInput.step = 'any';
                 }
             });
         }
