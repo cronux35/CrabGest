@@ -1,3 +1,4 @@
+// Ajouter une bière
 async function ajouterBiere() {
     const nom = document.getElementById('nom-biere').value;
     const style = document.getElementById('style-biere').value;
@@ -31,9 +32,10 @@ async function ajouterBiere() {
     }
 }
 
+// Afficher les bières
 async function afficherBieres() {
     try {
-        const bieres = await loadData('bieres');
+        const bieres = await loadData('bieres').catch(() => []);
         const tbody = document.querySelector('#table-bieres tbody');
 
         if (tbody) {
@@ -64,9 +66,10 @@ async function afficherBieres() {
     }
 }
 
+// Afficher les ingrédients utilisés pour une bière
 async function voirIngredientsBiere(biereId) {
     try {
-        const biere = await loadItemById('bieres', biereId);
+        const biere = await loadItemById('bieres', biereId).catch(() => null);
         if (!biere || !biere.ingredients || biere.ingredients.length === 0) {
             alert("Aucun ingrédient utilisé pour cette bière.");
             return;
@@ -83,6 +86,7 @@ async function voirIngredientsBiere(biereId) {
     }
 }
 
+// Ouvrir modale d'édition de bière
 function openEditBiereModal(id) {
     loadItemById('bieres', id).then(biere => {
         currentEditType = 'biere';
@@ -137,6 +141,7 @@ function openEditBiereModal(id) {
     });
 }
 
+// Sauvegarder les modifications d'une bière
 async function saveEditBiere(id) {
     try {
         const updatedBiere = {
@@ -157,4 +162,5 @@ async function saveEditBiere(id) {
     }
 }
 
+// Initialisation
 document.addEventListener('DOMContentLoaded', afficherBieres);

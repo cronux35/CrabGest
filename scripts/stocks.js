@@ -1,10 +1,12 @@
 let stockTableBody = null;
 
+// Charger les données des stocks et bières
 async function chargerDonnees() {
     try {
-        const stocks = await loadData('stocks');
-        const bieres = await loadData('bieres');
+        const stocks = await loadData('stocks').catch(() => []);
+        const bieres = await loadData('bieres').catch(() => []);
 
+        // Charger les ingrédients dans le sélecteur principal
         const selectIngredient = document.getElementById('select-ingredient');
         if (selectIngredient) {
             selectIngredient.innerHTML = '<option value="">-- Ingrédient --</option>';
@@ -25,11 +27,13 @@ async function chargerDonnees() {
     }
 }
 
+// Charger les données pour les sélecteurs de retrait
 async function chargerDonneesRetrait() {
     try {
-        const stocks = await loadData('stocks');
-        const bieres = await loadData('bieres');
+        const stocks = await loadData('stocks').catch(() => []);
+        const bieres = await loadData('bieres').catch(() => []);
 
+        // Charger les ingrédients dans le sélecteur de retrait
         const selectIngredientRetrait = document.getElementById('select-ingredient-retrait');
         if (selectIngredientRetrait) {
             selectIngredientRetrait.innerHTML = '<option value="">-- Ingrédient --</option>';
@@ -43,6 +47,7 @@ async function chargerDonneesRetrait() {
             });
         }
 
+        // Charger les bières dans le sélecteur de retrait
         const selectBiereRetrait = document.getElementById('select-biere-retrait');
         if (selectBiereRetrait) {
             selectBiereRetrait.innerHTML = '<option value="">-- Bière --</option>';
@@ -58,9 +63,10 @@ async function chargerDonneesRetrait() {
     }
 }
 
+// Afficher les stocks avec boutons d'action
 async function afficherStocks() {
     try {
-        const stocks = await loadData('stocks');
+        const stocks = await loadData('stocks').catch(() => []);
         stockTableBody = document.querySelector('#table-stocks tbody');
 
         if (stockTableBody) {
@@ -95,6 +101,7 @@ async function afficherStocks() {
     }
 }
 
+// Attacher les écouteurs d'événements
 function attachEventListeners() {
     if (!stockTableBody) return;
 
@@ -106,7 +113,7 @@ function attachEventListeners() {
         const id = parseInt(target.closest('tr').getAttribute('data-id'));
 
         try {
-            const stocks = await loadData('stocks');
+            const stocks = await loadData('stocks').catch(() => []);
             const stock = stocks.find(s => s.id === id);
 
             if (!stock) return;
@@ -131,6 +138,7 @@ function attachEventListeners() {
     };
 }
 
+// Retirer du stock pour une bière
 async function retirerStockPourBiere() {
     const idIngredient = document.getElementById('select-ingredient-retrait')?.value;
     const idBiere = document.getElementById('select-biere-retrait')?.value;
@@ -145,8 +153,8 @@ async function retirerStockPourBiere() {
     }
 
     try {
-        const stocks = await loadData('stocks');
-        const biere = await loadItemById('bieres', idBiere);
+        const stocks = await loadData('stocks').catch(() => []);
+        const biere = await loadItemById('bieres', idBiere).catch(() => null);
         const stock = stocks.find(s => s.id == idIngredient);
 
         if (!stock) {
@@ -208,9 +216,10 @@ async function retirerStockPourBiere() {
     }
 }
 
+// Afficher l'historique des retraits liés aux bières
 async function afficherHistoriqueRetraits() {
     try {
-        const historique = await loadData('historique_stocks');
+        const historique = await loadData('historique_stocks').catch(() => []);
         const historiqueFiltre = historique.filter(entry => entry.type === "retrait_biere");
         const tbody = document.querySelector('#historique-retraits tbody');
 
@@ -236,13 +245,13 @@ async function afficherHistoriqueRetraits() {
                     try {
                         const entry = historiqueFiltre.find(e => e.id === id);
                         if (entry) {
-                            const stocks = await loadData('stocks');
+                            const stocks = await loadData('stocks').catch(() => []);
                             const stock = stocks.find(s => s.id === entry.ingredient_id);
                             if (stock) {
                                 stock.quantite += entry.quantite;
                                 await updateItem('stocks', stock);
 
-                                const biere = await loadItemById('bieres', entry.biere_id);
+                                const biere = await loadItemById('bieres', entry.biere_id).catch(() => null);
                                 if (biere && biere.ingredients) {
                                     const ingredient = biere.ingredients.find(ing => ing.id === entry.ingredient_id);
                                     if (ingredient) {
@@ -267,6 +276,7 @@ async function afficherHistoriqueRetraits() {
     }
 }
 
+// Ouvrir la modale d'ajout d'ingrédient
 function ouvrirModalAjoutIngredient() {
     openEditModal('stock', null, {
         type: "", nom: "", lot: "", quantite: 0, fournisseur: "",
@@ -275,6 +285,7 @@ function ouvrirModalAjoutIngredient() {
     });
 }
 
+// Ajouter un nouvel ingrédient
 async function ajouterIngredient() {
     const type = document.getElementById('edit-type').value;
     const nom = document.getElementById('edit-nom').value;
@@ -315,6 +326,7 @@ async function ajouterIngredient() {
     }
 }
 
+// Sauvegarder les modifications
 async function saveEdit() {
     if (!currentEditType || currentEditId === null) {
         console.error("Type ou ID manquant pour la sauvegarde.");
@@ -350,9 +362,10 @@ async function saveEdit() {
     }
 }
 
+// Supprimer un stock
 async function supprimerStock(id) {
     try {
-        const stocks = await loadData('stocks');
+        const stocks = await loadData('stocks').catch(() => []);
         const stockToDelete = stocks.find(s => s.id === id);
         if (!stockToDelete) return;
 
@@ -365,4 +378,5 @@ async function supprimerStock(id) {
     }
 }
 
+// Initialisation au chargement de la page
 document.addEventListener('DOMContentLoaded', chargerDonnees);

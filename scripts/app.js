@@ -1,7 +1,9 @@
 document.addEventListener('DOMContentLoaded', async function() {
+    // Initialisation des données par défaut si la base est vide
     async function initData() {
         try {
-            const stocks = await loadData('stocks');
+            // Vérifier si des données existent déjà
+            const stocks = await loadData('stocks').catch(() => []);
             if (stocks.length === 0) {
                 const defaultStocks = [
                     {
@@ -15,28 +17,21 @@ document.addEventListener('DOMContentLoaded', async function() {
                         pourcentage_aa: null,
                         notes: "Malt de base pour les bières blondes et IPA.",
                         conditionnement: "Sac de 25 kg"
-                    },
-                    {
-                        type: "Malt",
-                        nom: "Munich",
-                        lot: "2023-002",
-                        quantite: 24400,
-                        fournisseur: "Château",
-                        specification: "25 EBC",
-                        annee_recolte: null,
-                        pourcentage_aa: null,
-                        notes: "Malt caramelisé pour les bières ambrées.",
-                        conditionnement: "Sac de 25 kg"
                     }
                 ];
                 await saveData('stocks', defaultStocks);
             }
 
+            // Initialiser les autres stores si vides
             const storesToInit = ['bieres', 'fermentations', 'conditionnements', 'ventes', 'historique_stocks', 'clients', 'declarations_douanes'];
             for (const store of storesToInit) {
-                const data = await loadData(store).catch(() => []);
-                if (data.length === 0) {
-                    await saveData(store, []);
+                try {
+                    const data = await loadData(store).catch(() => []);
+                    if (data.length === 0) {
+                        await saveData(store, []);
+                    }
+                } catch (error) {
+                    console.error(`Erreur lors de l'initialisation du store ${store}:`, error);
                 }
             }
         } catch (error) {
@@ -44,6 +39,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
 
+    // Gestion du menu burger
     const menuBurger = document.getElementById('menuBurger');
     const mainNav = document.getElementById('mainNav');
     if (menuBurger && mainNav) {
@@ -53,6 +49,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     }
 
+    // Gestion des onglets
     document.querySelectorAll('.tab-button').forEach(function(button) {
         button.addEventListener('click', function() {
             document.querySelectorAll('.tab-button').forEach(function(b) {
@@ -67,7 +64,14 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     });
 
-    await initData();
-    if (typeof chargerDonnees === 'function') chargerDonnees();
-    if (typeof afficherBieres === 'function') afficherBieres();
+    // Initialisation avec gestion des erreurs
+    try {
+        await initData();
+        if (typeof chargerDonnees === 'function') chargerDonnees();
+        if (typeof afficherBieres === 'function') afficherBieres();
+    } catch (error) {
+        console.error("Erreur lors de l'initialisation de l'application:", error);
+        // Afficher un message à l'utilisateur
+        alert("Une erreur est survenue lors du chargement de l'application. Veuillez actualiser la page.");
+    }
 });
