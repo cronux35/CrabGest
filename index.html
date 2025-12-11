@@ -134,7 +134,7 @@
             </div>
         </section>
 
-        <!-- Fermentation -->
+ <!-- Fermentation -->
 <section id="fermentation" class="tab">
     <h2>Suivi de Fermentation</h2>
     <div class="card">
@@ -152,7 +152,7 @@
                 <option value="pression">Pression (bars)</option>
                 <option value="dry_hopping">Dry Hopping (g)</option>
             </select>
-            <input type="number" id="valeur-action" class="form-control" placeholder="Valeur">
+            <input type="number" id="valeur-action" class="form-control" placeholder="Valeur" step="any">
             <button onclick="ajouterActionFermentation()" class="btn btn-primary">Ajouter Action</button>
         </div>
 
@@ -171,8 +171,8 @@
             </table>
         </div>
 
-        <div style="height: 400px; margin-top: 20px;">
-            <canvas id="fermentationChart" class="chart"></canvas>
+        <div class="chart-container" style="height: 400px; margin-top: 20px; position: relative;">
+            <canvas id="fermentationChart"></canvas>
         </div>
     </div>
 </section>
