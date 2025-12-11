@@ -1,4 +1,4 @@
-// fermentation.js - Gestion complète du suivi de fermentation avec échelles dynamiques
+// fermentation.js - Gestion complète du suivi de fermentation avec échelle de temps détaillée
 let fermentationChart = null;
 
 // Charger les bières dans le sélecteur de fermentation
@@ -61,6 +61,88 @@ function calculerLimitesEchelles(densites, temperatures) {
     };
 }
 
+// Formater les dates pour l'axe X
+function formaterDatesPourAxeX(dates) {
+    if (dates.length === 0) return [];
+
+    // Trouver la durée totale
+    const datesTriées = [...dates].sort((a, b) => new Date(a) - new Date(b));
+    const debut = new Date(datesTriées[0]);
+    const fin = new Date(datesTriées[datesTriées.length - 1]);
+    const duréeTotaleHeures = (fin - debut) / (1000 * 60 * 60);
+
+    // Déterminer le format en fonction de la durée
+    let formatDate;
+    if (duréeTotaleHeures <= 24) {
+        // Moins d'un jour: afficher heures:minutes
+        formatDate = date => {
+            const d = new Date(date);
+            return d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        };
+    } else if (duréeTotaleHeures <= 24 * 7) {
+        // Moins d'une semaine: afficher jour et heure
+        formatDate = date => {
+            const d = new Date(date);
+            return d.toLocaleString([], {
+                weekday: 'short',
+                day: 'numeric',
+                month: 'short',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        };
+    } else {
+        // Plus d'une semaine: afficher date complète
+        formatDate = date => {
+            const d = new Date(date);
+            return d.toLocaleString([], {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        };
+    }
+
+    return datesTriées.map(date => formatDate(date));
+}
+
+// Générer des ticks de temps réguliers pour l'axe X
+function genererTicksTemps(dates) {
+    if (dates.length === 0) return [];
+
+    const datesTriées = [...dates].sort((a, b) => new Date(a) - new Date(b));
+    const debut = new Date(datesTriées[0]);
+    const fin = new Date(datesTriées[datesTriées.length - 1]);
+    const duréeTotaleMs = fin - debut;
+
+    // Déterminer l'intervalle en fonction de la durée totale
+    let intervalleMs;
+    if (duréeTotaleMs <= 3600000) { // 1 heure
+        intervalleMs = 900000; // 15 minutes
+    } else if (duréeTotaleMs <= 86400000) { // 1 jour
+        intervalleMs = 3600000; // 1 heure
+    } else if (duréeTotaleMs <= 604800000) { // 1 semaine
+        intervalleMs = 21600000; // 6 heures
+    } else if (duréeTotaleMs <= 2592000000) { // 1 mois
+        intervalleMs = 86400000; // 1 jour
+    } else {
+        intervalleMs = 604800000; // 1 semaine
+    }
+
+    // Générer les ticks
+    const ticks = [];
+    let current = new Date(debut);
+
+    while (current <= fin) {
+        ticks.push(new Date(current));
+        current = new Date(current.getTime() + intervalleMs);
+    }
+
+    return ticks;
+}
+
 // Afficher le suivi de fermentation pour une bière sélectionnée
 async function afficherSuiviFermentation(idBiere) {
     try {
@@ -96,7 +178,7 @@ async function afficherSuiviFermentation(idBiere) {
     }
 }
 
-// Afficher le graphique de fermentation avec échelles dynamiques
+// Afficher le graphique de fermentation avec échelle de temps détaillée
 function afficherGraphiqueFermentation(data, nomBiere) {
     // Filtrer et trier les données
     const densites = data.filter(a => a.type === 'densite').sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -104,6 +186,12 @@ function afficherGraphiqueFermentation(data, nomBiere) {
 
     // Calculer les limites dynamiques
     const limites = calculerLimitesEchelles(densites, temperatures);
+
+    // Préparer les dates pour l'axe X
+    const toutesLesDates = [...densites, ...temperatures].map(a => new Date(a.date));
+    const datesTriées = [...toutesLesDates].sort((a, b) => a - b);
+    const labels = formaterDatesPourAxeX(datesTriées);
+    const ticks = genererTicksTemps(datesTriées);
 
     const ctx = document.getElementById('fermentationChart');
     if (ctx) {
@@ -113,11 +201,11 @@ function afficherGraphiqueFermentation(data, nomBiere) {
             fermentationChart = null;
         }
 
-        // Créer un nouveau graphique avec échelles dynamiques
+        // Créer un nouveau graphique avec échelle de temps détaillée
         fermentationChart = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: [...new Set([...densites, ...temperatures].map(a => new Date(a.date).toLocaleString()))].sort(),
+                labels: labels,
                 datasets: [
                     {
                         label: 'Gravité (SG)',
@@ -172,6 +260,9 @@ function afficherGraphiqueFermentation(data, nomBiere) {
                                         context.parsed.y.toFixed(1);
                                 }
                                 return label;
+                            },
+                            title: function(tooltipItems) {
+                                return new Date(tooltipItems[0].label).toLocaleString();
                             }
                         }
                     }
@@ -220,9 +311,27 @@ function afficherGraphiqueFermentation(data, nomBiere) {
                         }
                     },
                     x: {
+                        type: 'time',
+                        time: {
+                            unit: 'hour',
+                            displayFormats: {
+                                hour: 'HH:mm',
+                                day: 'ddd DD MMM',
+                                week: 'DD MMM',
+                                month: 'MMM YYYY'
+                            },
+                            tooltipFormat: 'DD MMM YYYY HH:mm'
+                        },
                         title: {
                             display: true,
-                            text: 'Date et heure'
+                            text: 'Temps'
+                        },
+                        ticks: {
+                            source: 'data',
+                            autoSkip: true,
+                            maxTicksLimit: 10,
+                            maxRotation: 45,
+                            minRotation: 45
                         }
                     }
                 }
