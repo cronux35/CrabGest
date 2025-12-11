@@ -1,4 +1,5 @@
 // fermentation.js - Gestion complète du suivi de fermentation
+let fermentationChart = null; // Variable globale pour stocker l'instance du graphique
 
 // Charger les bières dans le sélecteur de fermentation
 async function chargerSelecteurBieresFermentation() {
@@ -59,37 +60,50 @@ async function afficherSuiviFermentation(idBiere) {
 function afficherGraphiqueFermentation(data, nomBiere) {
     const densites = data.filter(a => a.type === 'densite').sort((a, b) => new Date(a.date) - new Date(b.date));
     const temperatures = data.filter(a => a.type === 'temperature').sort((a, b) => new Date(a.date) - new Date(b.date));
+    const pressions = data.filter(a => a.type === 'pression').sort((a, b) => new Date(a.date) - new Date(b.date));
 
     const ctx = document.getElementById('fermentationChart');
     if (ctx) {
         // Détruire le graphique existant s'il y en a un
-        if (ctx.chart) {
-            ctx.chart.destroy();
+        if (fermentationChart) {
+            fermentationChart.destroy();
         }
 
-        new Chart(ctx, {
+        // Créer un nouveau graphique
+        fermentationChart = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: densites.map(d => new Date(d.date).toLocaleTimeString()),
+                labels: densites.map(d => new Date(d.date).toLocaleString()),
                 datasets: [
                     {
                         label: 'Densité (SG)',
                         data: densites.map(d => d.valeur),
                         borderColor: 'rgb(75, 192, 192)',
                         tension: 0.1,
-                        fill: false
+                        fill: false,
+                        yAxisID: 'y'
                     },
                     {
                         label: 'Température (°C)',
                         data: temperatures.map(t => t.valeur),
                         borderColor: 'rgb(255, 99, 132)',
                         tension: 0.1,
-                        fill: false
+                        fill: false,
+                        yAxisID: 'y1'
+                    },
+                    {
+                        label: 'Pression (bars)',
+                        data: pressions.map(p => p.valeur),
+                        borderColor: 'rgb(54, 162, 235)',
+                        tension: 0.1,
+                        fill: false,
+                        yAxisID: 'y2'
                     }
                 ]
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: false,
                 plugins: {
                     title: {
                         display: true,
@@ -100,11 +114,51 @@ function afficherGraphiqueFermentation(data, nomBiere) {
                     },
                     legend: {
                         position: 'top',
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
                     }
                 },
                 scales: {
                     y: {
-                        beginAtZero: false
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: 'Densité (SG)'
+                        },
+                        min: 0.9,
+                        max: 1.2
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: 'Température (°C)'
+                        },
+                        grid: {
+                            drawOnChartArea: false
+                        },
+                        min: 10,
+                        max: 30
+                    },
+                    y2: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: 'Pression (bars)'
+                        },
+                        grid: {
+                            drawOnChartArea: false
+                        },
+                        min: 0,
+                        max: 5
                     }
                 }
             }
@@ -133,8 +187,12 @@ async function ajouterActionFermentation() {
         };
 
         await addItem('fermentations', nouvelleAction);
-        afficherSuiviFermentation(idBiere);
+
+        // Réinitialiser le champ de valeur
         document.getElementById('valeur-action').value = '';
+
+        // Rafraîchir l'affichage
+        afficherSuiviFermentation(idBiere);
 
         alert(`Action de ${type} enregistrée avec succès.`);
     } catch (error) {
@@ -170,8 +228,14 @@ document.addEventListener('DOMContentLoaded', function() {
             const idBiere = this.value;
             if (idBiere) {
                 afficherSuiviFermentation(idBiere);
+            } else {
+                // Effacer le graphique si aucune bière n'est sélectionnée
+                const ctx = document.getElementById('fermentationChart');
+                if (ctx && fermentationChart) {
+                    fermentationChart.destroy();
+                    fermentationChart = null;
+                }
             }
         });
     }
 });
-
