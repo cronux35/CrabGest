@@ -279,6 +279,114 @@
 </div>
 
 
+<!-- Modale pour ajouter un conditionnement -->
+<div class="modal fade" id="ajout-conditionnement-modal" tabindex="-1" aria-labelledby="ajoutConditionnementModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="ajoutConditionnementModalLabel">Ajouter un conditionnement</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="mb-3">
+                        <label for="modal-select-biere" class="form-label">Bière</label>
+                        <select id="modal-select-biere" class="form-select" required>
+                            <option value="">-- Sélectionner une bière --</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="modal-abv" class="form-label">ABV</label>
+                        <input type="number" class="form-control" id="modal-abv" step="0.1" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="modal-date" class="form-label">Date</label>
+                        <input type="date" class="form-control" id="modal-date" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="modal-type-contenant" class="form-label">Type de contenant</label>
+                        <select id="modal-type-contenant" class="form-select" required>
+                            <option value="">-- Sélectionner un contenant --</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="modal-quantite" class="form-label">Quantité</label>
+                        <input type="number" class="form-control" id="modal-quantite" step="1" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-primary" onclick="ajouterConditionnementDepuisModale()">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modale pour ajouter un conditionnement (doit être présent) -->
+<div class="modal fade" id="ajout-conditionnement-modal" tabindex="-1" aria-labelledby="ajoutConditionnementModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="ajoutConditionnementModalLabel">Ajouter un conditionnement</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="mb-3">
+                        <label for="modal-select-biere" class="form-label">Bière</label>
+                        <select id="modal-select-biere" class="form-select" required>
+                            <option value="">-- Sélectionner une bière --</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="modal-abv" class="form-label">ABV</label>
+                        <input type="number" class="form-control" id="modal-abv" step="0.1" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="modal-date" class="form-label">Date</label>
+                        <input type="date" class="form-control" id="modal-date" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="modal-type-contenant" class="form-label">Type de contenant</label>
+                        <select id="modal-type-contenant" class="form-select" required>
+                            <option value="">-- Sélectionner un contenant --</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="modal-quantite" class="form-label">Quantité</label>
+                        <input type="number" class="form-control" id="modal-quantite" step="1" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-primary" onclick="ajouterConditionnementDepuisModale()">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Modale pour l'historique d'une bière -->
+<div class="modal fade" id="historique-biere-modal" tabindex="-1" aria-labelledby="historiqueBiereModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="historiqueBiereModalLabel">Historique de conditionnement</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Le contenu sera rempli dynamiquement -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 
 
 

@@ -1,4 +1,4 @@
-// conditionnement.js - Version complète avec modale et listbox
+// conditionnement.js - Version complète et fonctionnelle
 let currentConditionnementId = null;
 let currentSortColumn = null;
 let currentSortDirection = 1;
@@ -680,15 +680,6 @@ async function supprimerConditionnement(id) {
 document.addEventListener('DOMContentLoaded', function() {
     // Charger les données initiales
     chargerDonneesInitiales();
-
-    // Configuration des inputs du formulaire principal
-    const abvInput = document.getElementById('abv-final');
-    const quantiteInput = document.getElementById('quantite-contenant');
-    const dateInput = document.getElementById('date-conditionnement');
-
-    if (abvInput) abvInput.step = '0.1';
-    if (quantiteInput) quantiteInput.step = '1';
-    if (dateInput) dateInput.valueAsDate = new Date();
 
     // Initialiser les filtres
     currentFilters = {};
