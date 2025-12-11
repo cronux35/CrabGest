@@ -41,6 +41,20 @@
                         <i class="material-icons">add</i> Ajouter un ingrédient
                     </button>
                 </div>
+                <div class="card">
+                    <h3>Retirer du stock pour une bière</h3>
+                    <div class="form-group">
+                        <select id="select-ingredient-retrait" class="form-control">
+                            <option value="">-- Ingrédient --</option>
+                        </select>
+                        <select id="select-biere-retrait" class="form-control">
+                            <option value="">-- Bière --</option>
+                        </select>
+                        <input type="number" id="quantite-retrait" class="form-control" placeholder="Quantité (g)" min="1">
+                        <button onclick="retirerStockPourBiere()" class="btn btn-primary">Retirer</button>
+                    </div>
+                    <div id="retrait-error" class="error-message"></div>
+                </div>
                 <div class="table-responsive">
                     <table id="table-stocks" class="table">
                         <thead>
@@ -58,21 +72,6 @@
                         </thead>
                         <tbody></tbody>
                     </table>
-                </div>
-
-                <div class="card">
-                    <h3>Retirer du stock pour une bière</h3>
-                    <div class="form-group">
-                        <select id="select-ingredient-retrait" class="form-control">
-                            <option value="">-- Ingrédient --</option>
-                        </select>
-                        <select id="select-biere-retrait" class="form-control">
-                            <option value="">-- Bière --</option>
-                        </select>
-                        <input type="number" id="quantite-retrait" class="form-control" placeholder="Quantité (g)" min="1">
-                        <button onclick="retirerStockPourBiere()" class="btn btn-primary">Retirer</button>
-                    </div>
-                    <div id="retrait-error" class="error-message"></div>
                 </div>
 
                 <div class="card">
