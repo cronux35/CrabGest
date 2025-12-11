@@ -440,3 +440,66 @@ footer {
 #select-ingredient-retrait, #select-biere-retrait {
     margin-bottom: 0.5rem;
 }
+
+/* Styles pour la liste des ingrédients */
+.ingredients-list {
+    border: 1px solid var(--crab-jaune);
+    border-radius: 4px;
+    padding: 0.5rem;
+    max-height: 200px;
+    overflow-y: auto;
+    background-color: var(--crab-gris-fonce);
+    margin-bottom: 1rem;
+}
+
+.ingredient-item {
+    padding: 0.3rem 0;
+    border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+    display: flex;
+    justify-content: space-between;
+}
+
+.ingredient-item:last-child {
+    border-bottom: none;
+}
+
+/* Style pour les messages d'erreur */
+.error-message {
+    color: var(--crab-alerte);
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+}
+
+/* Style pour le bouton d'information */
+.action-btn.info-btn {
+    background-color: #2196F3;
+    color: white;
+}
+
+.action-btn.info-btn:hover {
+    background-color: #0b7dda;
+    transform: scale(1.05);
+}
+
+/* Style pour le bouton d'annulation */
+.action-btn[title="Annuler le retrait"] {
+    background-color: #6c757d;
+}
+
+.action-btn[title="Annuler le retrait"]:hover {
+    background-color: #5a6268;
+    transform: scale(1.05);
+}
+
+/* Style pour les cartes de retrait */
+.card h3 {
+    color: var(--crab-jaune);
+    border-bottom: 1px solid var(--crab-jaune);
+    padding-bottom: 0.3rem;
+    margin-bottom: 1rem;
+}
+
+/* Style pour les sélecteurs de retrait */
+#select-ingredient-retrait, #select-biere-retrait {
+    margin-bottom: 0.5rem;
+}

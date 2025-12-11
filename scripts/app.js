@@ -15,6 +15,18 @@ document.addEventListener('DOMContentLoaded', async function() {
                         pourcentage_aa: null,
                         notes: "Malt de base pour les bières blondes et IPA.",
                         conditionnement: "Sac de 25 kg"
+                    },
+                    {
+                        type: "Malt",
+                        nom: "Munich",
+                        lot: "2023-002",
+                        quantite: 24400,
+                        fournisseur: "Château",
+                        specification: "25 EBC",
+                        annee_recolte: null,
+                        pourcentage_aa: null,
+                        notes: "Malt caramelisé pour les bières ambrées.",
+                        conditionnement: "Sac de 25 kg"
                     }
                 ];
                 await saveData('stocks', defaultStocks);
@@ -57,4 +69,5 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     await initData();
     if (typeof chargerDonnees === 'function') chargerDonnees();
+    if (typeof afficherBieres === 'function') afficherBieres();
 });
