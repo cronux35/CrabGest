@@ -99,6 +99,46 @@ function openEditModal(type, id, data) {
     openModal('editModal');
 }
 
+// Fonction pour recharger les sélecteurs après la fermeture de la modale
+function setupModalCloseHandlers() {
+    document.getElementById('confirmDelete').addEventListener('click', function() {
+        if (currentDeleteCallback) {
+            currentDeleteCallback().then(() => {
+                if (typeof rechargerSelecteurBieresRetrait === 'function') {
+                    rechargerSelecteurBieresRetrait();
+                }
+            }).catch(error => {
+                console.error("Erreur lors de la suppression:", error);
+            });
+            currentDeleteCallback = null;
+        }
+        closeModal('deleteModal');
+    });
+
+    document.getElementById('cancelDelete').addEventListener('click', function() {
+        currentDeleteCallback = null;
+        closeModal('deleteModal');
+    });
+}
+
+// Remplacer l'écouteur DOMContentLoaded existant
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.close').forEach(function(closeBtn) {
+        closeBtn.addEventListener('click', function() {
+            closeModal(closeBtn.closest('.modal').id);
+        });
+    });
+
+    window.addEventListener('click', function(event) {
+        if (event.target.classList.contains('modal')) {
+            closeModal(event.target.id);
+        }
+    });
+
+    setupModalCloseHandlers();
+});
+
+
 function openDeleteModal(message, callback) {
     const modal = document.getElementById('deleteModal');
     const messageElement = document.getElementById('deleteModalMessage');

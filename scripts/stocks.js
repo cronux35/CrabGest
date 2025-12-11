@@ -28,6 +28,7 @@ async function chargerDonnees() {
 }
 
 // Charger les données pour les sélecteurs de retrait
+// Charger les données pour les sélecteurs de retrait
 async function chargerDonneesRetrait() {
     try {
         const stocks = await loadData('stocks').catch(() => []);
@@ -62,6 +63,11 @@ async function chargerDonneesRetrait() {
         console.error("Erreur lors du chargement des données pour le retrait:", error);
     }
 }
+
+// Rendre la fonction accessible globalement
+window.chargerDonneesRetrait = chargerDonneesRetrait;
+
+
 
 // Afficher les stocks avec boutons d'action
 async function afficherStocks() {
@@ -100,6 +106,29 @@ async function afficherStocks() {
         console.error("Erreur lors de l'affichage des stocks:", error);
     }
 }
+
+// Fonction pour recharger les sélecteurs de bières dans le formulaire de retrait
+async function rechargerSelecteurBieresRetrait() {
+    try {
+        const bieres = await loadData('bieres').catch(() => []);
+
+        const selectBiereRetrait = document.getElementById('select-biere-retrait');
+        if (selectBiereRetrait) {
+            selectBiereRetrait.innerHTML = '<option value="">-- Bière --</option>';
+            bieres.forEach(biere => {
+                const option = document.createElement('option');
+                option.value = biere.id;
+                option.textContent = biere.nom;
+                selectBiereRetrait.appendChild(option);
+            });
+        }
+    } catch (error) {
+        console.error("Erreur lors du rechargement du sélecteur de bières pour le retrait:", error);
+    }
+}
+
+// Rendre la fonction accessible globalement
+window.rechargerSelecteurBieresRetrait = rechargerSelecteurBieresRetrait;
 
 // Attacher les écouteurs d'événements
 function attachEventListeners() {

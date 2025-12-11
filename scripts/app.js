@@ -69,8 +69,12 @@ document.addEventListener('DOMContentLoaded', async function() {
         await initData();
         if (typeof chargerDonnees === 'function') chargerDonnees();
         if (typeof afficherBieres === 'function') afficherBieres();
-    } catch (error) {
-        console.error("Erreur lors de l'initialisation de l'application:", error);
+        if (typeof chargerDonneesRetrait === 'function') {
+                chargerDonneesRetrait();
+            }
+        } catch (error) {
+            console.error("Erreur lors de l'initialisation des données:", error);
+        }
         // Afficher un message à l'utilisateur
         alert("Une erreur est survenue lors du chargement de l'application. Veuillez actualiser la page.");
     }

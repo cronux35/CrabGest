@@ -21,16 +21,89 @@ async function ajouterBiere() {
 
         await addItem('bieres', nouvelleBiere);
         alert(`La bière "${nom}" a été ajoutée avec succès.`);
+
+        // Réinitialiser le formulaire
         document.getElementById('nom-biere').value = '';
         document.getElementById('style-biere').value = '';
         document.getElementById('degre-biere').value = '';
         document.getElementById('volume-biere').value = '';
+
+        // Recharger les données
         afficherBieres();
+        rechargerSelecteursBieres(); // Appel de la fonction de rechargement
     } catch (error) {
         console.error("Erreur lors de l'ajout de la bière:", error);
         alert("Une erreur est survenue lors de l'ajout de la bière.");
     }
 }
+
+async function saveEditBiere(id) {
+    try {
+        const updatedBiere = {
+            id: id,
+            nom: document.getElementById('edit-nom-biere').value,
+            style: document.getElementById('edit-style-biere').value,
+            degre: parseFloat(document.getElementById('edit-degre-biere').value),
+            volume: parseFloat(document.getElementById('edit-volume-biere').value)
+        };
+
+        await updateItem('bieres', updatedBiere);
+        alert("Bière mise à jour avec succès !");
+        closeModal('editModal');
+        afficherBieres();
+        rechargerSelecteursBieres(); // Appel de la fonction de rechargement
+    } catch (error) {
+        console.error("Erreur lors de la sauvegarde de la bière:", error);
+        alert("Une erreur est survenue lors de la sauvegarde.");
+    }
+}
+
+// Fonction pour recharger les sélecteurs de bières dans tous les onglets
+async function rechargerSelecteursBieres() {
+    try {
+        const bieres = await loadData('bieres').catch(() => []);
+
+        // Mettre à jour le sélecteur de retrait de stock
+        const selectBiereRetrait = document.getElementById('select-biere-retrait');
+        if (selectBiereRetrait) {
+            selectBiereRetrait.innerHTML = '<option value="">-- Bière --</option>';
+            bieres.forEach(biere => {
+                const option = document.createElement('option');
+                option.value = biere.id;
+                option.textContent = biere.nom;
+                selectBiereRetrait.appendChild(option);
+            });
+        }
+
+        // Mettre à jour le sélecteur de fermentation
+        const selectBiereFermentation = document.getElementById('select-biere-fermentation');
+        if (selectBiereFermentation) {
+            selectBiereFermentation.innerHTML = '<option value="">-- Sélectionner une bière --</option>';
+            bieres.forEach(biere => {
+                const option = document.createElement('option');
+                option.value = biere.id;
+                option.textContent = biere.nom;
+                selectBiereFermentation.appendChild(option);
+            });
+        }
+
+        // Mettre à jour le sélecteur de conditionnement
+        const selectBiereConditionnement = document.getElementById('select-biere-conditionnement');
+        if (selectBiereConditionnement) {
+            selectBiereConditionnement.innerHTML = '<option value="">-- Sélectionner une bière --</option>';
+            bieres.forEach(biere => {
+                const option = document.createElement('option');
+                option.value = biere.id;
+                option.textContent = biere.nom;
+                selectBiereConditionnement.appendChild(option);
+            });
+        }
+    } catch (error) {
+        console.error("Erreur lors du rechargement des sélecteurs de bières:", error);
+    }
+}
+
+
 
 // Afficher les bières
 async function afficherBieres() {
@@ -141,26 +214,58 @@ function openEditBiereModal(id) {
     });
 }
 
-// Sauvegarder les modifications d'une bière
-async function saveEditBiere(id) {
+// Fonction pour recharger les sélecteurs de bières
+async function rechargerSelecteursBieres() {
     try {
-        const updatedBiere = {
-            id: id,
-            nom: document.getElementById('edit-nom-biere').value,
-            style: document.getElementById('edit-style-biere').value,
-            degre: parseFloat(document.getElementById('edit-degre-biere').value),
-            volume: parseFloat(document.getElementById('edit-volume-biere').value)
-        };
+        const bieres = await loadData('bieres').catch(() => []);
 
-        await updateItem('bieres', updatedBiere);
-        alert("Bière mise à jour avec succès !");
-        closeModal('editModal');
-        afficherBieres();
+        // Mettre à jour le sélecteur dans l'onglet Bières
+        const selectBieres = document.querySelector('#table-bieres');
+        if (selectBieres) {
+            afficherBieres();
+        }
+
+        // Mettre à jour le sélecteur de retrait de stock
+        const selectBiereRetrait = document.getElementById('select-biere-retrait');
+        if (selectBiereRetrait) {
+            selectBiereRetrait.innerHTML = '<option value="">-- Bière --</option>';
+            bieres.forEach(biere => {
+                const option = document.createElement('option');
+                option.value = biere.id;
+                option.textContent = biere.nom;
+                selectBiereRetrait.appendChild(option);
+            });
+        }
+
+        // Mettre à jour le sélecteur de fermentation
+        const selectBiereFermentation = document.getElementById('select-biere-fermentation');
+        if (selectBiereFermentation) {
+            selectBiereFermentation.innerHTML = '<option value="">-- Sélectionner une bière --</option>';
+            bieres.forEach(biere => {
+                const option = document.createElement('option');
+                option.value = biere.id;
+                option.textContent = biere.nom;
+                selectBiereFermentation.appendChild(option);
+            });
+        }
+
+        // Mettre à jour le sélecteur de conditionnement
+        const selectBiereConditionnement = document.getElementById('select-biere-conditionnement');
+        if (selectBiereConditionnement) {
+            selectBiereConditionnement.innerHTML = '<option value="">-- Sélectionner une bière --</option>';
+            bieres.forEach(biere => {
+                const option = document.createElement('option');
+                option.value = biere.id;
+                option.textContent = biere.nom;
+                selectBiereConditionnement.appendChild(option);
+            });
+        }
     } catch (error) {
-        console.error("Erreur lors de la sauvegarde de la bière:", error);
-        alert("Une erreur est survenue lors de la sauvegarde.");
+        console.error("Erreur lors du rechargement des sélecteurs de bières:", error);
     }
 }
+
+
 
 // Initialisation
 document.addEventListener('DOMContentLoaded', afficherBieres);
