@@ -1,4 +1,4 @@
-// conditionnement.js - Version complète avec affichage direct de l'historique
+// conditionnement.js - Version complète avec modale et listbox
 let currentConditionnementId = null;
 let currentSortColumn = null;
 let currentSortDirection = 1;
@@ -36,7 +36,7 @@ async function chargerDonneesInitiales() {
         // Charger les sélecteurs
         chargerSelecteurBieresConditionnement();
         chargerSelecteurContenants();
-        chargerSelecteurBieresFiltre();
+        chargerListBoxBieres();
 
         // Créer la ligne de filtres
         ajouterLigneFiltres();
@@ -62,20 +62,16 @@ function chargerSelecteurBieresConditionnement() {
     }
 }
 
-// 5. Charger les bières dans le sélecteur de filtre
-function chargerSelecteurBieresFiltre() {
-    const select = document.getElementById('select-biere-filtre');
-    if (select) {
-        select.innerHTML = '<option value="">-- Toutes les bières --</option>';
+// 5. Charger les bières dans la listbox
+function chargerListBoxBieres() {
+    const listbox = document.getElementById('listbox-bieres');
+    if (listbox) {
+        listbox.innerHTML = '';
         allBieres.forEach(biere => {
             const option = document.createElement('option');
             option.value = biere.id;
             option.textContent = biere.nom;
-            select.appendChild(option);
-        });
-
-        select.addEventListener('change', function() {
-            afficherTousConditionnements(this.value);
+            listbox.appendChild(option);
         });
     }
 }
@@ -115,14 +111,33 @@ function ajouterLigneFiltres() {
     inputLot.dataset.column = '0';
     inputLot.addEventListener('input', () => {
         currentFilters[0] = inputLot.value.toLowerCase();
-        afficherTousConditionnements(document.getElementById('select-biere-filtre')?.value);
+        afficherTousConditionnements();
     });
     tdLot.appendChild(inputLot);
     filterRow.appendChild(tdLot);
 
-    // 2. Bière (géré par le sélecteur dédié)
+    // 2. Bière
     const tdBiere = document.createElement('td');
-    tdBiere.textContent = ''; // Laissé vide car géré par le sélecteur
+    const selectBiere = document.createElement('select');
+    selectBiere.className = 'filter-select';
+    selectBiere.dataset.column = '1';
+    const defaultOptionBiere = document.createElement('option');
+    defaultOptionBiere.value = '';
+    defaultOptionBiere.textContent = 'Tous';
+    selectBiere.appendChild(defaultOptionBiere);
+
+    allBieres.forEach(biere => {
+        const option = document.createElement('option');
+        option.value = biere.nom;
+        option.textContent = biere.nom;
+        selectBiere.appendChild(option);
+    });
+
+    selectBiere.addEventListener('change', () => {
+        currentFilters[1] = selectBiere.value;
+        afficherTousConditionnements();
+    });
+    tdBiere.appendChild(selectBiere);
     filterRow.appendChild(tdBiere);
 
     // 3. ABV
@@ -145,7 +160,7 @@ function ajouterLigneFiltres() {
 
     selectAbv.addEventListener('change', () => {
         currentFilters[2] = selectAbv.value;
-        afficherTousConditionnements(document.getElementById('select-biere-filtre')?.value);
+        afficherTousConditionnements();
     });
     tdAbv.appendChild(selectAbv);
     filterRow.appendChild(tdAbv);
@@ -169,7 +184,7 @@ function ajouterLigneFiltres() {
 
     selectContenant.addEventListener('change', () => {
         currentFilters[3] = selectContenant.value;
-        afficherTousConditionnements(document.getElementById('select-biere-filtre')?.value);
+        afficherTousConditionnements();
     });
     tdContenant.appendChild(selectContenant);
     filterRow.appendChild(tdContenant);
@@ -183,7 +198,7 @@ function ajouterLigneFiltres() {
     inputQuantite.dataset.column = '4';
     inputQuantite.addEventListener('input', () => {
         currentFilters[4] = inputQuantite.value;
-        afficherTousConditionnements(document.getElementById('select-biere-filtre')?.value);
+        afficherTousConditionnements();
     });
     tdQuantite.appendChild(inputQuantite);
     filterRow.appendChild(tdQuantite);
@@ -197,7 +212,7 @@ function ajouterLigneFiltres() {
     inputVolume.dataset.column = '5';
     inputVolume.addEventListener('input', () => {
         currentFilters[5] = inputVolume.value;
-        afficherTousConditionnements(document.getElementById('select-biere-filtre')?.value);
+        afficherTousConditionnements();
     });
     tdVolume.appendChild(inputVolume);
     filterRow.appendChild(tdVolume);
@@ -210,7 +225,7 @@ function ajouterLigneFiltres() {
     inputDate.dataset.column = '6';
     inputDate.addEventListener('input', () => {
         currentFilters[6] = inputDate.value;
-        afficherTousConditionnements(document.getElementById('select-biere-filtre')?.value);
+        afficherTousConditionnements();
     });
     tdDate.appendChild(inputDate);
     filterRow.appendChild(tdDate);
@@ -234,18 +249,15 @@ function ajouterLigneFiltres() {
                 currentSortColumn = index;
                 currentSortDirection = 1;
             }
-            afficherTousConditionnements(document.getElementById('select-biere-filtre')?.value);
+            afficherTousConditionnements();
         });
     });
 }
 
 // 8. Appliquer les filtres et le tri
-function appliquerFiltresEtTri(data, biereId = null) {
+function appliquerFiltresEtTri(data) {
     // Appliquer les filtres
     let filteredData = data.filter(cond => {
-        // Filtre par bière si spécifié
-        if (biereId && cond.id_biere != biereId) return false;
-
         const biere = allBieres.find(b => b.id === cond.id_biere);
         const contenant = TYPES_CONTENANTS.find(c => c.id === cond.type_contenant);
 
@@ -255,6 +267,7 @@ function appliquerFiltresEtTri(data, biereId = null) {
             columnIndex = parseInt(columnIndex);
             switch(columnIndex) {
                 case 0: return cond.numero_lot.toLowerCase().includes(filterValue.toLowerCase());
+                case 1: return (biere ? biere.nom.toLowerCase() : '').includes(filterValue.toLowerCase());
                 case 2: return cond.abv.toString() === filterValue;
                 case 3: return (contenant ? contenant.nom.toLowerCase() : '').includes(filterValue.toLowerCase());
                 case 4: return cond.quantite.toString().includes(filterValue);
@@ -302,10 +315,10 @@ function appliquerFiltresEtTri(data, biereId = null) {
 }
 
 // 9. Afficher tous les conditionnements
-async function afficherTousConditionnements(biereId = null) {
+async function afficherTousConditionnements() {
     try {
         // Appliquer filtres et tri
-        const filteredData = appliquerFiltresEtTri(allConditionnements, biereId);
+        const filteredData = appliquerFiltresEtTri(allConditionnements);
 
         // Calculer le volume total par bière (sur les données filtrées)
         const volumesParBiere = {};
@@ -351,37 +364,35 @@ async function afficherTousConditionnements(biereId = null) {
             }).join('');
 
             // Ajouter une ligne de synthèse par bière (sur les données filtrées)
-            if (!biereId) { // Seulement si on affiche toutes les bières
-                const syntheseParBiere = {};
-                filteredData.forEach(cond => {
-                    if (!syntheseParBiere[cond.id_biere]) {
-                        const biere = allBieres.find(b => b.id === cond.id_biere);
-                        syntheseParBiere[cond.id_biere] = {
-                            nom: biere ? biere.nom : 'Inconnu',
-                            volumeTotal: 0,
-                            count: 0
-                        };
-                    }
-                    const contenant = TYPES_CONTENANTS.find(c => c.id === cond.type_contenant);
-                    if (contenant) {
-                        syntheseParBiere[cond.id_biere].volumeTotal += cond.quantite * contenant.volume;
-                        syntheseParBiere[cond.id_biere].count += cond.quantite;
-                    }
-                });
+            const syntheseParBiere = {};
+            filteredData.forEach(cond => {
+                if (!syntheseParBiere[cond.id_biere]) {
+                    const biere = allBieres.find(b => b.id === cond.id_biere);
+                    syntheseParBiere[cond.id_biere] = {
+                        nom: biere ? biere.nom : 'Inconnu',
+                        volumeTotal: 0,
+                        count: 0
+                    };
+                }
+                const contenant = TYPES_CONTENANTS.find(c => c.id === cond.type_contenant);
+                if (contenant) {
+                    syntheseParBiere[cond.id_biere].volumeTotal += cond.quantite * contenant.volume;
+                    syntheseParBiere[cond.id_biere].count += cond.quantite;
+                }
+            });
 
-                // Ajouter les lignes de synthèse
-                Object.entries(syntheseParBiere).forEach(([idBiere, data]) => {
-                    const row = document.createElement('tr');
-                    row.className = 'synthese-biere';
-                    row.innerHTML = `
-                        <td colspan="4"><strong>${data.nom}</strong></td>
-                        <td><strong>${data.count} contenants</strong></td>
-                        <td><strong>${data.volumeTotal.toFixed(2)}L</strong></td>
-                        <td colspan="2"></td>
-                    `;
-                    tbody.appendChild(row);
-                });
-            }
+            // Ajouter les lignes de synthèse
+            Object.entries(syntheseParBiere).forEach(([idBiere, data]) => {
+                const row = document.createElement('tr');
+                row.className = 'synthese-biere';
+                row.innerHTML = `
+                    <td colspan="4"><strong>${data.nom}</strong></td>
+                    <td><strong>${data.count} contenants</strong></td>
+                    <td><strong>${data.volumeTotal.toFixed(2)}L</strong></td>
+                    <td colspan="2"></td>
+                `;
+                tbody.appendChild(row);
+            });
 
             // Mettre à jour les indicateurs de tri
             const headers = document.querySelectorAll('#table-conditionnements thead tr:first-child th');
@@ -435,40 +446,117 @@ async function afficherHistoriqueBiere(idBiere) {
             return;
         }
 
-        // Afficher uniquement les conditionnements de cette bière
-        document.getElementById('select-biere-filtre').value = idBiere;
-        afficherTousConditionnements(idBiere);
+        // Filtrer les conditionnements pour cette bière
+        currentFilters[1] = biere.nom;
+        afficherTousConditionnements();
 
-        // Afficher aussi l'historique complet
-        let message = `Historique complet pour "${biere.nom}":\n`;
-        message += `Volume total conditionné: ${biere.volume_total_conditionne ? biere.volume_total_conditionne.toFixed(2) : 0}L\n\n`;
-
-        if (!biere.historique_conditionnement || biere.historique_conditionnement.length === 0) {
-            message += "Aucun conditionnement enregistré pour cette bière.";
-        } else {
-            const historique = [...biere.historique_conditionnement].sort((a, b) => new Date(b.date) - new Date(a.date));
-            historique.forEach(item => {
-                message += `- ${new Date(item.date).toLocaleDateString()}: `
-                         + `${item.numero_lot || 'N/A'} - `
-                         + `${item.quantite} x ${item.contenant_nom} `
-                         + `(ABV: ${item.abv}°, Total: ${item.volume_total.toFixed(2)}L)\n`;
-            });
-        }
-
-        alert(message);
+        // Afficher aussi l'historique complet dans une modale
+        ouvrirModaleHistoriqueBiere(biere);
     } catch (error) {
         console.error("Erreur affichage historique bière:", error);
         alert("Erreur lors de l'affichage de l'historique");
     }
 }
 
-// 12. Ajouter un conditionnement
-async function ajouterConditionnement() {
-    const idBiere = document.getElementById('select-biere-conditionnement').value;
-    const abv = parseFloat(document.getElementById('abv-final').value);
-    const typeContenant = document.getElementById('type-contenant').value;
-    const quantite = parseInt(document.getElementById('quantite-contenant').value);
-    const dateConditionnement = document.getElementById('date-conditionnement').value;
+// 12. Ouvrir la modale d'historique d'une bière
+function ouvrirModaleHistoriqueBiere(biere) {
+    const modal = document.getElementById('historique-biere-modal');
+    if (!modal) return;
+
+    // Remplir les données de la modale
+    const modalTitle = modal.querySelector('.modal-title');
+    const modalBody = modal.querySelector('.modal-body');
+
+    modalTitle.textContent = `Historique complet - ${biere.nom}`;
+
+    let content = `<p>Volume total conditionné: <strong>${biere.volume_total_conditionne ? biere.volume_total_conditionne.toFixed(2) : 0}L</strong></p>`;
+
+    if (!biere.historique_conditionnement || biere.historique_conditionnement.length === 0) {
+        content += "<p>Aucun conditionnement enregistré pour cette bière.</p>";
+    } else {
+        content += `<table class="table table-sm">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Numéro de lot</th>
+                    <th>Contenant</th>
+                    <th>Quantité</th>
+                    <th>Volume (L)</th>
+                    <th>ABV</th>
+                </tr>
+            </thead>
+            <tbody>`;
+
+        const historique = [...biere.historique_conditionnement].sort((a, b) => new Date(b.date) - new Date(a.date));
+        historique.forEach(item => {
+            content += `
+                <tr>
+                    <td>${new Date(item.date).toLocaleDateString()}</td>
+                    <td>${item.numero_lot || 'N/A'}</td>
+                    <td>${item.contenant_nom}</td>
+                    <td>${item.quantite}</td>
+                    <td>${item.volume_total.toFixed(2)}</td>
+                    <td>${item.abv}°</td>
+                </tr>`;
+        });
+
+        content += `</tbody></table>`;
+    }
+
+    modalBody.innerHTML = content;
+
+    // Afficher la modale
+    const modalInstance = new bootstrap.Modal(modal);
+    modalInstance.show();
+}
+
+// 13. Ouvrir la modale d'ajout de conditionnement
+function ouvrirModaleAjoutConditionnement() {
+    const modal = document.getElementById('ajout-conditionnement-modal');
+    if (!modal) return;
+
+    // Réinitialiser le formulaire
+    document.getElementById('modal-select-biere').value = '';
+    document.getElementById('modal-abv').value = '';
+    document.getElementById('modal-date').valueAsDate = new Date();
+    document.getElementById('modal-type-contenant').value = '';
+    document.getElementById('modal-quantite').value = '';
+
+    // Charger les sélecteurs
+    const selectBiere = document.getElementById('modal-select-biere');
+    if (selectBiere) {
+        selectBiere.innerHTML = '<option value="">-- Sélectionner une bière --</option>';
+        allBieres.forEach(biere => {
+            const option = document.createElement('option');
+            option.value = biere.id;
+            option.textContent = biere.nom;
+            selectBiere.appendChild(option);
+        });
+    }
+
+    const selectContenant = document.getElementById('modal-type-contenant');
+    if (selectContenant) {
+        selectContenant.innerHTML = '';
+        TYPES_CONTENANTS.forEach(contenant => {
+            const option = document.createElement('option');
+            option.value = contenant.id;
+            option.textContent = contenant.nom;
+            selectContenant.appendChild(option);
+        });
+    }
+
+    // Afficher la modale
+    const modalInstance = new bootstrap.Modal(modal);
+    modalInstance.show();
+}
+
+// 14. Ajouter un conditionnement depuis la modale
+async function ajouterConditionnementDepuisModale() {
+    const idBiere = document.getElementById('modal-select-biere').value;
+    const abv = parseFloat(document.getElementById('modal-abv').value);
+    const typeContenant = document.getElementById('modal-type-contenant').value;
+    const quantite = parseInt(document.getElementById('modal-quantite').value);
+    const dateConditionnement = document.getElementById('modal-date').value;
 
     if (!idBiere || isNaN(abv) || !typeContenant || isNaN(quantite) || quantite <= 0 || !dateConditionnement) {
         alert("Veuillez remplir tous les champs correctement (y compris la date)");
@@ -534,10 +622,10 @@ async function ajouterConditionnement() {
         allConditionnements = await loadData('conditionnements').catch(() => []);
         afficherTousConditionnements();
 
-        // Réinitialiser le formulaire
-        document.getElementById('abv-final').value = '';
-        document.getElementById('quantite-contenant').value = '';
-        document.getElementById('date-conditionnement').valueAsDate = new Date();
+        // Fermer la modale
+        const modal = document.getElementById('ajout-conditionnement-modal');
+        const modalInstance = bootstrap.Modal.getInstance(modal);
+        modalInstance.hide();
 
         alert(`Conditionnement enregistré:\n`
             + `Numéro de lot: ${numeroLot}\n`
@@ -548,7 +636,7 @@ async function ajouterConditionnement() {
     }
 }
 
-// 13. Supprimer un conditionnement
+// 15. Supprimer un conditionnement
 async function supprimerConditionnement(id) {
     try {
         const conditionnement = await loadItemById('conditionnements', id);
@@ -580,7 +668,7 @@ async function supprimerConditionnement(id) {
 
             // Recharger les données et afficher
             allConditionnements = await loadData('conditionnements').catch(() => []);
-            afficherTousConditionnements(document.getElementById('select-biere-filtre')?.value);
+            afficherTousConditionnements();
         }
     } catch (error) {
         console.error("Erreur suppression conditionnement:", error);
@@ -588,12 +676,12 @@ async function supprimerConditionnement(id) {
     }
 }
 
-// 14. Initialisation
+// 16. Initialisation
 document.addEventListener('DOMContentLoaded', function() {
     // Charger les données initiales
     chargerDonneesInitiales();
 
-    // Configuration des inputs
+    // Configuration des inputs du formulaire principal
     const abvInput = document.getElementById('abv-final');
     const quantiteInput = document.getElementById('quantite-contenant');
     const dateInput = document.getElementById('date-conditionnement');
