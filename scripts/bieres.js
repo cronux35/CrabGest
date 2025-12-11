@@ -52,6 +52,7 @@ async function saveEditBiere(id) {
         closeModal('editModal');
         afficherBieres();
         rechargerSelecteursBieres(); // Appel de la fonction de rechargement
+        if (typeof afficherHistoriqueRetraits === 'function') afficherHistoriqueRetraits();
     } catch (error) {
         console.error("Erreur lors de la sauvegarde de la bière:", error);
         alert("Une erreur est survenue lors de la sauvegarde.");
