@@ -4,18 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CrabGest - Gestion de Brasserie</title>
-    <!-- Polices Google -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
-    <!-- Styles locaux -->
     <link rel="stylesheet" href="styles/theme.css">
     <link rel="stylesheet" href="styles/style.css">
-    <!-- Font Awesome local -->
     <link rel="stylesheet" href="lib/font-awesome.min.css">
-    <!-- Manifest pour PWA -->
-    <link rel="manifest" href="manifest.json">
-    <!-- CSP pour éviter les blocages -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' fonts.googleapis.com; font-src 'self' fonts.gstatic.com; img-src 'self' data:">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' fonts.googleapis.com; font-src 'self' fonts.gstatic.com; img-src 'self' data:">
 </head>
 <body>
     <header>
@@ -30,7 +24,7 @@
         </div>
         <nav class="tabs" id="mainNav">
             <button class="tab-button active" data-tab="stocks">Stocks</button>
-            <button class="tab-button" data-tab="recettes">Recettes</button>
+            <button class="tab-button" data-tab="bieres">Bières</button>
             <button class="tab-button" data-tab="fermentation">Fermentation</button>
             <button class="tab-button" data-tab="conditionnement">Conditionnement</button>
             <button class="tab-button" data-tab="ventes">Ventes</button>
@@ -39,7 +33,6 @@
     </header>
 
     <main>
-        <!-- Stocks -->
         <section id="stocks" class="tab active">
             <h2>Gestion des Stocks</h2>
             <div class="card">
@@ -66,45 +59,32 @@
                         <tbody></tbody>
                     </table>
                 </div>
+
                 <div class="card">
-                <h3>Retirer du stock pour une recette</h3>
-                <div class="form-group">
-                    <select id="select-ingredient-retrait" class="form-control">
-                        <option value="">-- Ingrédient --</option>
-                    </select>
-                    <select id="select-recette-retrait" class="form-control">
-                        <option value="">-- Recette --</option>
-                    </select>
-                    <input type="number" id="quantite-retrait" class="form-control" placeholder="Quantité (g)" min="1">
-                    <button onclick="retirerStockPourRecette()" class="btn btn-primary">Retirer</button>
-                </div>
-                <div id="retrait-error" class="error-message"></div>
-            </div>
-                <div class="card">
-                    <h3>Retirer du stock</h3>
+                    <h3>Retirer du stock pour une bière</h3>
                     <div class="form-group">
-                        <select id="select-ingredient" class="form-control">
+                        <select id="select-ingredient-retrait" class="form-control">
                             <option value="">-- Ingrédient --</option>
                         </select>
-                        <select id="select-biere" class="form-control">
+                        <select id="select-biere-retrait" class="form-control">
                             <option value="">-- Bière --</option>
                         </select>
                         <input type="number" id="quantite-retrait" class="form-control" placeholder="Quantité (g)" min="1">
-                        <button onclick="retirerStock()" class="btn btn-primary">Retirer</button>
+                        <button onclick="retirerStockPourBiere()" class="btn btn-primary">Retirer</button>
                     </div>
+                    <div id="retrait-error" class="error-message"></div>
                 </div>
+
                 <div class="card">
                     <h3>Historique des retraits</h3>
-                    <select id="select-biere-historique" class="form-control" onchange="afficherHistoriqueParBiere(this.value)">
-                        <option value="">-- Sélectionner une bière --</option>
-                    </select>
                     <div class="table-responsive">
-                        <table id="historique-biere" class="table">
+                        <table id="historique-retraits" class="table">
                             <thead>
                                 <tr>
                                     <th>Date</th>
                                     <th>Ingrédient</th>
                                     <th>Quantité</th>
+                                    <th>Bière</th>
                                     <th>Notes</th>
                                     <th>Actions</th>
                                 </tr>
@@ -116,19 +96,18 @@
             </div>
         </section>
 
-        <!-- Recettes -->
-        <section id="recettes" class="tab">
-            <h2>Gestion des Recettes</h2>
+        <section id="bieres" class="tab">
+            <h2>Gestion des Bières</h2>
             <div class="card">
                 <div class="form-group">
-                    <input type="text" id="nom-recette" class="form-control" placeholder="Nom de la recette">
-                    <input type="text" id="style-recette" class="form-control" placeholder="Style">
-                    <input type="number" id="degre-recette" class="form-control" placeholder="Degré alcoolique">
-                    <input type="number" id="volume-recette" class="form-control" placeholder="Volume (L)">
-                    <button onclick="ajouterRecette()" class="btn btn-primary">Ajouter Recette</button>
+                    <input type="text" id="nom-biere" class="form-control" placeholder="Nom de la bière">
+                    <input type="text" id="style-biere" class="form-control" placeholder="Style">
+                    <input type="number" id="degre-biere" class="form-control" placeholder="Degré alcoolique" step="0.1">
+                    <input type="number" id="volume-biere" class="form-control" placeholder="Volume (L)" step="0.1">
+                    <button onclick="ajouterBiere()" class="btn btn-primary">Ajouter Bière</button>
                 </div>
                 <div class="table-responsive">
-                    <table id="table-recettes" class="table">
+                    <table id="table-bieres" class="table">
                         <thead>
                             <tr>
                                 <th>ID</th>
@@ -145,7 +124,6 @@
             </div>
         </section>
 
-        <!-- Fermentation -->
         <section id="fermentation" class="tab">
             <h2>Suivi de Fermentation</h2>
             <div class="card">
@@ -172,7 +150,6 @@
             </div>
         </section>
 
-        <!-- Conditionnement -->
         <section id="conditionnement" class="tab">
             <h2>Conditionnement</h2>
             <div class="card">
@@ -208,7 +185,6 @@
             </div>
         </section>
 
-        <!-- Ventes -->
         <section id="ventes" class="tab">
             <h2>Gestion des Ventes</h2>
             <div class="card">
@@ -237,7 +213,6 @@
             </div>
         </section>
 
-        <!-- Douane -->
         <section id="douane" class="tab">
             <h2>Déclarations Douanières</h2>
             <div class="card">
@@ -266,7 +241,6 @@
         </section>
     </main>
 
-    <!-- Modales -->
     <div id="editModal" class="modal">
         <div class="modal-content">
             <span class="close">&times;</span>
@@ -289,17 +263,15 @@
         <p>© 2025 CrabGest - Association CRAB</p>
     </footer>
 
-    <!-- Scripts locaux chargés à la fin du body -->
     <script src="scripts/db.js"></script>
     <script src="scripts/app.js"></script>
     <script src="scripts/modal.js"></script>
     <script src="scripts/stocks.js"></script>
-    <script src="scripts/recettes.js"></script>
+    <script src="scripts/bieres.js"></script>
     <script src="scripts/fermentation.js"></script>
     <script src="scripts/conditionnement.js"></script>
     <script src="scripts/ventes.js"></script>
     <script src="scripts/douane.js"></script>
-    <!-- Bibliothèques locales -->
     <script src="lib/chart.min.js"></script>
     <script src="lib/jspdf.umd.min.js"></script>
 </body>
