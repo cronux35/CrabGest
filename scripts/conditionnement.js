@@ -1,8 +1,10 @@
-// conditionnement.js - Version optimisée
+// conditionnement.js - Version avec filtres déroulants et actualisation automatique
 let currentConditionnementId = null;
 let currentSortColumn = null;
 let currentSortDirection = 1;
 let currentFilters = {};
+let allConditionnements = [];
+let allBieres = [];
 
 // 1. Types de contenants disponibles
 const TYPES_CONTENANTS = [
@@ -25,26 +27,41 @@ function genererNumeroLot(biereNom, typeContenant, date) {
     return `${biereCode}-${contenantCode}-${dateCode}-${randomCode}`;
 }
 
-// 3. Charger les bières dans le sélecteur
-async function chargerSelecteurBieresConditionnement() {
+// 3. Charger les données initiales
+async function chargerDonneesInitiales() {
     try {
-        const bieres = await loadData('bieres').catch(() => []);
-        const select = document.getElementById('select-biere-conditionnement');
-        if (select) {
-            select.innerHTML = '<option value="">-- Sélectionner une bière --</option>';
-            bieres.forEach(biere => {
-                const option = document.createElement('option');
-                option.value = biere.id;
-                option.textContent = biere.nom;
-                select.appendChild(option);
-            });
-        }
+        allBieres = await loadData('bieres').catch(() => []);
+        allConditionnements = await loadData('conditionnements').catch(() => []);
+
+        // Charger les sélecteurs
+        chargerSelecteurBieresConditionnement();
+        chargerSelecteurContenants();
+
+        // Initialiser les filtres
+        initialiserFiltres();
+
+        // Afficher les conditionnements
+        afficherConditionnements();
     } catch (error) {
-        console.error("Erreur chargement bières:", error);
+        console.error("Erreur chargement initial:", error);
     }
 }
 
-// 4. Charger les contenants dans le sélecteur
+// 4. Charger les bières dans le sélecteur
+function chargerSelecteurBieresConditionnement() {
+    const select = document.getElementById('select-biere-conditionnement');
+    if (select) {
+        select.innerHTML = '<option value="">-- Sélectionner une bière --</option>';
+        allBieres.forEach(biere => {
+            const option = document.createElement('option');
+            option.value = biere.id;
+            option.textContent = biere.nom;
+            select.appendChild(option);
+        });
+    }
+}
+
+// 5. Charger les contenants dans le sélecteur
 function chargerSelecteurContenants() {
     const select = document.getElementById('type-contenant');
     if (select) {
@@ -58,32 +75,119 @@ function chargerSelecteurContenants() {
     }
 }
 
-// 5. Ajouter des filtres au tableau
-function ajouterFiltresTableau() {
-    const thead = document.querySelector('#table-conditionnements thead');
-    if (!thead) return;
-
-    const headerRow = thead.querySelector('tr');
-    if (!headerRow) return;
-
-    // Ajouter des inputs de filtre pour chaque colonne (sauf Actions)
-    const headers = headerRow.querySelectorAll('th');
+// 6. Initialiser les filtres déroulants
+function initialiserFiltres() {
+    const headers = document.querySelectorAll('#table-conditionnements thead th');
     headers.forEach((header, index) => {
         if (index === headers.length - 1) return; // Ne pas ajouter de filtre à la colonne Actions
 
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.placeholder = 'Filtrer...';
-        input.className = 'filter-input';
-        input.dataset.column = index;
+        const filterContainer = document.createElement('div');
+        filterContainer.className = 'filter-container';
 
-        input.addEventListener('input', function() {
-            currentFilters[index] = this.value.toLowerCase();
-            afficherConditionnements();
-        });
+        const select = document.createElement('select');
+        select.className = 'filter-select';
+        select.dataset.column = index;
 
-        header.style.position = 'relative';
-        header.appendChild(input);
+        // Ajouter une option "Tous" par défaut
+        const defaultOption = document.createElement('option');
+        defaultOption.value = '';
+        defaultOption.textContent = 'Tous';
+        select.appendChild(defaultOption);
+
+        // Ajouter les options spécifiques à chaque colonne
+        switch(index) {
+            case 0: // Numéro de lot
+                const lotsUniques = [...new Set(allConditionnements.map(c => c.numero_lot))].sort();
+                lotsUniques.forEach(lot => {
+                    const option = document.createElement('option');
+                    option.value = lot;
+                    option.textContent = lot;
+                    select.appendChild(option);
+                });
+                break;
+
+            case 1: // Bière
+                allBieres.forEach(biere => {
+                    const option = document.createElement('option');
+                    option.value = biere.nom;
+                    option.textContent = biere.nom;
+                    select.appendChild(option);
+                });
+                break;
+
+            case 2: // ABV
+                const abvUniques = [...new Set(allConditionnements.map(c => c.abv))].sort((a, b) => a - b);
+                abvUniques.forEach(abv => {
+                    const option = document.createElement('option');
+                    option.value = abv;
+                    option.textContent = abv + '°';
+                    select.appendChild(option);
+                });
+                break;
+
+            case 3: // Contenant
+                TYPES_CONTENANTS.forEach(contenant => {
+                    const option = document.createElement('option');
+                    option.value = contenant.nom;
+                    option.textContent = contenant.nom;
+                    select.appendChild(option);
+                });
+                break;
+
+            case 4: // Quantité
+                // Pas de filtre spécifique pour la quantité
+                select.style.display = 'none';
+                const input = document.createElement('input');
+                input.type = 'number';
+                input.placeholder = 'Filtrer...';
+                input.className = 'filter-input';
+                input.dataset.column = index;
+                input.addEventListener('input', () => {
+                    currentFilters[index] = input.value;
+                    afficherConditionnements();
+                });
+                filterContainer.appendChild(input);
+                break;
+
+            case 5: // Volume conditionné
+                // Pas de filtre spécifique pour le volume
+                select.style.display = 'none';
+                const volumeInput = document.createElement('input');
+                volumeInput.type = 'number';
+                volumeInput.placeholder = 'Filtrer...';
+                volumeInput.className = 'filter-input';
+                volumeInput.dataset.column = index;
+                volumeInput.addEventListener('input', () => {
+                    currentFilters[index] = volumeInput.value;
+                    afficherConditionnements();
+                });
+                filterContainer.appendChild(volumeInput);
+                break;
+
+            case 6: // Date
+                // Pas de filtre spécifique pour la date
+                select.style.display = 'none';
+                const dateInput = document.createElement('input');
+                dateInput.type = 'date';
+                dateInput.className = 'filter-input';
+                dateInput.dataset.column = index;
+                dateInput.addEventListener('input', () => {
+                    currentFilters[index] = dateInput.value;
+                    afficherConditionnements();
+                });
+                filterContainer.appendChild(dateInput);
+                break;
+        }
+
+        if (select.style.display !== 'none') {
+            select.addEventListener('change', () => {
+                currentFilters[index] = select.value;
+                afficherConditionnements();
+            });
+            filterContainer.appendChild(select);
+        }
+
+        header.appendChild(filterContainer);
     });
 
     // Ajouter des indicateurs de tri
@@ -103,11 +207,11 @@ function ajouterFiltresTableau() {
     });
 }
 
-// 6. Appliquer les filtres et le tri
-function appliquerFiltresEtTri(data, bieres) {
+// 7. Appliquer les filtres et le tri
+function appliquerFiltresEtTri(data) {
     // Appliquer les filtres
     let filteredData = data.filter(cond => {
-        const biere = bieres.find(b => b.id === cond.id_biere);
+        const biere = allBieres.find(b => b.id === cond.id_biere);
         const contenant = TYPES_CONTENANTS.find(c => c.id === cond.type_contenant);
 
         return Object.entries(currentFilters).every(([columnIndex, filterValue]) => {
@@ -115,13 +219,19 @@ function appliquerFiltresEtTri(data, bieres) {
 
             columnIndex = parseInt(columnIndex);
             switch(columnIndex) {
-                case 0: return cond.numero_lot.toLowerCase().includes(filterValue); // Numéro de lot
-                case 1: return (biere ? biere.nom.toLowerCase() : '').includes(filterValue); // Bière
-                case 2: return cond.abv.toString().includes(filterValue); // ABV
-                case 3: return (contenant ? contenant.nom.toLowerCase() : '').includes(filterValue); // Contenant
-                case 4: return cond.quantite.toString().includes(filterValue); // Quantité
-                case 5: return (cond.quantite * (contenant ? contenant.volume : 0)).toFixed(2).includes(filterValue); // Volume conditionné
-                case 6: return new Date(cond.date).toLocaleDateString().toLowerCase().includes(filterValue); // Date
+                case 0: return cond.numero_lot.toLowerCase().includes(filterValue.toLowerCase());
+                case 1: return (biere ? biere.nom.toLowerCase() : '').includes(filterValue.toLowerCase());
+                case 2: return cond.abv.toString() === filterValue;
+                case 3: return (contenant ? contenant.nom.toLowerCase() : '').includes(filterValue.toLowerCase());
+                case 4: return cond.quantite.toString().includes(filterValue);
+                case 5: {
+                    const volume = cond.quantite * (contenant ? contenant.volume : 0);
+                    return volume.toFixed(2).includes(filterValue);
+                }
+                case 6: {
+                    const date = new Date(cond.date).toISOString().split('T')[0];
+                    return date === filterValue;
+                }
                 default: return true;
             }
         });
@@ -130,8 +240,8 @@ function appliquerFiltresEtTri(data, bieres) {
     // Appliquer le tri
     if (currentSortColumn !== null) {
         filteredData.sort((a, b) => {
-            const biereA = bieres.find(b => b.id === a.id_biere);
-            const biereB = bieres.find(b => b.id === b.id_biere);
+            const biereA = allBieres.find(b => b.id === a.id_biere);
+            const biereB = allBieres.find(b => b.id === b.id_biere);
             const contenantA = TYPES_CONTENANTS.find(c => c.id === a.type_contenant);
             const contenantB = TYPES_CONTENANTS.find(c => c.id === b.type_contenant);
 
@@ -157,14 +267,11 @@ function appliquerFiltresEtTri(data, bieres) {
     return filteredData;
 }
 
-// 7. Afficher les conditionnements avec filtres et tri
+// 8. Afficher les conditionnements avec filtres et tri
 async function afficherConditionnements() {
     try {
-        const conditionnements = await loadData('conditionnements').catch(() => []);
-        const bieres = await loadData('bieres').catch(() => []);
-
         // Appliquer filtres et tri
-        const filteredData = appliquerFiltresEtTri(conditionnements, bieres);
+        const filteredData = appliquerFiltresEtTri(allConditionnements);
 
         // Calculer le volume total par bière (sur les données filtrées)
         const volumesParBiere = {};
@@ -182,7 +289,7 @@ async function afficherConditionnements() {
         const tbody = document.querySelector('#table-conditionnements tbody');
         if (tbody) {
             tbody.innerHTML = filteredData.map(cond => {
-                const biere = bieres.find(b => b.id === cond.id_biere);
+                const biere = allBieres.find(b => b.id === cond.id_biere);
                 const contenant = TYPES_CONTENANTS.find(c => c.id === cond.type_contenant);
                 const volumeTotalContenant = cond.quantite * (contenant ? contenant.volume : 0);
 
@@ -213,7 +320,7 @@ async function afficherConditionnements() {
             const syntheseParBiere = {};
             filteredData.forEach(cond => {
                 if (!syntheseParBiere[cond.id_biere]) {
-                    const biere = bieres.find(b => b.id === cond.id_biere);
+                    const biere = allBieres.find(b => b.id === cond.id_biere);
                     syntheseParBiere[cond.id_biere] = {
                         nom: biere ? biere.nom : 'Inconnu',
                         volumeTotal: 0,
@@ -254,7 +361,7 @@ async function afficherConditionnements() {
     }
 }
 
-// 8. Ajouter un conditionnement
+// 9. Ajouter un conditionnement
 async function ajouterConditionnement() {
     const idBiere = document.getElementById('select-biere-conditionnement').value;
     const abv = parseFloat(document.getElementById('abv-final').value);
@@ -268,7 +375,7 @@ async function ajouterConditionnement() {
     }
 
     try {
-        const biere = await loadItemById('bieres', idBiere);
+        const biere = allBieres.find(b => b.id == idBiere);
         if (!biere) {
             alert("Bière non trouvée");
             return;
@@ -322,13 +429,15 @@ async function ajouterConditionnement() {
         biere.volume_total_conditionne += volumeTotalContenants;
         await updateItem('bieres', biere);
 
+        // Recharger les données et afficher
+        allConditionnements = await loadData('conditionnements').catch(() => []);
+        afficherConditionnements();
+
         // Réinitialiser le formulaire
         document.getElementById('abv-final').value = '';
         document.getElementById('quantite-contenant').value = '';
         document.getElementById('date-conditionnement').valueAsDate = new Date();
 
-        // Rafraîchir l'affichage
-        afficherConditionnements();
         alert(`Conditionnement enregistré:\n`
             + `Numéro de lot: ${numeroLot}\n`
             + `${quantite} x ${contenant.nom} (${volumeTotalContenants.toFixed(2)}L)`);
@@ -338,7 +447,7 @@ async function ajouterConditionnement() {
     }
 }
 
-// 9. Supprimer un conditionnement
+// 10. Supprimer un conditionnement
 async function supprimerConditionnement(id) {
     try {
         const conditionnement = await loadItemById('conditionnements', id);
@@ -348,7 +457,7 @@ async function supprimerConditionnement(id) {
             await deleteItem('conditionnements', id);
 
             // Mettre à jour l'historique de la bière
-            const biere = await loadItemById('bieres', conditionnement.id_biere);
+            const biere = allBieres.find(b => b.id === conditionnement.id_biere);
             if (biere) {
                 // Retirer de l'historique
                 if (biere.historique_conditionnement) {
@@ -359,12 +468,17 @@ async function supprimerConditionnement(id) {
 
                 // Mettre à jour le volume total
                 if (biere.volume_total_conditionne) {
-                    biere.volume_total_conditionne -= conditionnement.volume_total_contenants;
+                    const contenant = TYPES_CONTENANTS.find(c => c.id === conditionnement.type_contenant);
+                    if (contenant) {
+                        biere.volume_total_conditionne -= conditionnement.quantite * contenant.volume;
+                    }
                 }
 
                 await updateItem('bieres', biere);
             }
 
+            // Recharger les données et afficher
+            allConditionnements = await loadData('conditionnements').catch(() => []);
             afficherConditionnements();
         }
     } catch (error) {
@@ -373,10 +487,10 @@ async function supprimerConditionnement(id) {
     }
 }
 
-// 10. Afficher l'historique de conditionnement pour une bière
+// 11. Afficher l'historique de conditionnement pour une bière
 async function afficherHistoriqueConditionnement(idBiere) {
     try {
-        const biere = await loadItemById('bieres', idBiere);
+        const biere = allBieres.find(b => b.id === idBiere);
         if (!biere) {
             alert("Bière non trouvée");
             return;
@@ -404,14 +518,10 @@ async function afficherHistoriqueConditionnement(idBiere) {
     }
 }
 
-// 11. Initialisation
+// 12. Initialisation
 document.addEventListener('DOMContentLoaded', function() {
     // Charger les données initiales
-    chargerSelecteurBieresConditionnement();
-    chargerSelecteurContenants();
-
-    // Ajouter les filtres et le tri
-    ajouterFiltresTableau();
+    chargerDonneesInitiales();
 
     // Configuration des inputs
     const abvInput = document.getElementById('abv-final');
@@ -421,7 +531,4 @@ document.addEventListener('DOMContentLoaded', function() {
     if (abvInput) abvInput.step = '0.1';
     if (quantiteInput) quantiteInput.step = '1';
     if (dateInput) dateInput.valueAsDate = new Date();
-
-    // Initialiser les filtres
-    currentFilters = {};
 });
