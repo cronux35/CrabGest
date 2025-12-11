@@ -1,4 +1,4 @@
-// fermentation.js - Gestion complète du suivi de fermentation
+// fermentation.js - Gestion complète du suivi de fermentation avec double échelle
 let fermentationChart = null; // Variable globale pour stocker l'instance du graphique
 
 // Charger les bières dans le sélecteur de fermentation
@@ -37,7 +37,7 @@ async function afficherSuiviFermentation(idBiere) {
                 tbody.innerHTML = data.map(action => `
                     <tr>
                         <td>${new Date(action.date).toLocaleString()}</td>
-                        <td>${action.type}</td>
+                        <td>${action.type === 'densite' ? 'Gravité' : action.type}</td>
                         <td>${action.valeur}</td>
                         <td>
                             <button class="action-btn delete-btn" onclick="supprimerActionFermentation(${action.id})" title="Supprimer">
@@ -56,48 +56,47 @@ async function afficherSuiviFermentation(idBiere) {
     }
 }
 
-// Afficher le graphique de fermentation
+// Afficher le graphique de fermentation avec double échelle
 function afficherGraphiqueFermentation(data, nomBiere) {
+    // Filtrer et trier les données
     const densites = data.filter(a => a.type === 'densite').sort((a, b) => new Date(a.date) - new Date(b.date));
     const temperatures = data.filter(a => a.type === 'temperature').sort((a, b) => new Date(a.date) - new Date(b.date));
-    const pressions = data.filter(a => a.type === 'pression').sort((a, b) => new Date(a.date) - new Date(b.date));
 
     const ctx = document.getElementById('fermentationChart');
     if (ctx) {
         // Détruire le graphique existant s'il y en a un
         if (fermentationChart) {
             fermentationChart.destroy();
+            fermentationChart = null;
         }
 
-        // Créer un nouveau graphique
+        // Créer un nouveau graphique avec double échelle
         fermentationChart = new Chart(ctx, {
             type: 'line',
             data: {
                 labels: densites.map(d => new Date(d.date).toLocaleString()),
                 datasets: [
                     {
-                        label: 'Densité (SG)',
+                        label: 'Gravité (SG)',
                         data: densites.map(d => d.valeur),
                         borderColor: 'rgb(75, 192, 192)',
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
                         tension: 0.1,
-                        fill: false,
-                        yAxisID: 'y'
+                        fill: true,
+                        yAxisID: 'y', // Échelle de gauche pour la gravité
+                        pointRadius: 4,
+                        pointHoverRadius: 6
                     },
                     {
                         label: 'Température (°C)',
                         data: temperatures.map(t => t.valeur),
                         borderColor: 'rgb(255, 99, 132)',
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
                         tension: 0.1,
-                        fill: false,
-                        yAxisID: 'y1'
-                    },
-                    {
-                        label: 'Pression (bars)',
-                        data: pressions.map(p => p.valeur),
-                        borderColor: 'rgb(54, 162, 235)',
-                        tension: 0.1,
-                        fill: false,
-                        yAxisID: 'y2'
+                        fill: true,
+                        yAxisID: 'y1', // Échelle de droite pour la température
+                        pointRadius: 4,
+                        pointHoverRadius: 6
                     }
                 ]
             },
@@ -117,7 +116,21 @@ function afficherGraphiqueFermentation(data, nomBiere) {
                     },
                     tooltip: {
                         mode: 'index',
-                        intersect: false
+                        intersect: false,
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed.y !== null) {
+                                    label += context.dataset.label === 'Gravité (SG)' ?
+                                        context.parsed.y.toFixed(3) :
+                                        context.parsed.y.toFixed(1);
+                                }
+                                return label;
+                            }
+                        }
                     }
                 },
                 scales: {
@@ -127,10 +140,20 @@ function afficherGraphiqueFermentation(data, nomBiere) {
                         position: 'left',
                         title: {
                             display: true,
-                            text: 'Densité (SG)'
+                            text: 'Gravité (SG)',
+                            color: 'rgb(75, 192, 192)'
                         },
-                        min: 0.9,
-                        max: 1.2
+                        min: 0.800,
+                        max: 1.150,
+                        ticks: {
+                            stepSize: 0.050,
+                            callback: function(value) {
+                                return value.toFixed(3);
+                            }
+                        },
+                        grid: {
+                            drawOnChartArea: true
+                        }
                     },
                     y1: {
                         type: 'linear',
@@ -138,27 +161,23 @@ function afficherGraphiqueFermentation(data, nomBiere) {
                         position: 'right',
                         title: {
                             display: true,
-                            text: 'Température (°C)'
-                        },
-                        grid: {
-                            drawOnChartArea: false
-                        },
-                        min: 10,
-                        max: 30
-                    },
-                    y2: {
-                        type: 'linear',
-                        display: true,
-                        position: 'right',
-                        title: {
-                            display: true,
-                            text: 'Pression (bars)'
-                        },
-                        grid: {
-                            drawOnChartArea: false
+                            text: 'Température (°C)',
+                            color: 'rgb(255, 99, 132)'
                         },
                         min: 0,
-                        max: 5
+                        max: 40,
+                        ticks: {
+                            stepSize: 5
+                        },
+                        grid: {
+                            drawOnChartArea: false
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Date et heure'
+                        }
                     }
                 }
             }
@@ -178,6 +197,18 @@ async function ajouterActionFermentation() {
         return;
     }
 
+    // Validation spécifique pour la gravité
+    if (type === 'densite' && (valeur < 0.800 || valeur > 1.150)) {
+        alert("La gravité doit être comprise entre 0.800 et 1.150.");
+        return;
+    }
+
+    // Validation spécifique pour la température
+    if (type === 'temperature' && (valeur < 0 || valeur > 40)) {
+        alert("La température doit être comprise entre 0°C et 40°C.");
+        return;
+    }
+
     try {
         const nouvelleAction = {
             id_biere: parseInt(idBiere),
@@ -194,7 +225,7 @@ async function ajouterActionFermentation() {
         // Rafraîchir l'affichage
         afficherSuiviFermentation(idBiere);
 
-        alert(`Action de ${type} enregistrée avec succès.`);
+        alert(`Action de ${type === 'densite' ? 'gravité' : type} enregistrée avec succès.`);
     } catch (error) {
         console.error("Erreur lors de l'ajout de l'action de fermentation:", error);
         alert("Une erreur est survenue lors de l'enregistrement.");
@@ -207,7 +238,7 @@ async function supprimerActionFermentation(id) {
         const action = await loadItemById('fermentations', id);
         if (!action) return;
 
-        if (confirm(`Voulez-vous vraiment supprimer cette action de ${action.type} ?`)) {
+        if (confirm(`Voulez-vous vraiment supprimer cette action de ${action.type === 'densite' ? 'gravité' : action.type} ?`)) {
             await deleteItem('fermentations', id);
             afficherSuiviFermentation(action.id_biere);
         }
@@ -237,5 +268,32 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
         });
+    }
+
+    // Configuration des inputs pour les valeurs décimales
+    const valeurActionInput = document.getElementById('valeur-action');
+    if (valeurActionInput) {
+        valeurActionInput.step = 'any'; // Permet les valeurs décimales
+
+        // Écouteur pour changer le placeholder en fonction du type sélectionné
+        const typeActionSelect = document.getElementById('type-action');
+        if (typeActionSelect) {
+            typeActionSelect.addEventListener('change', function() {
+                const type = this.value;
+                if (type === 'densite') {
+                    valeurActionInput.placeholder = 'Ex: 1.050';
+                    valeurActionInput.step = '0.001';
+                } else if (type === 'temperature') {
+                    valeurActionInput.placeholder = 'Ex: 20.0';
+                    valeurActionInput.step = '0.1';
+                } else if (type === 'pression') {
+                    valeurActionInput.placeholder = 'Ex: 1.5';
+                    valeurActionInput.step = '0.1';
+                } else {
+                    valeurActionInput.placeholder = 'Valeur';
+                    valeurActionInput.step = 'any';
+                }
+            });
+        }
     }
 });
