@@ -801,3 +801,94 @@ th.sorted-desc::after {
 .btn-info:hover {
     background-color: #0b7dda;
 }
+
+/* Style pour la listbox */
+#listbox-bieres {
+    height: 150px;
+    padding: 5px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+/* Style pour les boutons d'action */
+.btn-primary, .btn-info {
+    margin-right: 10px;
+    padding: 8px 12px;
+}
+
+/* Style pour les modales */
+.modal-content {
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.modal-header {
+    border-bottom: 1px solid #eee;
+    padding: 15px;
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+/* Style pour les filtres */
+.filter-row {
+    background-color: #f8f9fa;
+}
+
+.filter-row td {
+    padding: 4px 8px;
+    vertical-align: middle;
+}
+
+.filter-select, .filter-input {
+    width: 100%;
+    padding: 4px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 0.8em;
+}
+
+/* Style pour les indicateurs de tri */
+th.sorted-asc::after {
+    content: " ↑";
+    color: #666;
+    margin-left: 5px;
+}
+
+th.sorted-desc::after {
+    content: " ↓";
+    color: #666;
+    margin-left: 5px;
+}
+
+/* Style pour les lignes de synthèse */
+#table-conditionnements tr.synthese-biere {
+    background-color: #f5f5f5;
+    font-weight: bold;
+}
+
+#table-conditionnements tr.synthese-biere td {
+    border-top: 2px solid #ddd;
+    padding-top: 8px;
+    padding-bottom: 8px;
+}
+
+/* Style pour les boutons d'action */
+.action-btn {
+    margin: 0 2px;
+    padding: 4px 8px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.action-btn.info-btn {
+    background-color: #2196F3;
+    color: white;
+}
+
+.action-btn.delete-btn {
+    background-color: #f44336;
+    color: white;
+}
