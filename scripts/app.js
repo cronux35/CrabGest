@@ -64,6 +64,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (typeof chargerDonnees === 'function') chargerDonnees();
         if (typeof afficherBieres === 'function') afficherBieres();
         if (typeof chargerDonneesRetrait === 'function') chargerDonneesRetrait();
+        if (typeof afficherHistoriqueRetraits === 'function') afficherHistoriqueRetraits(); // <-- Ajout de cette ligne
     } catch (error) {
         console.error("Erreur lors de l'initialisation de l'application:", error);
         alert("Une erreur est survenue lors du chargement de l'application. Veuillez actualiser la page.");
