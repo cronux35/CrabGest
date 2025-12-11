@@ -1,74 +1,82 @@
-// Variables globales
+// stocks.js - Version complète avec IndexedDB
 let stockTableBody = null;
 
 // Charger les données des stocks et recettes
-function chargerDonnees() {
-    const stocks = JSON.parse(localStorage.getItem('stocks') || '[]');
-    const recettes = JSON.parse(localStorage.getItem('recettes') || '[]');
+async function chargerDonnees() {
+    try {
+        const stocks = await loadData('stocks');
+        const recettes = await loadData('recettes');
 
-    // Charger les ingrédients dans le sélecteur
-    const selectIngredient = document.getElementById('select-ingredient');
-    if (selectIngredient) {
-        selectIngredient.innerHTML = '<option value="">-- Ingrédient --</option>';
-        stocks.forEach(stock => {
-            const option = document.createElement('option');
-            option.value = stock.id;
-            option.textContent = `${stock.type} - ${stock.nom} (${stock.quantite}g)`;
-            if (stock.quantite < 0) option.classList.add('stock-negatif');
-            selectIngredient.appendChild(option);
-        });
+        // Charger les ingrédients dans le sélecteur
+        const selectIngredient = document.getElementById('select-ingredient');
+        if (selectIngredient) {
+            selectIngredient.innerHTML = '<option value="">-- Ingrédient --</option>';
+            stocks.forEach(stock => {
+                const option = document.createElement('option');
+                option.value = stock.id;
+                option.textContent = `${stock.type} - ${stock.nom} (${stock.quantite}g)`;
+                if (stock.quantite < 0) option.classList.add('stock-negatif');
+                selectIngredient.appendChild(option);
+            });
+        }
+
+        // Charger les bières dans les sélecteurs
+        const selectBiere = document.getElementById('select-biere');
+        const selectBiereHistorique = document.getElementById('select-biere-historique');
+        if (selectBiere && selectBiereHistorique) {
+            selectBiere.innerHTML = '<option value="">-- Bière --</option>';
+            selectBiereHistorique.innerHTML = '<option value="">-- Bière --</option>';
+            recettes.forEach(biere => {
+                const option = document.createElement('option');
+                option.value = biere.id;
+                option.textContent = biere.nom;
+                selectBiere.appendChild(option.cloneNode(true));
+                selectBiereHistorique.appendChild(option.cloneNode(true));
+            });
+        }
+
+        afficherStocks();
+        attachEventListeners();
+    } catch (error) {
+        console.error("Erreur lors du chargement des données:", error);
     }
-
-    // Charger les bières dans les sélecteurs
-    const selectBiere = document.getElementById('select-biere');
-    const selectBiereHistorique = document.getElementById('select-biere-historique');
-    if (selectBiere && selectBiereHistorique) {
-        selectBiere.innerHTML = '<option value="">-- Bière --</option>';
-        selectBiereHistorique.innerHTML = '<option value="">-- Bière --</option>';
-        recettes.forEach(biere => {
-            const option = document.createElement('option');
-            option.value = biere.id;
-            option.textContent = biere.nom;
-            selectBiere.appendChild(option.cloneNode(true));
-            selectBiereHistorique.appendChild(option.cloneNode(true));
-        });
-    }
-
-    afficherStocks();
-    attachEventListeners(); // Attacher les écouteurs après le premier chargement
 }
 
 // Afficher les stocks avec boutons d'action
-function afficherStocks() {
-    const stocks = JSON.parse(localStorage.getItem('stocks') || '[]');
-    stockTableBody = document.querySelector('#table-stocks tbody');
+async function afficherStocks() {
+    try {
+        const stocks = await loadData('stocks');
+        stockTableBody = document.querySelector('#table-stocks tbody');
 
-    if (stockTableBody) {
-        stockTableBody.innerHTML = stocks.map(stock => `
-            <tr data-id="${stock.id}">
-                <td>${stock.type || ''}</td>
-                <td>${stock.nom || ''}</td>
-                <td>${stock.lot || '-'}</td>
-                <td class="${stock.quantite < 0 ? 'stock-negatif' : ''}">${stock.quantite || 0}g</td>
-                <td>${stock.fournisseur || ''}</td>
-                <td>${stock.specification || '-'}</td>
-                <td>${stock.annee_recolte || '-'}</td>
-                <td>${stock.conditionnement || 'non spécifié'}</td>
-                <td>
-                    <button class="action-btn edit-btn" data-action="edit" data-id="${stock.id}" title="Éditer">
-                        <i class="material-icons">edit</i>
-                    </button>
-                    <button class="action-btn delete-btn" data-action="delete" data-id="${stock.id}" title="Supprimer">
-                        <i class="material-icons">delete</i>
-                    </button>
-                    ${stock.notes ? `<button class="action-btn notes-btn" data-action="notes" data-id="${stock.id}" title="Voir les notes">
-                        <i class="material-icons">info</i>
-                    </button>` : ''}
-                </td>
-            </tr>
-        `).join('');
+        if (stockTableBody) {
+            stockTableBody.innerHTML = stocks.map(stock => `
+                <tr data-id="${stock.id}">
+                    <td>${stock.type || ''}</td>
+                    <td>${stock.nom || ''}</td>
+                    <td>${stock.lot || '-'}</td>
+                    <td class="${stock.quantite < 0 ? 'stock-negatif' : ''}">${stock.quantite || 0}g</td>
+                    <td>${stock.fournisseur || ''}</td>
+                    <td>${stock.specification || '-'}</td>
+                    <td>${stock.annee_recolte || '-'}</td>
+                    <td>${stock.conditionnement || 'non spécifié'}</td>
+                    <td>
+                        <button class="action-btn edit-btn" data-action="edit" data-id="${stock.id}" title="Éditer">
+                            <i class="material-icons">edit</i>
+                        </button>
+                        <button class="action-btn delete-btn" data-action="delete" data-id="${stock.id}" title="Supprimer">
+                            <i class="material-icons">delete</i>
+                        </button>
+                        ${stock.notes ? `<button class="action-btn notes-btn" data-action="notes" data-id="${stock.id}" title="Voir les notes">
+                            <i class="material-icons">info</i>
+                        </button>` : ''}
+                    </td>
+                </tr>
+            `).join('');
 
-        attachEventListeners(); // Réattacher les écouteurs après chaque mise à jour
+            attachEventListeners();
+        }
+    } catch (error) {
+        console.error("Erreur lors de l'affichage des stocks:", error);
     }
 }
 
@@ -76,40 +84,37 @@ function afficherStocks() {
 function attachEventListeners() {
     if (!stockTableBody) return;
 
-    // Écouteur unique sur le tbody pour tous les boutons
-    stockTableBody.querySelectorAll('tr').forEach(row => {
-        const editBtn = row.querySelector('.edit-btn');
-        const deleteBtn = row.querySelector('.delete-btn');
-        const notesBtn = row.querySelector('.notes-btn');
-        const stockId = parseInt(row.getAttribute('data-id'));
+    stockTableBody.onclick = async function(e) {
+        const target = e.target.closest('button[data-action]');
+        if (!target) return;
 
-        if (editBtn) {
-            editBtn.onclick = () => {
-                const stocks = JSON.parse(localStorage.getItem('stocks') || '[]');
-                const stock = stocks.find(s => s.id === stockId);
-                if (stock) openEditModal('stock', stockId, stock);
-            };
-        }
+        const action = target.getAttribute('data-action');
+        const id = parseInt(target.closest('tr').getAttribute('data-id'));
 
-        if (deleteBtn) {
-            deleteBtn.onclick = () => {
-                const stocks = JSON.parse(localStorage.getItem('stocks') || '[]');
-                const stock = stocks.find(s => s.id === stockId);
-                if (stock) openDeleteModal(
-                    `Voulez-vous vraiment supprimer "${stock.nom}" ?`,
-                    () => supprimerStock(stockId)
-                );
-            };
-        }
+        try {
+            const stocks = await loadData('stocks');
+            const stock = stocks.find(s => s.id === id);
 
-        if (notesBtn) {
-            notesBtn.onclick = () => {
-                const stocks = JSON.parse(localStorage.getItem('stocks') || '[]');
-                const stock = stocks.find(s => s.id === stockId);
-                if (stock) alert(`Notes pour ${stock.nom}:\n${stock.notes}`);
-            };
+            if (!stock) return;
+
+            switch (action) {
+                case 'edit':
+                    openEditModal('stock', id, stock);
+                    break;
+                case 'delete':
+                    openDeleteModal(
+                        `Voulez-vous vraiment supprimer "${stock.nom}" ?`,
+                        async () => await supprimerStock(id)
+                    );
+                    break;
+                case 'notes':
+                    alert(`Notes pour ${stock.nom}:\n${stock.notes}`);
+                    break;
+            }
+        } catch (error) {
+            console.error("Erreur lors de la gestion de l'action:", error);
         }
-    });
+    };
 }
 
 // Ouvrir la modale d'ajout d'ingrédient
@@ -121,21 +126,101 @@ function ouvrirModalAjoutIngredient() {
     });
 }
 
+// Ajouter un nouvel ingrédient
+async function ajouterIngredient() {
+    const type = document.getElementById('edit-type').value;
+    const nom = document.getElementById('edit-nom').value;
+    const lot = document.getElementById('edit-lot').value;
+    const quantite = parseFloat(document.getElementById('edit-quantite').value);
+    const fournisseur = document.getElementById('edit-fournisseur').value;
+    const specification = document.getElementById('edit-specification').value;
+    const annee = document.getElementById('edit-annee').value;
+    const conditionnement = document.getElementById('edit-conditionnement').value;
+    const notes = document.getElementById('edit-notes').value;
+
+    if (!type || !nom || !fournisseur || isNaN(quantite)) {
+        alert("Veuillez remplir tous les champs obligatoires.");
+        return;
+    }
+
+    try {
+        const nouvelIngredient = {
+            type: type,
+            nom: nom,
+            lot: lot,
+            quantite: quantite,
+            fournisseur: fournisseur,
+            specification: (type === 'Malt' || type === 'Houblon') ? specification : null,
+            annee_recolte: type === 'Houblon' ? parseInt(annee) || null : null,
+            pourcentage_aa: type === 'Houblon' ? parseFloat(specification) || null : null,
+            conditionnement: conditionnement || 'non spécifié',
+            notes: notes
+        };
+
+        await addItem('stocks', nouvelIngredient);
+        afficherStocks();
+        closeModal('editModal');
+        alert(`L'ingrédient "${nom}" a été ajouté avec succès.`);
+    } catch (error) {
+        console.error("Erreur lors de l'ajout de l'ingrédient:", error);
+        alert("Une erreur est survenue lors de l'ajout de l'ingrédient.");
+    }
+}
+
+// Sauvegarder les modifications
+async function saveEdit() {
+    if (!currentEditType || currentEditId === null) {
+        console.error("Type ou ID manquant pour la sauvegarde.");
+        return;
+    }
+
+    try {
+        const type = document.getElementById('edit-type').value;
+        const specification = document.getElementById('edit-specification').value;
+        const annee = document.getElementById('edit-annee').value;
+
+        const updatedStock = {
+            id: currentEditId,
+            type: type,
+            nom: document.getElementById('edit-nom').value,
+            lot: document.getElementById('edit-lot').value,
+            quantite: parseFloat(document.getElementById('edit-quantite').value),
+            fournisseur: document.getElementById('edit-fournisseur').value,
+            specification: (type === 'Malt' || type === 'Houblon') ? specification : null,
+            annee_recolte: type === 'Houblon' ? parseInt(annee) || null : null,
+            pourcentage_aa: type === 'Houblon' ? parseFloat(specification) || null : null,
+            conditionnement: document.getElementById('edit-conditionnement').value,
+            notes: document.getElementById('edit-notes').value
+        };
+
+        await updateItem('stocks', updatedStock);
+        afficherStocks();
+        alert("Ingrédient mis à jour avec succès !");
+        closeModal('editModal');
+    } catch (error) {
+        console.error("Erreur lors de la sauvegarde des modifications:", error);
+        alert("Une erreur est survenue lors de la sauvegarde.");
+    }
+}
+
 // Supprimer un stock
-function supprimerStock(id) {
-    let stocks = JSON.parse(localStorage.getItem('stocks') || '[]');
-    const stockIndex = stocks.findIndex(s => s.id === id);
-    if (stockIndex !== -1) {
-        const nomStock = stocks[stockIndex].nom;
-        stocks = stocks.filter(stock => stock.id !== id);
-        localStorage.setItem('stocks', JSON.stringify(stocks));
-        afficherStocks(); // Recharge le tableau et réattache les écouteurs
-        alert(`"${nomStock}" supprimé avec succès.`);
+async function supprimerStock(id) {
+    try {
+        const stocks = await loadData('stocks');
+        const stockToDelete = stocks.find(s => s.id === id);
+        if (!stockToDelete) return;
+
+        await deleteItem('stocks', id);
+        afficherStocks();
+        alert(`"${stockToDelete.nom}" a été supprimé avec succès.`);
+    } catch (error) {
+        console.error("Erreur lors de la suppression du stock:", error);
+        alert("Une erreur est survenue lors de la suppression.");
     }
 }
 
 // Retirer du stock
-function retirerStock() {
+async function retirerStock() {
     const idIngredient = document.getElementById('select-ingredient')?.value;
     const idBiere = document.getElementById('select-biere')?.value;
     const quantite = parseFloat(document.getElementById('quantite-retrait')?.value);
@@ -145,73 +230,75 @@ function retirerStock() {
         return;
     }
 
-    let stocks = JSON.parse(localStorage.getItem('stocks') || '[]');
-    const stockIndex = stocks.findIndex(s => s.id == idIngredient);
-    if (stockIndex !== -1) {
-        stocks[stockIndex].quantite -= quantite;
-        localStorage.setItem('stocks', JSON.stringify(stocks));
+    try {
+        const stocks = await loadData('stocks');
+        const stockIndex = stocks.findIndex(s => s.id == idIngredient);
+        if (stockIndex !== -1) {
+            const updatedStock = {...stocks[stockIndex]};
+            updatedStock.quantite -= quantite;
+            await updateItem('stocks', updatedStock);
+
+            // Ajouter à l'historique
+            const historiqueEntry = {
+                date: new Date().toISOString(),
+                type: "retrait",
+                ingredient: updatedStock.nom,
+                lot: updatedStock.lot || '-',
+                quantite: quantite,
+                stock_avant: updatedStock.quantite + quantite,
+                stock_apres: updatedStock.quantite,
+                id_biere: parseInt(idBiere),
+                notes: `Retrait pour la bière #${idBiere}`
+            };
+            await addItem('historique_stocks', historiqueEntry);
+
+            alert(`Retrait de ${quantite}g de ${updatedStock.nom} pour la bière #${idBiere} enregistré.`);
+            afficherStocks();
+        }
+    } catch (error) {
+        console.error("Erreur lors du retrait de stock:", error);
+        alert("Une erreur est survenue lors du retrait de stock.");
     }
-
-    // Ajouter à l'historique
-    const ingredient = stocks[stockIndex];
-    let historique = JSON.parse(localStorage.getItem('historique_stocks') || '[]');
-    historique.push({
-        date: new Date().toISOString(),
-        type: "retrait",
-        ingredient: ingredient.nom,
-        lot: ingredient.lot || '-',
-        quantite: quantite,
-        stock_avant: ingredient.quantite + quantite,
-        stock_apres: ingredient.quantite,
-        id_biere: parseInt(idBiere),
-        notes: `Retrait pour la bière #${idBiere}`
-    });
-    localStorage.setItem('historique_stocks', JSON.stringify(historique));
-
-    alert(`Retrait de ${quantite}g de ${ingredient.nom} pour la bière #${idBiere} enregistré.`);
-    afficherStocks();
 }
 
 // Afficher l'historique par bière
-function afficherHistoriqueParBiere(idBiere) {
-    const historique = JSON.parse(localStorage.getItem('historique_stocks') || '[]');
-    const historiqueFiltre = historique.filter(entry => entry.id_biere == idBiere);
-    const tbody = document.querySelector('#historique-biere tbody');
-    if (tbody) {
-        tbody.innerHTML = historiqueFiltre.map(entry => `
-            <tr data-date="${entry.date}">
-                <td>${new Date(entry.date).toLocaleString()}</td>
-                <td>${entry.ingredient || ''}</td>
-                <td>${entry.quantite || 0}g</td>
-                <td>${entry.notes || ''}</td>
-                <td>
-                    <button class="action-btn delete-btn" data-action="delete" data-date="${entry.date}" title="Supprimer">
-                        <i class="material-icons">delete</i>
-                    </button>
-                </td>
-            </tr>
-        `).join('');
+async function afficherHistoriqueParBiere(idBiere) {
+    try {
+        const historique = await loadData('historique_stocks');
+        const historiqueFiltre = historique.filter(entry => entry.id_biere == idBiere);
+        const tbody = document.querySelector('#historique-biere tbody');
 
-        // Écouteur pour les boutons de suppression de l'historique
-        tbody.querySelectorAll('.delete-btn').forEach(btn => {
-            btn.onclick = () => {
-                const date = btn.getAttribute('data-date');
-                openDeleteModal(
-                    'Voulez-vous vraiment supprimer cette entrée d\'historique ?',
-                    () => supprimerHistorique(date)
-                );
-            };
-        });
+        if (tbody) {
+            tbody.innerHTML = historiqueFiltre.map(entry => `
+                <tr data-id="${entry.id}">
+                    <td>${new Date(entry.date).toLocaleString()}</td>
+                    <td>${entry.ingredient || ''}</td>
+                    <td>${entry.quantite || 0}g</td>
+                    <td>${entry.notes || ''}</td>
+                    <td>
+                        <button class="action-btn delete-btn" data-action="delete" data-id="${entry.id}" title="Supprimer">
+                            <i class="material-icons">delete</i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+
+            // Écouteur pour les boutons de suppression de l'historique
+            tbody.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.onclick = async () => {
+                    const id = parseInt(btn.closest('tr').getAttribute('data-id'));
+                    try {
+                        await deleteItem('historique_stocks', id);
+                        afficherHistoriqueParBiere(idBiere);
+                    } catch (error) {
+                        console.error("Erreur lors de la suppression de l'entrée d'historique:", error);
+                    }
+                };
+            });
+        }
+    } catch (error) {
+        console.error("Erreur lors de l'affichage de l'historique:", error);
     }
-}
-
-// Supprimer une entrée d'historique
-function supprimerHistorique(date) {
-    let historique = JSON.parse(localStorage.getItem('historique_stocks') || '[]');
-    historique = historique.filter(entry => entry.date !== date);
-    localStorage.setItem('historique_stocks', JSON.stringify(historique));
-    const biereId = document.getElementById('select-biere-historique')?.value;
-    if (biereId) afficherHistoriqueParBiere(biereId);
 }
 
 // Initialisation au chargement de la page
