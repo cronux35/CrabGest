@@ -1,8 +1,6 @@
 document.addEventListener('DOMContentLoaded', async function() {
-    // Initialisation des données par défaut si la base est vide
     async function initData() {
         try {
-            // Vérifier si des données existent déjà
             const stocks = await loadData('stocks').catch(() => []);
             if (stocks.length === 0) {
                 const defaultStocks = [
@@ -22,7 +20,6 @@ document.addEventListener('DOMContentLoaded', async function() {
                 await saveData('stocks', defaultStocks);
             }
 
-            // Initialiser les autres stores si vides
             const storesToInit = ['bieres', 'fermentations', 'conditionnements', 'ventes', 'historique_stocks', 'clients', 'declarations_douanes'];
             for (const store of storesToInit) {
                 try {
@@ -39,7 +36,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
 
-    // Gestion du menu burger
     const menuBurger = document.getElementById('menuBurger');
     const mainNav = document.getElementById('mainNav');
     if (menuBurger && mainNav) {
@@ -49,7 +45,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     }
 
-    // Gestion des onglets
     document.querySelectorAll('.tab-button').forEach(function(button) {
         button.addEventListener('click', function() {
             document.querySelectorAll('.tab-button').forEach(function(b) {
@@ -64,18 +59,13 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     });
 
-    // Initialisation avec gestion des erreurs
     try {
         await initData();
         if (typeof chargerDonnees === 'function') chargerDonnees();
         if (typeof afficherBieres === 'function') afficherBieres();
-        if (typeof chargerDonneesRetrait === 'function') {
-                chargerDonneesRetrait();
-            }
-        } catch (error) {
-            console.error("Erreur lors de l'initialisation des données:", error);
-        }
-        // Afficher un message à l'utilisateur
+        if (typeof chargerDonneesRetrait === 'function') chargerDonneesRetrait();
+    } catch (error) {
+        console.error("Erreur lors de l'initialisation de l'application:", error);
         alert("Une erreur est survenue lors du chargement de l'application. Veuillez actualiser la page.");
     }
 });
