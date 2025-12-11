@@ -1,11 +1,10 @@
-// fermentation.js - Gestion complète du suivi de fermentation
+// fermentation.js - Version corrigée complète
 let fermentationChart = null;
 
 // Charger les bières dans le sélecteur de fermentation
 async function chargerSelecteurBieresFermentation() {
     try {
         const bieres = await loadData('bieres').catch(() => []);
-
         const selectBiereFermentation = document.getElementById('select-biere-fermentation');
         if (selectBiereFermentation) {
             selectBiereFermentation.innerHTML = '<option value="">-- Sélectionner une bière --</option>';
@@ -23,7 +22,6 @@ async function chargerSelecteurBieresFermentation() {
 
 // Calculer les limites dynamiques pour les échelles
 function calculerLimitesEchelles(densites, temperatures) {
-    // Calcul des limites pour la gravité
     let minGravite = 0.800;
     let maxGravite = 1.150;
 
@@ -31,13 +29,11 @@ function calculerLimitesEchelles(densites, temperatures) {
         const graviteValues = densites.map(d => d.valeur);
         const minGraviteData = Math.min(...graviteValues);
         const maxGraviteData = Math.max(...graviteValues);
-
         const margeGravite = Math.max(0.010, 0.05 * (maxGraviteData - minGraviteData));
         minGravite = Math.max(0.800, minGraviteData - margeGravite);
         maxGravite = Math.min(1.150, maxGraviteData + margeGravite);
     }
 
-    // Calcul des limites pour la température
     let minTemperature = 0;
     let maxTemperature = 40;
 
@@ -45,7 +41,6 @@ function calculerLimitesEchelles(densites, temperatures) {
         const tempValues = temperatures.map(t => t.valeur);
         const minTempData = Math.min(...tempValues);
         const maxTempData = Math.max(...tempValues);
-
         const margeTemp = Math.max(2, 0.1 * (maxTempData - minTempData));
         minTemperature = Math.max(0, minTempData - margeTemp);
         maxTemperature = Math.min(40, maxTempData + margeTemp);
@@ -62,7 +57,6 @@ async function afficherSuiviFermentation(idBiere) {
     try {
         const fermentations = await loadData('fermentations').catch(() => []);
         const biere = await loadItemById('bieres', idBiere).catch(() => null);
-
         const data = fermentations.filter(f => f.id_biere == idBiere);
 
         // Afficher les actions de fermentation dans un tableau
@@ -123,7 +117,7 @@ function afficherGraphiqueFermentation(data, nomBiere) {
         fermentationChart = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: datesUniques.map(date => date.toISOString()),
+                labels: datesUniques.map(date => date.getTime()), // Utiliser des timestamps pour l'axe X
                 datasets: [
                     {
                         label: 'Gravité (SG)',
@@ -180,7 +174,7 @@ function afficherGraphiqueFermentation(data, nomBiere) {
                                 return label;
                             },
                             title: function(tooltipItems) {
-                                const date = new Date(tooltipItems[0].label);
+                                const date = new Date(tooltipItems[0].parsed.x);
                                 return date.toLocaleString();
                             }
                         }
@@ -228,7 +222,6 @@ function afficherGraphiqueFermentation(data, nomBiere) {
                     x: {
                         type: 'time',
                         time: {
-                            parser: 'yyyy-MM-ddTHH:mm:ss.sssZ',
                             unit: 'hour',
                             displayFormats: {
                                 hour: 'HH:mm',
@@ -249,9 +242,8 @@ function afficherGraphiqueFermentation(data, nomBiere) {
                             maxRotation: 45,
                             minRotation: 45,
                             callback: function(value, index, values) {
-                                // Afficher seulement certains ticks pour éviter la surcharge
                                 if (values.length <= 10 || index % Math.max(1, Math.floor(values.length / 10)) === 0) {
-                                    const date = new Date(this.getLabelForValue(value));
+                                    const date = new Date(value);
                                     return date.toLocaleString([], {
                                         hour: '2-digit',
                                         minute: '2-digit',
