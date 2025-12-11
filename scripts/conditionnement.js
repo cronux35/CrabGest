@@ -1,4 +1,4 @@
-// conditionnement.js - Version avec filtres déroulants et actualisation automatique
+// conditionnement.js - Version finale corrigée
 let currentConditionnementId = null;
 let currentSortColumn = null;
 let currentSortDirection = 1;
@@ -37,8 +37,8 @@ async function chargerDonneesInitiales() {
         chargerSelecteurBieresConditionnement();
         chargerSelecteurContenants();
 
-        // Initialiser les filtres
-        initialiserFiltres();
+        // Créer la ligne de filtres
+        ajouterLigneFiltres();
 
         // Afficher les conditionnements
         afficherConditionnements();
@@ -75,122 +75,170 @@ function chargerSelecteurContenants() {
     }
 }
 
-// 6. Initialiser les filtres déroulants
-function initialiserFiltres() {
-    const headers = document.querySelectorAll('#table-conditionnements thead th');
-    headers.forEach((header, index) => {
-        if (index === headers.length - 1) return; // Ne pas ajouter de filtre à la colonne Actions
+// 6. Ajouter une ligne de filtres sous l'en-tête
+function ajouterLigneFiltres() {
+    const table = document.getElementById('table-conditionnements');
+    if (!table) return;
 
-        const filterContainer = document.createElement('div');
-        filterContainer.className = 'filter-container';
+    const thead = table.querySelector('thead');
+    if (!thead) return;
 
-        const select = document.createElement('select');
-        select.className = 'filter-select';
-        select.dataset.column = index;
+    // Créer une nouvelle ligne pour les filtres
+    const filterRow = document.createElement('tr');
+    filterRow.className = 'filter-row';
 
-        // Ajouter une option "Tous" par défaut
-        const defaultOption = document.createElement('option');
-        defaultOption.value = '';
-        defaultOption.textContent = 'Tous';
-        select.appendChild(defaultOption);
+    // Ajouter les filtres dans l'ordre exact des colonnes
+    // 1. Numéro de lot
+    const tdLot = document.createElement('td');
+    const selectLot = document.createElement('select');
+    selectLot.className = 'filter-select';
+    selectLot.dataset.column = '0';
+    const defaultOptionLot = document.createElement('option');
+    defaultOptionLot.value = '';
+    defaultOptionLot.textContent = 'Tous';
+    selectLot.appendChild(defaultOptionLot);
 
-        // Ajouter les options spécifiques à chaque colonne
-        switch(index) {
-            case 0: // Numéro de lot
-                const lotsUniques = [...new Set(allConditionnements.map(c => c.numero_lot))].sort();
-                lotsUniques.forEach(lot => {
-                    const option = document.createElement('option');
-                    option.value = lot;
-                    option.textContent = lot;
-                    select.appendChild(option);
-                });
-                break;
-
-            case 1: // Bière
-                allBieres.forEach(biere => {
-                    const option = document.createElement('option');
-                    option.value = biere.nom;
-                    option.textContent = biere.nom;
-                    select.appendChild(option);
-                });
-                break;
-
-            case 2: // ABV
-                const abvUniques = [...new Set(allConditionnements.map(c => c.abv))].sort((a, b) => a - b);
-                abvUniques.forEach(abv => {
-                    const option = document.createElement('option');
-                    option.value = abv;
-                    option.textContent = abv + '°';
-                    select.appendChild(option);
-                });
-                break;
-
-            case 3: // Contenant
-                TYPES_CONTENANTS.forEach(contenant => {
-                    const option = document.createElement('option');
-                    option.value = contenant.nom;
-                    option.textContent = contenant.nom;
-                    select.appendChild(option);
-                });
-                break;
-
-            case 4: // Quantité
-                // Pas de filtre spécifique pour la quantité
-                select.style.display = 'none';
-                const input = document.createElement('input');
-                input.type = 'number';
-                input.placeholder = 'Filtrer...';
-                input.className = 'filter-input';
-                input.dataset.column = index;
-                input.addEventListener('input', () => {
-                    currentFilters[index] = input.value;
-                    afficherConditionnements();
-                });
-                filterContainer.appendChild(input);
-                break;
-
-            case 5: // Volume conditionné
-                // Pas de filtre spécifique pour le volume
-                select.style.display = 'none';
-                const volumeInput = document.createElement('input');
-                volumeInput.type = 'number';
-                volumeInput.placeholder = 'Filtrer...';
-                volumeInput.className = 'filter-input';
-                volumeInput.dataset.column = index;
-                volumeInput.addEventListener('input', () => {
-                    currentFilters[index] = volumeInput.value;
-                    afficherConditionnements();
-                });
-                filterContainer.appendChild(volumeInput);
-                break;
-
-            case 6: // Date
-                // Pas de filtre spécifique pour la date
-                select.style.display = 'none';
-                const dateInput = document.createElement('input');
-                dateInput.type = 'date';
-                dateInput.className = 'filter-input';
-                dateInput.dataset.column = index;
-                dateInput.addEventListener('input', () => {
-                    currentFilters[index] = dateInput.value;
-                    afficherConditionnements();
-                });
-                filterContainer.appendChild(dateInput);
-                break;
-        }
-
-        if (select.style.display !== 'none') {
-            select.addEventListener('change', () => {
-                currentFilters[index] = select.value;
-                afficherConditionnements();
-            });
-            filterContainer.appendChild(select);
-        }
-
-        header.appendChild(filterContainer);
+    const lotsUniques = [...new Set(allConditionnements.map(c => c.numero_lot))].sort();
+    lotsUniques.forEach(lot => {
+        const option = document.createElement('option');
+        option.value = lot;
+        option.textContent = lot;
+        selectLot.appendChild(option);
     });
 
-    // Ajouter des indicateurs de tri
+    selectLot.addEventListener('change', () => {
+        currentFilters[0] = selectLot.value;
+        afficherConditionnements();
+    });
+    tdLot.appendChild(selectLot);
+    filterRow.appendChild(tdLot);
+
+    // 2. Bière
+    const tdBiere = document.createElement('td');
+    const selectBiere = document.createElement('select');
+    selectBiere.className = 'filter-select';
+    selectBiere.dataset.column = '1';
+    const defaultOptionBiere = document.createElement('option');
+    defaultOptionBiere.value = '';
+    defaultOptionBiere.textContent = 'Tous';
+    selectBiere.appendChild(defaultOptionBiere);
+
+    allBieres.forEach(biere => {
+        const option = document.createElement('option');
+        option.value = biere.nom;
+        option.textContent = biere.nom;
+        selectBiere.appendChild(option);
+    });
+
+    selectBiere.addEventListener('change', () => {
+        currentFilters[1] = selectBiere.value;
+        afficherConditionnements();
+    });
+    tdBiere.appendChild(selectBiere);
+    filterRow.appendChild(tdBiere);
+
+    // 3. ABV
+    const tdAbv = document.createElement('td');
+    const selectAbv = document.createElement('select');
+    selectAbv.className = 'filter-select';
+    selectAbv.dataset.column = '2';
+    const defaultOptionAbv = document.createElement('option');
+    defaultOptionAbv.value = '';
+    defaultOptionAbv.textContent = 'Tous';
+    selectAbv.appendChild(defaultOptionAbv);
+
+    const abvUniques = [...new Set(allConditionnements.map(c => c.abv))].sort((a, b) => a - b);
+    abvUniques.forEach(abv => {
+        const option = document.createElement('option');
+        option.value = abv;
+        option.textContent = abv + '°';
+        selectAbv.appendChild(option);
+    });
+
+    selectAbv.addEventListener('change', () => {
+        currentFilters[2] = selectAbv.value;
+        afficherConditionnements();
+    });
+    tdAbv.appendChild(selectAbv);
+    filterRow.appendChild(tdAbv);
+
+    // 4. Contenant
+    const tdContenant = document.createElement('td');
+    const selectContenant = document.createElement('select');
+    selectContenant.className = 'filter-select';
+    selectContenant.dataset.column = '3';
+    const defaultOptionContenant = document.createElement('option');
+    defaultOptionContenant.value = '';
+    defaultOptionContenant.textContent = 'Tous';
+    selectContenant.appendChild(defaultOptionContenant);
+
+    TYPES_CONTENANTS.forEach(contenant => {
+        const option = document.createElement('option');
+        option.value = contenant.nom;
+        option.textContent = contenant.nom;
+        selectContenant.appendChild(option);
+    });
+
+    selectContenant.addEventListener('change', () => {
+        currentFilters[3] = selectContenant.value;
+        afficherConditionnements();
+    });
+    tdContenant.appendChild(selectContenant);
+    filterRow.appendChild(tdContenant);
+
+    // 5. Quantité
+    const tdQuantite = document.createElement('td');
+    const inputQuantite = document.createElement('input');
+    inputQuantite.type = 'number';
+    inputQuantite.placeholder = 'Filtrer...';
+    inputQuantite.className = 'filter-input';
+    inputQuantite.dataset.column = '4';
+
+    inputQuantite.addEventListener('input', () => {
+        currentFilters[4] = inputQuantite.value;
+        afficherConditionnements();
+    });
+    tdQuantite.appendChild(inputQuantite);
+    filterRow.appendChild(tdQuantite);
+
+    // 6. Volume conditionné
+    const tdVolume = document.createElement('td');
+    const inputVolume = document.createElement('input');
+    inputVolume.type = 'number';
+    inputVolume.placeholder = 'Filtrer...';
+    inputVolume.className = 'filter-input';
+    inputVolume.dataset.column = '5';
+
+    inputVolume.addEventListener('input', () => {
+        currentFilters[5] = inputVolume.value;
+        afficherConditionnements();
+    });
+    tdVolume.appendChild(inputVolume);
+    filterRow.appendChild(tdVolume);
+
+    // 7. Date
+    const tdDate = document.createElement('td');
+    const inputDate = document.createElement('input');
+    inputDate.type = 'date';
+    inputDate.className = 'filter-input';
+    inputDate.dataset.column = '6';
+
+    inputDate.addEventListener('input', () => {
+        currentFilters[6] = inputDate.value;
+        afficherConditionnements();
+    });
+    tdDate.appendChild(inputDate);
+    filterRow.appendChild(tdDate);
+
+    // 8. Cellule vide pour les actions (pas de filtre)
+    const tdActions = document.createElement('td');
+    filterRow.appendChild(tdActions);
+
+    // Ajouter la ligne de filtres au thead
+    thead.appendChild(filterRow);
+
+    // Ajouter des indicateurs de tri aux en-têtes
+    const headers = document.querySelectorAll('#table-conditionnements thead tr:first-child th');
     headers.forEach((header, index) => {
         if (index === headers.length - 1) return; // Ne pas ajouter de tri à la colonne Actions
 
@@ -348,7 +396,7 @@ async function afficherConditionnements() {
             });
 
             // Mettre à jour les indicateurs de tri
-            const headers = document.querySelectorAll('#table-conditionnements thead th');
+            const headers = document.querySelectorAll('#table-conditionnements thead tr:first-child th');
             headers.forEach((header, index) => {
                 header.classList.remove('sorted-asc', 'sorted-desc');
                 if (index === currentSortColumn) {
@@ -531,4 +579,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (abvInput) abvInput.step = '0.1';
     if (quantiteInput) quantiteInput.step = '1';
     if (dateInput) dateInput.valueAsDate = new Date();
+
+    // Initialiser les filtres
+    currentFilters = {};
 });
