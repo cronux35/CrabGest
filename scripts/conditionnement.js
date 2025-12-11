@@ -1,7 +1,7 @@
-// conditionnement.js - Version avec tri et filtres
+// conditionnement.js - Version optimisée
 let currentConditionnementId = null;
 let currentSortColumn = null;
-let currentSortDirection = 1; // 1 = ascendant, -1 = descendant
+let currentSortDirection = 1;
 let currentFilters = {};
 
 // 1. Types de contenants disponibles
@@ -66,14 +66,14 @@ function ajouterFiltresTableau() {
     const headerRow = thead.querySelector('tr');
     if (!headerRow) return;
 
-    // Ajouter des inputs de filtre pour chaque colonne
+    // Ajouter des inputs de filtre pour chaque colonne (sauf Actions)
     const headers = headerRow.querySelectorAll('th');
     headers.forEach((header, index) => {
         if (index === headers.length - 1) return; // Ne pas ajouter de filtre à la colonne Actions
 
         const input = document.createElement('input');
         input.type = 'text';
-        input.placeholder = `Filtrer...`;
+        input.placeholder = 'Filtrer...';
         input.className = 'filter-input';
         input.dataset.column = index;
 
@@ -115,15 +115,13 @@ function appliquerFiltresEtTri(data, bieres) {
 
             columnIndex = parseInt(columnIndex);
             switch(columnIndex) {
-                case 0: return cond.id.toString().toLowerCase().includes(filterValue);
-                case 1: return (biere ? biere.nom.toLowerCase() : '').includes(filterValue);
-                case 2: return cond.volume_total_calcule.toString().includes(filterValue);
-                case 3: return cond.abv.toString().includes(filterValue);
-                case 4: return (contenant ? contenant.nom.toLowerCase() : '').includes(filterValue);
-                case 5: return cond.quantite.toString().includes(filterValue);
-                case 6: return (cond.quantite * contenant.volume).toFixed(2).includes(filterValue);
-                case 7: return new Date(cond.date).toLocaleDateString().toLowerCase().includes(filterValue);
-                case 8: return (cond.numero_lot || '').toLowerCase().includes(filterValue);
+                case 0: return cond.numero_lot.toLowerCase().includes(filterValue); // Numéro de lot
+                case 1: return (biere ? biere.nom.toLowerCase() : '').includes(filterValue); // Bière
+                case 2: return cond.abv.toString().includes(filterValue); // ABV
+                case 3: return (contenant ? contenant.nom.toLowerCase() : '').includes(filterValue); // Contenant
+                case 4: return cond.quantite.toString().includes(filterValue); // Quantité
+                case 5: return (cond.quantite * (contenant ? contenant.volume : 0)).toFixed(2).includes(filterValue); // Volume conditionné
+                case 6: return new Date(cond.date).toLocaleDateString().toLowerCase().includes(filterValue); // Date
                 default: return true;
             }
         });
@@ -140,15 +138,13 @@ function appliquerFiltresEtTri(data, bieres) {
             let valueA, valueB;
 
             switch(currentSortColumn) {
-                case 0: valueA = a.id; valueB = b.id; break;
+                case 0: valueA = a.numero_lot; valueB = b.numero_lot; break;
                 case 1: valueA = biereA ? biereA.nom : ''; valueB = biereB ? biereB.nom : ''; break;
-                case 2: valueA = a.volume_total_calcule; valueB = b.volume_total_calcule; break;
-                case 3: valueA = a.abv; valueB = b.abv; break;
-                case 4: valueA = contenantA ? contenantA.nom : ''; valueB = contenantB ? contenantB.nom : ''; break;
-                case 5: valueA = a.quantite; valueB = b.quantite; break;
-                case 6: valueA = a.quantite * (contenantA ? contenantA.volume : 0); valueB = b.quantite * (contenantB ? contenantB.volume : 0); break;
-                case 7: valueA = new Date(a.date); valueB = new Date(b.date); break;
-                case 8: valueA = a.numero_lot || ''; valueB = b.numero_lot || ''; break;
+                case 2: valueA = a.abv; valueB = b.abv; break;
+                case 3: valueA = contenantA ? contenantA.nom : ''; valueB = contenantB ? contenantB.nom : ''; break;
+                case 4: valueA = a.quantite; valueB = b.quantite; break;
+                case 5: valueA = a.quantite * (contenantA ? contenantA.volume : 0); valueB = b.quantite * (contenantB ? contenantB.volume : 0); break;
+                case 6: valueA = new Date(a.date); valueB = new Date(b.date); break;
                 default: return 0;
             }
 
@@ -189,19 +185,16 @@ async function afficherConditionnements() {
                 const biere = bieres.find(b => b.id === cond.id_biere);
                 const contenant = TYPES_CONTENANTS.find(c => c.id === cond.type_contenant);
                 const volumeTotalContenant = cond.quantite * (contenant ? contenant.volume : 0);
-                const volumeTotalBiere = volumesParBiere[cond.id_biere] || 0;
 
                 return `
                     <tr data-id="${cond.id}">
-                        <td>${cond.id}</td>
+                        <td>${cond.numero_lot || '-'}</td>
                         <td>${biere ? biere.nom : 'Inconnu'}</td>
-                        <td>${cond.volume_total_calcule ? cond.volume_total_calcule.toFixed(2) : 'N/A'}L</td>
                         <td>${cond.abv}°</td>
                         <td>${contenant ? contenant.nom : cond.type_contenant}</td>
                         <td>${cond.quantite}</td>
                         <td>${volumeTotalContenant.toFixed(2)}L</td>
                         <td>${new Date(cond.date).toLocaleDateString()}</td>
-                        <td>${cond.numero_lot || '-'}</td>
                         <td>
                             <button class="action-btn info-btn" title="Voir historique"
                                    onclick="afficherHistoriqueConditionnement(${cond.id_biere})">
@@ -239,11 +232,10 @@ async function afficherConditionnements() {
                 const row = document.createElement('tr');
                 row.className = 'synthese-biere';
                 row.innerHTML = `
-                    <td colspan="2"><strong>${data.nom}</strong></td>
-                    <td colspan="2"><strong>Total:</strong></td>
-                    <td colspan="2"><strong>${data.count} contenants</strong></td>
+                    <td colspan="4"><strong>${data.nom}</strong></td>
+                    <td><strong>${data.count} contenants</strong></td>
                     <td><strong>${data.volumeTotal.toFixed(2)}L</strong></td>
-                    <td colspan="3"></td>
+                    <td colspan="2"></td>
                 `;
                 tbody.appendChild(row);
             });
@@ -297,14 +289,14 @@ async function ajouterConditionnement() {
         const nouveauConditionnement = {
             id_biere: parseInt(idBiere),
             nom_biere: biere.nom,
-            volume_total_calcule: volumeTotalContenants,
             abv: abv,
             type_contenant: typeContenant,
             quantite: quantite,
             date: dateConditionnement,
             numero_lot: numeroLot,
             contenant_nom: contenant.nom,
-            contenant_volume: contenant.volume
+            contenant_volume: contenant.volume,
+            volume_total_contenants: volumeTotalContenants
         };
 
         await addItem('conditionnements', nouveauConditionnement);
@@ -367,10 +359,7 @@ async function supprimerConditionnement(id) {
 
                 // Mettre à jour le volume total
                 if (biere.volume_total_conditionne) {
-                    const contenant = TYPES_CONTENANTS.find(c => c.id === conditionnement.type_contenant);
-                    if (contenant) {
-                        biere.volume_total_conditionne -= conditionnement.quantite * contenant.volume;
-                    }
+                    biere.volume_total_conditionne -= conditionnement.volume_total_contenants;
                 }
 
                 await updateItem('bieres', biere);
@@ -384,7 +373,7 @@ async function supprimerConditionnement(id) {
     }
 }
 
-// 10. Afficher l'historique de conditionnement
+// 10. Afficher l'historique de conditionnement pour une bière
 async function afficherHistoriqueConditionnement(idBiere) {
     try {
         const biere = await loadItemById('bieres', idBiere);
