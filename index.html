@@ -4,11 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CrabGest - Gestion de Brasserie</title>
+    <!-- Polices Google -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
+    <!-- Styles locaux -->
     <link rel="stylesheet" href="styles/theme.css">
     <link rel="stylesheet" href="styles/style.css">
+    <!-- Font Awesome local -->
     <link rel="stylesheet" href="lib/font-awesome.min.css">
+    <!-- Manifest pour PWA -->
+    <link rel="manifest" href="manifest.json">
+    <!-- CSP pour éviter les blocages -->
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' fonts.googleapis.com; font-src 'self' fonts.gstatic.com; img-src 'self' data:">
 </head>
 <body>
@@ -33,6 +39,7 @@
     </header>
 
     <main>
+        <!-- Stocks -->
         <section id="stocks" class="tab active">
             <h2>Gestion des Stocks</h2>
             <div class="card">
@@ -40,20 +47,6 @@
                     <button onclick="ouvrirModalAjoutIngredient()" class="btn btn-primary">
                         <i class="material-icons">add</i> Ajouter un ingrédient
                     </button>
-                </div>
-                <div class="card">
-                    <h3>Retirer du stock pour une bière</h3>
-                    <div class="form-group">
-                        <select id="select-ingredient-retrait" class="form-control">
-                            <option value="">-- Ingrédient --</option>
-                        </select>
-                        <select id="select-biere-retrait" class="form-control">
-                            <option value="">-- Bière --</option>
-                        </select>
-                        <input type="number" id="quantite-retrait" class="form-control" placeholder="Quantité (g)" min="1">
-                        <button onclick="retirerStockPourBiere()" class="btn btn-primary">Retirer</button>
-                    </div>
-                    <div id="retrait-error" class="error-message"></div>
                 </div>
                 <div class="table-responsive">
                     <table id="table-stocks" class="table">
@@ -74,6 +67,23 @@
                     </table>
                 </div>
 
+                <!-- Formulaire de retrait de stock -->
+                <div class="card">
+                    <h3>Retirer du stock pour une bière</h3>
+                    <div class="form-group">
+                        <select id="select-ingredient-retrait" class="form-control">
+                            <option value="">-- Ingrédient --</option>
+                        </select>
+                        <select id="select-biere-retrait" class="form-control">
+                            <option value="">-- Bière --</option>
+                        </select>
+                        <input type="number" id="quantite-retrait" class="form-control" placeholder="Quantité (g)" min="1">
+                        <button onclick="retirerStockPourBiere()" class="btn btn-primary">Retirer</button>
+                    </div>
+                    <div id="retrait-error" class="error-message"></div>
+                </div>
+
+                <!-- Historique des retraits -->
                 <div class="card">
                     <h3>Historique des retraits</h3>
                     <div class="table-responsive">
@@ -95,6 +105,7 @@
             </div>
         </section>
 
+        <!-- Bières -->
         <section id="bieres" class="tab">
             <h2>Gestion des Bières</h2>
             <div class="card">
@@ -123,6 +134,7 @@
             </div>
         </section>
 
+        <!-- Fermentation -->
         <section id="fermentation" class="tab">
             <h2>Suivi de Fermentation</h2>
             <div class="card">
@@ -149,6 +161,7 @@
             </div>
         </section>
 
+        <!-- Conditionnement -->
         <section id="conditionnement" class="tab">
             <h2>Conditionnement</h2>
             <div class="card">
@@ -184,6 +197,7 @@
             </div>
         </section>
 
+        <!-- Ventes -->
         <section id="ventes" class="tab">
             <h2>Gestion des Ventes</h2>
             <div class="card">
@@ -212,6 +226,7 @@
             </div>
         </section>
 
+        <!-- Douane -->
         <section id="douane" class="tab">
             <h2>Déclarations Douanières</h2>
             <div class="card">
@@ -240,6 +255,7 @@
         </section>
     </main>
 
+    <!-- Modales -->
     <div id="editModal" class="modal">
         <div class="modal-content">
             <span class="close">&times;</span>
@@ -262,6 +278,7 @@
         <p>© 2025 CrabGest - Association CRAB</p>
     </footer>
 
+    <!-- Scripts locaux chargés à la fin du body -->
     <script src="scripts/db.js"></script>
     <script src="scripts/app.js"></script>
     <script src="scripts/modal.js"></script>
@@ -271,6 +288,7 @@
     <script src="scripts/conditionnement.js"></script>
     <script src="scripts/ventes.js"></script>
     <script src="scripts/douane.js"></script>
+    <!-- Bibliothèques locales -->
     <script src="lib/chart.min.js"></script>
     <script src="lib/jspdf.umd.min.js"></script>
 </body>
