@@ -1,4 +1,4 @@
-// fermentation.js - Gestion complète du suivi de fermentation avec échelle de temps détaillée
+// fermentation.js - Gestion complète du suivi de fermentation
 let fermentationChart = null;
 
 // Charger les bières dans le sélecteur de fermentation
@@ -32,9 +32,7 @@ function calculerLimitesEchelles(densites, temperatures) {
         const minGraviteData = Math.min(...graviteValues);
         const maxGraviteData = Math.max(...graviteValues);
 
-        // Ajouter une marge de 5% ou 0.010 (le plus grand des deux)
         const margeGravite = Math.max(0.010, 0.05 * (maxGraviteData - minGraviteData));
-
         minGravite = Math.max(0.800, minGraviteData - margeGravite);
         maxGravite = Math.min(1.150, maxGraviteData + margeGravite);
     }
@@ -48,9 +46,7 @@ function calculerLimitesEchelles(densites, temperatures) {
         const minTempData = Math.min(...tempValues);
         const maxTempData = Math.max(...tempValues);
 
-        // Ajouter une marge de 10% ou 2°C (le plus grand des deux)
         const margeTemp = Math.max(2, 0.1 * (maxTempData - minTempData));
-
         minTemperature = Math.max(0, minTempData - margeTemp);
         maxTemperature = Math.min(40, maxTempData + margeTemp);
     }
@@ -59,88 +55,6 @@ function calculerLimitesEchelles(densites, temperatures) {
         gravite: { min: minGravite, max: maxGravite },
         temperature: { min: minTemperature, max: maxTemperature }
     };
-}
-
-// Formater les dates pour l'axe X
-function formaterDatesPourAxeX(dates) {
-    if (dates.length === 0) return [];
-
-    // Trouver la durée totale
-    const datesTriées = [...dates].sort((a, b) => new Date(a) - new Date(b));
-    const debut = new Date(datesTriées[0]);
-    const fin = new Date(datesTriées[datesTriées.length - 1]);
-    const duréeTotaleHeures = (fin - debut) / (1000 * 60 * 60);
-
-    // Déterminer le format en fonction de la durée
-    let formatDate;
-    if (duréeTotaleHeures <= 24) {
-        // Moins d'un jour: afficher heures:minutes
-        formatDate = date => {
-            const d = new Date(date);
-            return d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-        };
-    } else if (duréeTotaleHeures <= 24 * 7) {
-        // Moins d'une semaine: afficher jour et heure
-        formatDate = date => {
-            const d = new Date(date);
-            return d.toLocaleString([], {
-                weekday: 'short',
-                day: 'numeric',
-                month: 'short',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-        };
-    } else {
-        // Plus d'une semaine: afficher date complète
-        formatDate = date => {
-            const d = new Date(date);
-            return d.toLocaleString([], {
-                day: 'numeric',
-                month: 'short',
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-        };
-    }
-
-    return datesTriées.map(date => formatDate(date));
-}
-
-// Générer des ticks de temps réguliers pour l'axe X
-function genererTicksTemps(dates) {
-    if (dates.length === 0) return [];
-
-    const datesTriées = [...dates].sort((a, b) => new Date(a) - new Date(b));
-    const debut = new Date(datesTriées[0]);
-    const fin = new Date(datesTriées[datesTriées.length - 1]);
-    const duréeTotaleMs = fin - debut;
-
-    // Déterminer l'intervalle en fonction de la durée totale
-    let intervalleMs;
-    if (duréeTotaleMs <= 3600000) { // 1 heure
-        intervalleMs = 900000; // 15 minutes
-    } else if (duréeTotaleMs <= 86400000) { // 1 jour
-        intervalleMs = 3600000; // 1 heure
-    } else if (duréeTotaleMs <= 604800000) { // 1 semaine
-        intervalleMs = 21600000; // 6 heures
-    } else if (duréeTotaleMs <= 2592000000) { // 1 mois
-        intervalleMs = 86400000; // 1 jour
-    } else {
-        intervalleMs = 604800000; // 1 semaine
-    }
-
-    // Générer les ticks
-    const ticks = [];
-    let current = new Date(debut);
-
-    while (current <= fin) {
-        ticks.push(new Date(current));
-        current = new Date(current.getTime() + intervalleMs);
-    }
-
-    return ticks;
 }
 
 // Afficher le suivi de fermentation pour une bière sélectionnée
@@ -178,7 +92,7 @@ async function afficherSuiviFermentation(idBiere) {
     }
 }
 
-// Afficher le graphique de fermentation avec échelle de temps détaillée
+// Afficher le graphique de fermentation avec échelle de temps complète
 function afficherGraphiqueFermentation(data, nomBiere) {
     // Filtrer et trier les données
     const densites = data.filter(a => a.type === 'densite').sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -187,11 +101,15 @@ function afficherGraphiqueFermentation(data, nomBiere) {
     // Calculer les limites dynamiques
     const limites = calculerLimitesEchelles(densites, temperatures);
 
-    // Préparer les dates pour l'axe X
-    const toutesLesDates = [...densites, ...temperatures].map(a => new Date(a.date));
-    const datesTriées = [...toutesLesDates].sort((a, b) => a - b);
-    const labels = formaterDatesPourAxeX(datesTriées);
-    const ticks = genererTicksTemps(datesTriées);
+    // Préparer les données pour le graphique
+    const toutesLesDates = [...densites, ...temperatures]
+        .map(a => new Date(a.date))
+        .sort((a, b) => a - b);
+
+    // Créer un mapping entre les dates et leurs positions
+    const datesUniques = [...new Set(toutesLesDates.map(d => d.getTime()))]
+        .map(t => new Date(t))
+        .sort((a, b) => a - b);
 
     const ctx = document.getElementById('fermentationChart');
     if (ctx) {
@@ -201,15 +119,18 @@ function afficherGraphiqueFermentation(data, nomBiere) {
             fermentationChart = null;
         }
 
-        // Créer un nouveau graphique avec échelle de temps détaillée
+        // Créer un nouveau graphique avec échelle de temps complète
         fermentationChart = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: labels,
+                labels: datesUniques.map(date => date.toISOString()),
                 datasets: [
                     {
                         label: 'Gravité (SG)',
-                        data: densites.map(d => d.valeur),
+                        data: datesUniques.map(date => {
+                            const point = densites.find(d => new Date(d.date).getTime() === date.getTime());
+                            return point ? point.valeur : null;
+                        }),
                         borderColor: 'rgb(75, 192, 192)',
                         backgroundColor: 'rgba(75, 192, 192, 0.2)',
                         tension: 0.1,
@@ -220,7 +141,10 @@ function afficherGraphiqueFermentation(data, nomBiere) {
                     },
                     {
                         label: 'Température (°C)',
-                        data: temperatures.map(t => t.valeur),
+                        data: datesUniques.map(date => {
+                            const point = temperatures.find(t => new Date(t.date).getTime() === date.getTime());
+                            return point ? point.valeur : null;
+                        }),
                         borderColor: 'rgb(255, 99, 132)',
                         backgroundColor: 'rgba(255, 99, 132, 0.2)',
                         tension: 0.1,
@@ -238,22 +162,16 @@ function afficherGraphiqueFermentation(data, nomBiere) {
                     title: {
                         display: true,
                         text: `Suivi de fermentation - ${nomBiere}`,
-                        font: {
-                            size: 16
-                        }
+                        font: { size: 16 }
                     },
-                    legend: {
-                        position: 'top',
-                    },
+                    legend: { position: 'top' },
                     tooltip: {
                         mode: 'index',
                         intersect: false,
                         callbacks: {
                             label: function(context) {
                                 let label = context.dataset.label || '';
-                                if (label) {
-                                    label += ': ';
-                                }
+                                if (label) label += ': ';
                                 if (context.parsed.y !== null) {
                                     label += context.dataset.label === 'Gravité (SG)' ?
                                         context.parsed.y.toFixed(3) :
@@ -262,7 +180,8 @@ function afficherGraphiqueFermentation(data, nomBiere) {
                                 return label;
                             },
                             title: function(tooltipItems) {
-                                return new Date(tooltipItems[0].label).toLocaleString();
+                                const date = new Date(tooltipItems[0].label);
+                                return date.toLocaleString();
                             }
                         }
                     }
@@ -285,9 +204,7 @@ function afficherGraphiqueFermentation(data, nomBiere) {
                                 return value.toFixed(3);
                             }
                         },
-                        grid: {
-                            drawOnChartArea: true
-                        }
+                        grid: { drawOnChartArea: true }
                     },
                     y1: {
                         type: 'linear',
@@ -306,13 +223,12 @@ function afficherGraphiqueFermentation(data, nomBiere) {
                                 return value.toFixed(1) + '°C';
                             }
                         },
-                        grid: {
-                            drawOnChartArea: false
-                        }
+                        grid: { drawOnChartArea: false }
                     },
                     x: {
                         type: 'time',
                         time: {
+                            parser: 'yyyy-MM-ddTHH:mm:ss.sssZ',
                             unit: 'hour',
                             displayFormats: {
                                 hour: 'HH:mm',
@@ -320,7 +236,7 @@ function afficherGraphiqueFermentation(data, nomBiere) {
                                 week: 'DD MMM',
                                 month: 'MMM YYYY'
                             },
-                            tooltipFormat: 'DD MMM YYYY HH:mm'
+                            tooltipFormat: 'DD MMM YYYY HH:mm:ss'
                         },
                         title: {
                             display: true,
@@ -331,8 +247,22 @@ function afficherGraphiqueFermentation(data, nomBiere) {
                             autoSkip: true,
                             maxTicksLimit: 10,
                             maxRotation: 45,
-                            minRotation: 45
-                        }
+                            minRotation: 45,
+                            callback: function(value, index, values) {
+                                // Afficher seulement certains ticks pour éviter la surcharge
+                                if (values.length <= 10 || index % Math.max(1, Math.floor(values.length / 10)) === 0) {
+                                    const date = new Date(this.getLabelForValue(value));
+                                    return date.toLocaleString([], {
+                                        hour: '2-digit',
+                                        minute: '2-digit',
+                                        day: 'numeric',
+                                        month: 'short'
+                                    });
+                                }
+                                return '';
+                            }
+                        },
+                        grid: { display: true }
                     }
                 }
             }
