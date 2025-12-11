@@ -661,3 +661,66 @@ th.sorted-desc::after {
     background-color: #f44336;
     color: white;
 }
+
+/* Style pour la ligne de filtres */
+.filter-row {
+    background-color: #f8f9fa;
+}
+
+.filter-row td {
+    padding: 4px 8px;
+    vertical-align: middle;
+}
+
+/* Style pour les filtres */
+.filter-select, .filter-input {
+    width: 100%;
+    padding: 4px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 0.8em;
+}
+
+/* Style pour les indicateurs de tri */
+th.sorted-asc::after {
+    content: " ↑";
+    color: #666;
+    margin-left: 5px;
+}
+
+th.sorted-desc::after {
+    content: " ↓";
+    color: #666;
+    margin-left: 5px;
+}
+
+/* Style pour les lignes de synthèse */
+#table-conditionnements tr.synthese-biere {
+    background-color: #f5f5f5;
+    font-weight: bold;
+}
+
+#table-conditionnements tr.synthese-biere td {
+    border-top: 2px solid #ddd;
+    padding-top: 8px;
+    padding-bottom: 8px;
+}
+
+/* Style pour les boutons */
+.action-btn {
+    margin: 0 2px;
+    padding: 4px 8px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.action-btn.info-btn {
+    background-color: #2196F3;
+    color: white;
+}
+
+.action-btn.delete-btn {
+    background-color: #f44336;
+    color: white;
+}
