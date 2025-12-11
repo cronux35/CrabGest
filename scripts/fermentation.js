@@ -1,5 +1,5 @@
-// fermentation.js - Gestion complète du suivi de fermentation avec double échelle
-let fermentationChart = null; // Variable globale pour stocker l'instance du graphique
+// fermentation.js - Gestion complète du suivi de fermentation avec échelles dynamiques
+let fermentationChart = null;
 
 // Charger les bières dans le sélecteur de fermentation
 async function chargerSelecteurBieresFermentation() {
@@ -19,6 +19,46 @@ async function chargerSelecteurBieresFermentation() {
     } catch (error) {
         console.error("Erreur lors du chargement des bières pour la fermentation:", error);
     }
+}
+
+// Calculer les limites dynamiques pour les échelles
+function calculerLimitesEchelles(densites, temperatures) {
+    // Calcul des limites pour la gravité
+    let minGravite = 0.800;
+    let maxGravite = 1.150;
+
+    if (densites.length > 0) {
+        const graviteValues = densites.map(d => d.valeur);
+        const minGraviteData = Math.min(...graviteValues);
+        const maxGraviteData = Math.max(...graviteValues);
+
+        // Ajouter une marge de 5% ou 0.010 (le plus grand des deux)
+        const margeGravite = Math.max(0.010, 0.05 * (maxGraviteData - minGraviteData));
+
+        minGravite = Math.max(0.800, minGraviteData - margeGravite);
+        maxGravite = Math.min(1.150, maxGraviteData + margeGravite);
+    }
+
+    // Calcul des limites pour la température
+    let minTemperature = 0;
+    let maxTemperature = 40;
+
+    if (temperatures.length > 0) {
+        const tempValues = temperatures.map(t => t.valeur);
+        const minTempData = Math.min(...tempValues);
+        const maxTempData = Math.max(...tempValues);
+
+        // Ajouter une marge de 10% ou 2°C (le plus grand des deux)
+        const margeTemp = Math.max(2, 0.1 * (maxTempData - minTempData));
+
+        minTemperature = Math.max(0, minTempData - margeTemp);
+        maxTemperature = Math.min(40, maxTempData + margeTemp);
+    }
+
+    return {
+        gravite: { min: minGravite, max: maxGravite },
+        temperature: { min: minTemperature, max: maxTemperature }
+    };
 }
 
 // Afficher le suivi de fermentation pour une bière sélectionnée
@@ -56,11 +96,14 @@ async function afficherSuiviFermentation(idBiere) {
     }
 }
 
-// Afficher le graphique de fermentation avec double échelle
+// Afficher le graphique de fermentation avec échelles dynamiques
 function afficherGraphiqueFermentation(data, nomBiere) {
     // Filtrer et trier les données
     const densites = data.filter(a => a.type === 'densite').sort((a, b) => new Date(a.date) - new Date(b.date));
     const temperatures = data.filter(a => a.type === 'temperature').sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    // Calculer les limites dynamiques
+    const limites = calculerLimitesEchelles(densites, temperatures);
 
     const ctx = document.getElementById('fermentationChart');
     if (ctx) {
@@ -70,11 +113,11 @@ function afficherGraphiqueFermentation(data, nomBiere) {
             fermentationChart = null;
         }
 
-        // Créer un nouveau graphique avec double échelle
+        // Créer un nouveau graphique avec échelles dynamiques
         fermentationChart = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: densites.map(d => new Date(d.date).toLocaleString()),
+                labels: [...new Set([...densites, ...temperatures].map(a => new Date(a.date).toLocaleString()))].sort(),
                 datasets: [
                     {
                         label: 'Gravité (SG)',
@@ -83,7 +126,7 @@ function afficherGraphiqueFermentation(data, nomBiere) {
                         backgroundColor: 'rgba(75, 192, 192, 0.2)',
                         tension: 0.1,
                         fill: true,
-                        yAxisID: 'y', // Échelle de gauche pour la gravité
+                        yAxisID: 'y',
                         pointRadius: 4,
                         pointHoverRadius: 6
                     },
@@ -94,7 +137,7 @@ function afficherGraphiqueFermentation(data, nomBiere) {
                         backgroundColor: 'rgba(255, 99, 132, 0.2)',
                         tension: 0.1,
                         fill: true,
-                        yAxisID: 'y1', // Échelle de droite pour la température
+                        yAxisID: 'y1',
                         pointRadius: 4,
                         pointHoverRadius: 6
                     }
@@ -143,10 +186,10 @@ function afficherGraphiqueFermentation(data, nomBiere) {
                             text: 'Gravité (SG)',
                             color: 'rgb(75, 192, 192)'
                         },
-                        min: 0.800,
-                        max: 1.150,
+                        min: limites.gravite.min,
+                        max: limites.gravite.max,
                         ticks: {
-                            stepSize: 0.050,
+                            stepSize: 0.010,
                             callback: function(value) {
                                 return value.toFixed(3);
                             }
@@ -164,10 +207,13 @@ function afficherGraphiqueFermentation(data, nomBiere) {
                             text: 'Température (°C)',
                             color: 'rgb(255, 99, 132)'
                         },
-                        min: 0,
-                        max: 40,
+                        min: limites.temperature.min,
+                        max: limites.temperature.max,
                         ticks: {
-                            stepSize: 5
+                            stepSize: 2,
+                            callback: function(value) {
+                                return value.toFixed(1) + '°C';
+                            }
                         },
                         grid: {
                             drawOnChartArea: false
@@ -197,16 +243,17 @@ async function ajouterActionFermentation() {
         return;
     }
 
-    // Validation spécifique pour la gravité
-    if (type === 'densite' && (valeur < 0.800 || valeur > 1.150)) {
-        alert("La gravité doit être comprise entre 0.800 et 1.150.");
-        return;
-    }
-
-    // Validation spécifique pour la température
-    if (type === 'temperature' && (valeur < 0 || valeur > 40)) {
-        alert("La température doit être comprise entre 0°C et 40°C.");
-        return;
+    // Validations des valeurs
+    if (type === 'densite') {
+        if (valeur < 0.800 || valeur > 1.150) {
+            alert("La gravité doit être comprise entre 0.800 et 1.150.");
+            return;
+        }
+    } else if (type === 'temperature') {
+        if (valeur < 0 || valeur > 40) {
+            alert("La température doit être comprise entre 0°C et 40°C.");
+            return;
+        }
     }
 
     try {
@@ -273,7 +320,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Configuration des inputs pour les valeurs décimales
     const valeurActionInput = document.getElementById('valeur-action');
     if (valeurActionInput) {
-        valeurActionInput.step = 'any'; // Permet les valeurs décimales
+        valeurActionInput.step = 'any';
 
         // Écouteur pour changer le placeholder en fonction du type sélectionné
         const typeActionSelect = document.getElementById('type-action');
