@@ -187,3 +187,40 @@ async function clearStore(storeName) {
 
 // Initialiser la base de données au chargement de la page
 initDB().catch(console.error);
+
+// Charger une recette par ID
+async function loadRecetteById(id) {
+    try {
+        const database = await initDB();
+        return new Promise((resolve, reject) => {
+            const transaction = database.transaction(['recettes'], 'readonly');
+            const store = transaction.objectStore('recettes');
+            const request = store.get(parseInt(id));
+
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = (event) => reject(event.target.error);
+        });
+    } catch (error) {
+        console.error(`Erreur lors du chargement de la recette ${id}:`, error);
+        throw error;
+    }
+}
+
+// Mettre à jour une recette
+async function updateRecette(recette) {
+    try {
+        const database = await initDB();
+        return new Promise((resolve, reject) => {
+            const transaction = database.transaction(['recettes'], 'readwrite');
+            const store = transaction.objectStore('recettes');
+
+            const request = store.put(recette);
+
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = (event) => reject(event.target.error);
+        });
+    } catch (error) {
+        console.error(`Erreur lors de la mise à jour de la recette:`, error);
+        throw error;
+    }
+}

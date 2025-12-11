@@ -149,3 +149,79 @@ document.addEventListener('DOMContentLoaded', function() {
         closeModal('deleteModal');
     });
 });
+
+// Ouvrir modale d'édition de recette
+function openEditRecetteModal(id, data) {
+    currentEditType = 'recette';
+    currentEditId = id;
+    const modal = document.getElementById('editModal');
+    const form = document.getElementById('editForm');
+    const title = document.getElementById('editModalTitle');
+
+    if (!modal || !form || !title) {
+        console.error("Éléments de la modale introuvables");
+        return;
+    }
+
+    title.textContent = id ? 'Éditer une recette' : 'Ajouter une recette';
+    form.innerHTML = `
+        <div class="form-group">
+            <label for="edit-nom-recette">Nom</label>
+            <input type="text" id="edit-nom-recette" class="form-control" value="${data.nom || ''}" required>
+        </div>
+        <div class="form-group">
+            <label for="edit-style-recette">Style</label>
+            <input type="text" id="edit-style-recette" class="form-control" value="${data.style || ''}">
+        </div>
+        <div class="form-group">
+            <label for="edit-degre-recette">Degré alcoolique</label>
+            <input type="number" id="edit-degre-recette" class="form-control" value="${data.degre || ''}" step="0.1">
+        </div>
+        <div class="form-group">
+            <label for="edit-volume-recette">Volume (L)</label>
+            <input type="number" id="edit-volume-recette" class="form-control" value="${data.volume || ''}" step="0.1">
+        </div>
+        <div class="form-group">
+            <label for="edit-ingredients-recette">Ingrédients utilisés</label>
+            <div id="edit-ingredients-recette" class="ingredients-list">
+                ${data.ingredients ? data.ingredients.map(ing => `
+                    <div class="ingredient-item">
+                        <span>${ing.nom} (${ing.quantite_utilisee}g)</span>
+                        <span>${ing.date_dernier_retrait ? new Date(ing.date_dernier_retrait).toLocaleDateString() : ''}</span>
+                    </div>
+                `).join('') : '<div>Aucun ingrédient utilisé</div>'}
+            </div>
+        </div>
+        <button type="button" onclick="${id ? 'saveEditRecette()' : 'ajouterRecette()'}" class="btn btn-primary">
+            ${id ? 'Enregistrer' : 'Ajouter'}
+        </button>
+    `;
+
+    openModal('editModal');
+}
+
+// Sauvegarder les modifications d'une recette
+async function saveEditRecette() {
+    if (!currentEditType || currentEditId === null) {
+        console.error("Type ou ID manquant pour la sauvegarde.");
+        return;
+    }
+
+    try {
+        const updatedRecette = {
+            id: currentEditId,
+            nom: document.getElementById('edit-nom-recette').value,
+            style: document.getElementById('edit-style-recette').value,
+            degre: parseFloat(document.getElementById('edit-degre-recette').value),
+            volume: parseFloat(document.getElementById('edit-volume-recette').value),
+            // Les ingrédients sont gérés automatiquement via les retraits
+        };
+
+        await updateRecette(updatedRecette);
+        alert("Recette mise à jour avec succès !");
+        closeModal('editModal');
+    } catch (error) {
+        console.error("Erreur lors de la sauvegarde de la recette:", error);
+        alert("Une erreur est survenue lors de la sauvegarde.");
+    }
+}
