@@ -1,11 +1,11 @@
-// Types de contenants disponibles
+// Types de contenants disponibles (corrigé)
 const TYPES_CONTENANTS = {
     'canette_33cl': { nom: 'Canette 33cl', volume: 0.33, code: 'C33' },
     'canette_44cl': { nom: 'Canette 44cl', volume: 0.44, code: 'C44' },
     'bouteille_33cl': { nom: 'Bouteille 33cl', volume: 0.33, code: 'B33' },
     'bouteille_50cl': { nom: 'Bouteille 50cl', volume: 0.50, code: 'B50' },
     'bouteille_75cl': { nom: 'Bouteille 75cl', volume: 0.75, code: 'B75' },
-    'fut_19l': { nom: 'Fût 19L', volume: 19, code: 'F19' },
+    'fut_sodakeg_19l': { nom: 'Fût SodaKeg 19L', volume: 19, code: 'FS19' },  // Corrigé
     'fut_20l': { nom: 'Fût 20L', volume: 20, code: 'F20' }
 };
 
@@ -95,7 +95,7 @@ function fermerModale(modalId) {
     }
 }
 
-// Enregistrer un nouveau conditionnement
+// Fonction enregistrerConditionnement corrigée
 async function enregistrerConditionnement() {
     const biereId = document.getElementById('modale-biere').value;
     const abv = parseFloat(document.getElementById('modale-abv').value);
@@ -125,7 +125,7 @@ async function enregistrerConditionnement() {
         const volumeTotal = quantite * contenant.volume;
         const numeroLot = genererNumeroLot(biere.nom, contenantId, date);
 
-        // Créer le conditionnement
+        // Créer le conditionnement avec le volume pré-calculé
         const conditionnement = {
             id: Date.now(),
             id_biere: biere.id,
@@ -135,7 +135,7 @@ async function enregistrerConditionnement() {
             quantite: quantite,
             date: date,
             numero_lot: numeroLot,
-            volume_total: volumeTotal
+            volume_total: volumeTotal  // Stockage du volume calculé
         };
 
         // Ajouter à la base de données
@@ -171,7 +171,7 @@ async function enregistrerConditionnement() {
     }
 }
 
-// Afficher les conditionnements
+// Fonction afficherConditionnements corrigée
 function afficherConditionnements() {
     const tbody = document.querySelector('#table-conditionnements tbody');
     if (!tbody) {
@@ -203,6 +203,9 @@ function afficherConditionnements() {
         const biere = allBieres.find(b => b.id === cond.id_biere);
         const contenant = TYPES_CONTENANTS[cond.type_contenant];
 
+        // Calculer le volume total pour cette ligne
+        const volumeTotal = cond.quantite * (contenant ? contenant.volume : 0);
+
         return `
             <tr>
                 <td>${cond.numero_lot || '-'}</td>
@@ -210,8 +213,8 @@ function afficherConditionnements() {
                 <td>${cond.abv}°</td>
                 <td>${contenant ? contenant.nom : cond.type_contenant}</td>
                 <td>${cond.quantite}</td>
-                <td>${cond.volume_total ? cond.volume_total.toFixed(2) : '0.00'}L</td>
-                <td>${cond.date ? new Date(cond.date).toLocaleDateString() : '-'}</td>
+                <td>${volumeTotal.toFixed(2)}L</td>  <!-- Volume calculé ici -->
+                <td>${new Date(cond.date).toLocaleDateString('fr-FR')}</td>  <!-- Format français -->
                 <td>
                     <button class="action-btn info-btn" title="Voir détails">
                         <i class="material-icons">info</i>
@@ -225,8 +228,15 @@ function afficherConditionnements() {
     if (biereId) {
         const biere = allBieres.find(b => b.id == biereId);
         if (biere) {
-            const totalQuantite = data.reduce((sum, cond) => sum + cond.quantite, 0);
-            const totalVolume = data.reduce((sum, cond) => sum + (cond.volume_total || 0), 0);
+            const totalQuantite = data.reduce((sum, cond) => {
+                const contenant = TYPES_CONTENANTS[cond.type_contenant];
+                return sum + cond.quantite;
+            }, 0);
+
+            const totalVolume = data.reduce((sum, cond) => {
+                const contenant = TYPES_CONTENANTS[cond.type_contenant];
+                return sum + (cond.quantite * (contenant ? contenant.volume : 0));
+            }, 0);
 
             const row = document.createElement('tr');
             row.className = 'synthese-biere';
@@ -240,6 +250,7 @@ function afficherConditionnements() {
         }
     }
 }
+
 
 // Initialisation
 document.addEventListener('DOMContentLoaded', function() {
