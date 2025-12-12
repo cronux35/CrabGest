@@ -1,4 +1,4 @@
-// Types de contenants (à ajouter en haut du fichier)
+// Types de contenants
 const TYPES_CONTENANTS = {
     'canette_33cl': { nom: 'Canette 33cl', volume: 0.33 },
     'canette_44cl': { nom: 'Canette 44cl', volume: 0.44 },
@@ -19,18 +19,18 @@ function genererNumeroLot(biereNom, date) {
 
 // Ouvrir la modale
 function ouvrirModaleConditionnement() {
-    document.getElementById('modale-conditionnement').style.display = 'block';
+    const modal = document.getElementById('modale-conditionnement');
+    modal.style.display = 'block';
 
-    // Charger les bières dans le sélecteur
-    const selectBiere = document.getElementById('modale-biere');
-    selectBiere.innerHTML = '<option value="">-- Sélectionner une bière --</option>';
-
+    // Charger les bières
     loadData('bieres').then(bieres => {
+        const select = document.getElementById('modale-biere');
+        select.innerHTML = '<option value="">-- Sélectionner une bière --</option>';
         bieres.forEach(biere => {
             const option = document.createElement('option');
             option.value = biere.id;
             option.textContent = biere.nom;
-            selectBiere.appendChild(option);
+            select.appendChild(option);
         });
     });
 
@@ -46,7 +46,7 @@ function fermerModale(modalId) {
     document.getElementById(modalId).style.display = 'none';
 }
 
-// Enregistrer un nouveau conditionnement
+// Enregistrer un conditionnement
 async function enregistrerConditionnement() {
     const biereId = document.getElementById('modale-biere').value;
     const abv = parseFloat(document.getElementById('modale-abv').value);
@@ -74,12 +74,10 @@ async function enregistrerConditionnement() {
 
         // Calculer le volume total
         const volumeTotal = quantite * contenant.volume;
-
-        // Générer le numéro de lot
         const numeroLot = genererNumeroLot(biere.nom, date);
 
-        // Créer le nouveau conditionnement
-        const nouveauConditionnement = {
+        // Créer le conditionnement
+        const conditionnement = {
             id: Date.now(),
             id_biere: biere.id,
             nom_biere: biere.nom,
@@ -92,7 +90,7 @@ async function enregistrerConditionnement() {
         };
 
         // Ajouter à la base de données
-        await addItem('conditionnements', nouveauConditionnement);
+        await addItem('conditionnements', conditionnement);
 
         // Mettre à jour la bière
         if (!biere.historique_conditionnement) {
@@ -100,7 +98,7 @@ async function enregistrerConditionnement() {
         }
 
         biere.historique_conditionnement.push({
-            ...nouveauConditionnement,
+            ...conditionnement,
             contenant_nom: contenant.nom
         });
 
@@ -120,7 +118,7 @@ async function enregistrerConditionnement() {
         alert(`Conditionnement enregistré avec succès!\nNuméro de lot: ${numeroLot}`);
     } catch (error) {
         console.error("Erreur:", error);
-        alert("Une erreur est survenue lors de l'enregistrement");
+        alert("Une erreur est survenue");
     }
 }
 
@@ -142,7 +140,7 @@ async function chargerSelecteurBieresFiltre() {
     select.addEventListener('change', afficherConditionnements);
 }
 
-// Modifier la fonction afficherConditionnements pour prendre en compte le filtre
+// Afficher les conditionnements (version conservant votre tableau existant)
 async function afficherConditionnements() {
     const biereId = document.getElementById('select-biere-filtre')?.value;
     const conditionnements = await loadData('conditionnements');
@@ -201,6 +199,18 @@ async function afficherConditionnements() {
 
 // Initialisation
 document.addEventListener('DOMContentLoaded', function() {
-    chargerSelecteurBieresFiltre();
-    afficherConditionnements();
+    // Charger les données initiales
+    loadData('bieres').then(bieres => {
+        allBieres = bieres;
+        chargerSelecteurBieresFiltre();
+        afficherConditionnements();
+    });
+
+    // Gestion des clics en dehors des modales
+    window.onclick = function(event) {
+        const modal = document.getElementById('modale-conditionnement');
+        if (event.target == modal) {
+            modal.style.display = 'none';
+        }
+    };
 });
