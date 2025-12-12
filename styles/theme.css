@@ -724,3 +724,69 @@ th.sorted-desc::after {
     background-color: #f44336;
     color: white;
 }
+
+/* Styles pour les modales personnalisées */
+.custom-modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.7);
+}
+
+.custom-modal-content {
+    background-color: var(--crab-gris-clair);
+    color: var(--crab-blanc);
+    margin: 5% auto;
+    padding: 2rem;
+    border: 1px solid var(--crab-jaune);
+    border-radius: 8px;
+    width: 90%;
+    max-width: 600px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.custom-close {
+    color: var(--crab-blanc);
+    float: right;
+    font-size: 1.5rem;
+    font-weight: bold;
+    cursor: pointer;
+    position: absolute;
+    right: 1rem;
+    top: 0.5rem;
+}
+
+.custom-close:hover {
+    color: var(--crab-jaune);
+}
+
+.modal-title {
+    color: var(--crab-jaune);
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid var(--crab-jaune);
+    padding-bottom: 0.5rem;
+}
+
+.modal-body {
+    padding: 1rem 0;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--crab-jaune);
+    margin-top: 1.5rem;
+}
+
+/* Style pour le sélecteur de filtre par bière */
+#select-biere-filtre {
+    width: 200px;
+    margin-right: 10px;
+}
