@@ -790,3 +790,62 @@ th.sorted-desc::after {
     width: 200px;
     margin-right: 10px;
 }
+
+/* Styles pour la modale de conditionnement */
+#modale-conditionnement {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.7);
+}
+
+#modale-conditionnement .modal-content {
+    background-color: var(--crab-gris-clair);
+    margin: 10% auto;
+    padding: 20px;
+    border: 1px solid var(--crab-jaune);
+    border-radius: 8px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+
+#modale-conditionnement .close {
+    color: var(--crab-blanc);
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+#modale-conditionnement .close:hover {
+    color: var(--crab-jaune);
+}
+
+#modale-conditionnement h2 {
+    color: var(--crab-jaune);
+    margin-top: 0;
+    border-bottom: 1px solid var(--crab-jaune);
+    padding-bottom: 10px;
+}
+
+#modale-conditionnement .modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid var(--crab-jaune);
+}
+
+/* Style pour le sélecteur de filtre */
+#select-biere-filtre {
+    min-width: 200px;
+    background-color: var(--crab-gris-fonce);
+    color: var(--crab-blanc);
+    border: 1px solid var(--crab-jaune);
+}
