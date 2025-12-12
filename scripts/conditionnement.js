@@ -1,20 +1,26 @@
 // Types de contenants
 const TYPES_CONTENANTS = {
-    'canette_33cl': { nom: 'Canette 33cl', volume: 0.33 },
-    'canette_44cl': { nom: 'Canette 44cl', volume: 0.44 },
-    'bouteille_33cl': { nom: 'Bouteille 33cl', volume: 0.33 },
-    'bouteille_50cl': { nom: 'Bouteille 50cl', volume: 0.50 },
-    'bouteille_75cl': { nom: 'Bouteille 75cl', volume: 0.75 },
-    'fut_19l': { nom: 'Fût 19L', volume: 19 },
-    'fut_20l': { nom: 'Fût 20L', volume: 20 }
+    'canette_33cl': { nom: 'Canette 33cl', volume: 0.33, code: 'C33' },
+    'canette_44cl': { nom: 'Canette 44cl', volume: 0.44, code: 'C44' },
+    'bouteille_33cl': { nom: 'Bouteille 33cl', volume: 0.33, code: 'B33' },
+    'bouteille_50cl': { nom: 'Bouteille 50cl', volume: 0.50, code: 'B50' },
+    'bouteille_75cl': { nom: 'Bouteille 75cl', volume: 0.75, code: 'B75' },
+    'fut_19l': { nom: 'Fût 19L', volume: 19, code: 'F19' },
+    'fut_20l': { nom: 'Fût 20L', volume: 20, code: 'F20' }
 };
 
+// Variables globales
+let allBieres = [];
+let allConditionnements = [];
+
 // Générer un numéro de lot
-function genererNumeroLot(biereNom, date) {
-    const biereCode = biereNom.substring(0, 3).toUpperCase();
+function genererNumeroLot(biereNom, typeContenant, date) {
+    const biereCode = biereNom.substring(0, 2).toUpperCase();
+    const contenant = TYPES_CONTENANTS[typeContenant];
+    const contenantCode = contenant ? contenant.code : 'XX';
     const dateCode = new Date(date).toISOString().substring(2, 10).replace(/-/g, '');
     const randomCode = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-    return `LOT-${biereCode}-${dateCode}-${randomCode}`;
+    return `${biereCode}-${contenantCode}-${dateCode}-${randomCode}`;
 }
 
 // Ouvrir la modale
@@ -74,7 +80,7 @@ async function enregistrerConditionnement() {
 
         // Calculer le volume total
         const volumeTotal = quantite * contenant.volume;
-        const numeroLot = genererNumeroLot(biere.nom, date);
+        const numeroLot = genererNumeroLot(biere.nom, contenantId, date);
 
         // Créer le conditionnement
         const conditionnement = {
@@ -118,7 +124,7 @@ async function enregistrerConditionnement() {
         alert(`Conditionnement enregistré avec succès!\nNuméro de lot: ${numeroLot}`);
     } catch (error) {
         console.error("Erreur:", error);
-        alert("Une erreur est survenue");
+        alert("Une erreur est survenue lors de l'enregistrement");
     }
 }
 
@@ -140,16 +146,20 @@ async function chargerSelecteurBieresFiltre() {
     select.addEventListener('change', afficherConditionnements);
 }
 
-// Afficher les conditionnements (version conservant votre tableau existant)
+// Afficher les conditionnements (version corrigée qui affiche bien le tableau)
 async function afficherConditionnements() {
     const biereId = document.getElementById('select-biere-filtre')?.value;
-    const conditionnements = await loadData('conditionnements');
+    allConditionnements = await loadData('conditionnements');
+    allBieres = await loadData('bieres');
 
     const tbody = document.querySelector('#table-conditionnements tbody');
-    if (!tbody) return;
+    if (!tbody) {
+        console.error("Élément tbody non trouvé");
+        return;
+    }
 
     // Filtrer les conditionnements
-    let data = conditionnements;
+    let data = allConditionnements;
     if (biereId) {
         data = data.filter(c => c.id_biere == biereId);
     }
@@ -166,8 +176,8 @@ async function afficherConditionnements() {
                 <td>${cond.abv}°</td>
                 <td>${contenant ? contenant.nom : cond.type_contenant}</td>
                 <td>${cond.quantite}</td>
-                <td>${cond.volume_total.toFixed(2)}L</td>
-                <td>${new Date(cond.date).toLocaleDateString()}</td>
+                <td>${cond.volume_total ? cond.volume_total.toFixed(2) : '0.00'}L</td>
+                <td>${cond.date ? new Date(cond.date).toLocaleDateString() : '-'}</td>
                 <td>
                     <button class="action-btn info-btn" title="Voir détails">
                         <i class="material-icons">info</i>
@@ -182,7 +192,7 @@ async function afficherConditionnements() {
         const biere = allBieres.find(b => b.id == biereId);
         if (biere) {
             const totalQuantite = data.reduce((sum, cond) => sum + cond.quantite, 0);
-            const totalVolume = data.reduce((sum, cond) => sum + cond.volume_total, 0);
+            const totalVolume = data.reduce((sum, cond) => sum + (cond.volume_total || 0), 0);
 
             const row = document.createElement('tr');
             row.className = 'synthese-biere';
@@ -195,13 +205,28 @@ async function afficherConditionnements() {
             tbody.appendChild(row);
         }
     }
+
+    // Si aucun conditionnement, afficher un message
+    if (data.length === 0) {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td colspan="8" style="text-align: center; padding: 20px;">
+                Aucun conditionnement trouvé${biereId ? ' pour cette bière' : ''}
+            </td>
+        `;
+        tbody.appendChild(row);
+    }
 }
 
 // Initialisation
 document.addEventListener('DOMContentLoaded', function() {
     // Charger les données initiales
-    loadData('bieres').then(bieres => {
+    Promise.all([
+        loadData('bieres'),
+        loadData('conditionnements')
+    ]).then(([bieres, conditionnements]) => {
         allBieres = bieres;
+        allConditionnements = conditionnements;
         chargerSelecteurBieresFiltre();
         afficherConditionnements();
     });
