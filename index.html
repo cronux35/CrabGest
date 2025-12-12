@@ -180,21 +180,45 @@
 <!-- Conditionnement -->
 <section id="conditionnement" class="tab">
     <h2>Conditionnement</h2>
-    <!-- À ajouter juste après le titre "Conditionnement" -->
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-    <button onclick="ouvrirModaleConditionnement()" class="btn btn-primary">
-        <i class="material-icons">add</i> Ajouter conditionnement
-    </button>
+    <div class="card">
+        <!-- Nouveaux éléments à ajouter -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <button onclick="ouvrirModaleConditionnement()" class="btn btn-primary">
+                <i class="material-icons">add</i> Ajouter conditionnement
+            </button>
 
-    <div style="display: flex; align-items: center; gap: 0.5rem;">
-        <label for="select-biere-filtre" style="white-space: nowrap;">Filtrer par bière:</label>
-        <select id="select-biere-filtre" class="form-control" style="min-width: 200px;">
-            <option value="">-- Toutes les bières --</option>
-        </select>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <label for="select-biere-filtre" style="white-space: nowrap;">Filtrer par bière:</label>
+                <select id="select-biere-filtre" class="form-control" style="min-width: 200px;">
+                    <option value="">-- Toutes les bières --</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Votre tableau existant (à conserver tel quel) -->
+        <div class="table-responsive">
+            <table id="table-conditionnements" class="table">
+                <thead>
+                    <tr>
+                        <th>Numéro de lot</th>
+                        <th>Bière</th>
+                        <th>ABV</th>
+                        <th>Contenant</th>
+                        <th>Quantité</th>
+                        <th>Volume (L)</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Le contenu sera généré par JavaScript -->
+                </tbody>
+            </table>
+        </div>
     </div>
-</div>
+</section>
 
-<!-- À ajouter avant la balise </body> -->
+<!-- Modale à ajouter avant </body> -->
 <div id="modale-conditionnement" class="modal">
     <div class="modal-content">
         <span class="close" onclick="fermerModale('modale-conditionnement')">&times;</span>
@@ -242,8 +266,6 @@
         </div>
     </div>
 </div>
-
- 
 </section>
 
 
