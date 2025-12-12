@@ -1,4 +1,4 @@
-// conditionnement.js - Version adaptée au style existant
+// conditionnement.js - Version complète pour CrabGest
 let currentConditionnementId = null;
 let currentSortColumn = null;
 let currentSortDirection = 1;
@@ -6,7 +6,7 @@ let currentFilters = {};
 let allConditionnements = [];
 let allBieres = [];
 
-// 1. Types de contenants disponibles
+// Types de contenants disponibles
 const TYPES_CONTENANTS = [
     { id: 'canette_44cl', nom: 'Canette 44cl', volume: 0.44, code: 'C44' },
     { id: 'canette_33cl', nom: 'Canette 33cl', volume: 0.33, code: 'C33' },
@@ -17,7 +17,7 @@ const TYPES_CONTENANTS = [
     { id: 'fut_20l', nom: 'Fût 20L', volume: 20, code: 'F20' }
 ];
 
-// 2. Générer un numéro de lot unique
+// Générer un numéro de lot unique
 function genererNumeroLot(biereNom, typeContenant, date) {
     const biereCode = biereNom.substring(0, 2).toUpperCase();
     const contenant = TYPES_CONTENANTS.find(c => c.id === typeContenant);
@@ -27,28 +27,23 @@ function genererNumeroLot(biereNom, typeContenant, date) {
     return `${biereCode}-${contenantCode}-${dateCode}-${randomCode}`;
 }
 
-// 3. Charger les données initiales
+// Charger les données initiales
 async function chargerDonneesInitiales() {
     try {
         allBieres = await loadData('bieres').catch(() => []);
         allConditionnements = await loadData('conditionnements').catch(() => []);
 
-        // Charger les sélecteurs
         chargerSelecteurBieresConditionnement();
         chargerSelecteurContenants();
         chargerListBoxBieres();
-
-        // Créer la ligne de filtres
         ajouterLigneFiltres();
-
-        // Afficher tous les conditionnements
         afficherTousConditionnements();
     } catch (error) {
         console.error("Erreur chargement initial:", error);
     }
 }
 
-// 4. Charger les bières dans le sélecteur de conditionnement
+// Charger les bières dans le sélecteur
 function chargerSelecteurBieresConditionnement() {
     const select = document.getElementById('select-biere-conditionnement');
     if (select) {
@@ -62,7 +57,7 @@ function chargerSelecteurBieresConditionnement() {
     }
 }
 
-// 5. Charger les bières dans la listbox
+// Charger les bières dans la listbox
 function chargerListBoxBieres() {
     const listbox = document.getElementById('listbox-bieres');
     if (listbox) {
@@ -76,7 +71,7 @@ function chargerListBoxBieres() {
     }
 }
 
-// 6. Charger les contenants dans le sélecteur
+// Charger les contenants dans le sélecteur
 function chargerSelecteurContenants() {
     const select = document.getElementById('type-contenant');
     if (select) {
@@ -90,7 +85,7 @@ function chargerSelecteurContenants() {
     }
 }
 
-// 7. Ajouter une ligne de filtres
+// Ajouter une ligne de filtres
 function ajouterLigneFiltres() {
     const table = document.getElementById('table-conditionnements');
     if (!table) return;
@@ -98,11 +93,10 @@ function ajouterLigneFiltres() {
     const thead = table.querySelector('thead');
     if (!thead) return;
 
-    // Créer une nouvelle ligne pour les filtres
     const filterRow = document.createElement('tr');
     filterRow.className = 'filter-row';
 
-    // 1. Numéro de lot
+    // Numéro de lot
     const tdLot = document.createElement('td');
     const inputLot = document.createElement('input');
     inputLot.type = 'text';
@@ -116,7 +110,7 @@ function ajouterLigneFiltres() {
     tdLot.appendChild(inputLot);
     filterRow.appendChild(tdLot);
 
-    // 2. Bière
+    // Bière
     const tdBiere = document.createElement('td');
     const selectBiere = document.createElement('select');
     selectBiere.className = 'filter-select';
@@ -140,7 +134,7 @@ function ajouterLigneFiltres() {
     tdBiere.appendChild(selectBiere);
     filterRow.appendChild(tdBiere);
 
-    // 3. ABV
+    // ABV
     const tdAbv = document.createElement('td');
     const selectAbv = document.createElement('select');
     selectAbv.className = 'filter-select';
@@ -165,7 +159,7 @@ function ajouterLigneFiltres() {
     tdAbv.appendChild(selectAbv);
     filterRow.appendChild(tdAbv);
 
-    // 4. Contenant
+    // Contenant
     const tdContenant = document.createElement('td');
     const selectContenant = document.createElement('select');
     selectContenant.className = 'filter-select';
@@ -189,7 +183,7 @@ function ajouterLigneFiltres() {
     tdContenant.appendChild(selectContenant);
     filterRow.appendChild(tdContenant);
 
-    // 5. Quantité
+    // Quantité
     const tdQuantite = document.createElement('td');
     const inputQuantite = document.createElement('input');
     inputQuantite.type = 'number';
@@ -203,7 +197,7 @@ function ajouterLigneFiltres() {
     tdQuantite.appendChild(inputQuantite);
     filterRow.appendChild(tdQuantite);
 
-    // 6. Volume conditionné
+    // Volume conditionné
     const tdVolume = document.createElement('td');
     const inputVolume = document.createElement('input');
     inputVolume.type = 'number';
@@ -217,7 +211,7 @@ function ajouterLigneFiltres() {
     tdVolume.appendChild(inputVolume);
     filterRow.appendChild(tdVolume);
 
-    // 7. Date
+    // Date
     const tdDate = document.createElement('td');
     const inputDate = document.createElement('input');
     inputDate.type = 'date';
@@ -230,16 +224,16 @@ function ajouterLigneFiltres() {
     tdDate.appendChild(inputDate);
     filterRow.appendChild(tdDate);
 
-    // 8. Cellule vide pour les actions
+    // Cellule vide pour les actions
     const tdActions = document.createElement('td');
     filterRow.appendChild(tdActions);
 
     thead.appendChild(filterRow);
 
-    // Ajouter des indicateurs de tri aux en-têtes
+    // Indicateurs de tri
     const headers = document.querySelectorAll('#table-conditionnements thead tr:first-child th');
     headers.forEach((header, index) => {
-        if (index === headers.length - 1) return; // Ne pas ajouter de tri à la colonne Actions
+        if (index === headers.length - 1) return;
 
         header.style.cursor = 'pointer';
         header.addEventListener('click', function() {
@@ -254,9 +248,8 @@ function ajouterLigneFiltres() {
     });
 }
 
-// 8. Appliquer les filtres et le tri
+// Appliquer les filtres et le tri
 function appliquerFiltresEtTri(data) {
-    // Appliquer les filtres
     let filteredData = data.filter(cond => {
         const biere = allBieres.find(b => b.id === cond.id_biere);
         const contenant = TYPES_CONTENANTS.find(c => c.id === cond.type_contenant);
@@ -284,7 +277,6 @@ function appliquerFiltresEtTri(data) {
         });
     });
 
-    // Appliquer le tri
     if (currentSortColumn !== null) {
         filteredData.sort((a, b) => {
             const biereA = allBieres.find(b => b.id === a.id_biere);
@@ -314,13 +306,11 @@ function appliquerFiltresEtTri(data) {
     return filteredData;
 }
 
-// 9. Afficher tous les conditionnements
+// Afficher tous les conditionnements
 async function afficherTousConditionnements() {
     try {
-        // Appliquer filtres et tri
         const filteredData = appliquerFiltresEtTri(allConditionnements);
 
-        // Calculer le volume total par bière (sur les données filtrées)
         const volumesParBiere = {};
         filteredData.forEach(cond => {
             const contenant = TYPES_CONTENANTS.find(c => c.id === cond.type_contenant);
@@ -363,7 +353,7 @@ async function afficherTousConditionnements() {
                 `;
             }).join('');
 
-            // Ajouter une ligne de synthèse par bière (sur les données filtrées)
+            // Ajouter une ligne de synthèse par bière
             const syntheseParBiere = {};
             filteredData.forEach(cond => {
                 if (!syntheseParBiere[cond.id_biere]) {
@@ -381,7 +371,6 @@ async function afficherTousConditionnements() {
                 }
             });
 
-            // Ajouter les lignes de synthèse
             Object.entries(syntheseParBiere).forEach(([idBiere, data]) => {
                 const row = document.createElement('tr');
                 row.className = 'synthese-biere';
@@ -408,7 +397,7 @@ async function afficherTousConditionnements() {
     }
 }
 
-// 10. Afficher les détails d'un conditionnement
+// Afficher les détails d'un conditionnement
 async function afficherDetailsConditionnement(id) {
     try {
         const conditionnement = await loadItemById('conditionnements', id);
@@ -437,7 +426,7 @@ async function afficherDetailsConditionnement(id) {
     }
 }
 
-// 11. Afficher l'historique d'une bière spécifique
+// Afficher l'historique d'une bière spécifique
 async function afficherHistoriqueBiere(idBiere) {
     try {
         const biere = allBieres.find(b => b.id === idBiere);
@@ -446,11 +435,8 @@ async function afficherHistoriqueBiere(idBiere) {
             return;
         }
 
-        // Filtrer les conditionnements pour cette bière
         currentFilters[1] = biere.nom;
         afficherTousConditionnements();
-
-        // Afficher aussi l'historique complet dans une modale personnalisée
         ouvrirModaleHistoriqueBiere(biere);
     } catch (error) {
         console.error("Erreur affichage historique bière:", error);
@@ -458,12 +444,11 @@ async function afficherHistoriqueBiere(idBiere) {
     }
 }
 
-// 12. Ouvrir la modale d'historique d'une bière (version personnalisée)
+// Ouvrir la modale d'historique d'une bière
 function ouvrirModaleHistoriqueBiere(biere) {
     const modal = document.getElementById('historique-biere-modal');
     if (!modal) return;
 
-    // Remplir les données de la modale
     const modalTitle = modal.querySelector('.modal-title');
     const modalBody = modal.querySelector('.modal-body');
 
@@ -504,24 +489,20 @@ function ouvrirModaleHistoriqueBiere(biere) {
     }
 
     modalBody.innerHTML = content;
-
-    // Afficher la modale
     modal.style.display = 'block';
 }
 
-// 13. Ouvrir la modale d'ajout de conditionnement (version personnalisée)
+// Ouvrir la modale d'ajout de conditionnement
 function ouvrirModaleAjoutConditionnement() {
     const modal = document.getElementById('ajout-conditionnement-modal');
     if (!modal) return;
 
-    // Réinitialiser le formulaire
     document.getElementById('modal-select-biere').value = '';
     document.getElementById('modal-abv').value = '';
     document.getElementById('modal-date').valueAsDate = new Date();
     document.getElementById('modal-type-contenant').value = '';
     document.getElementById('modal-quantite').value = '';
 
-    // Charger les sélecteurs
     const selectBiere = document.getElementById('modal-select-biere');
     if (selectBiere) {
         selectBiere.innerHTML = '<option value="">-- Sélectionner une bière --</option>';
@@ -544,16 +525,15 @@ function ouvrirModaleAjoutConditionnement() {
         });
     }
 
-    // Afficher la modale
     modal.style.display = 'block';
 }
 
-// 14. Fermer une modale
+// Fermer une modale
 function fermerModale(modalId) {
     document.getElementById(modalId).style.display = 'none';
 }
 
-// 15. Ajouter un conditionnement depuis la modale
+// Ajouter un conditionnement depuis la modale
 async function ajouterConditionnementDepuisModale() {
     const idBiere = document.getElementById('modal-select-biere').value;
     const abv = parseFloat(document.getElementById('modal-abv').value);
@@ -579,10 +559,7 @@ async function ajouterConditionnementDepuisModale() {
             return;
         }
 
-        // Calculer le volume total conditionné automatiquement
         const volumeTotalContenants = quantite * contenant.volume;
-
-        // Générer le numéro de lot
         const numeroLot = genererNumeroLot(biere.nom, typeContenant, dateConditionnement);
 
         const nouveauConditionnement = {
@@ -600,7 +577,6 @@ async function ajouterConditionnementDepuisModale() {
 
         await addItem('conditionnements', nouveauConditionnement);
 
-        // Mettre à jour l'historique de la bière
         if (!biere.historique_conditionnement) {
             biere.historique_conditionnement = [];
         }
@@ -614,18 +590,14 @@ async function ajouterConditionnementDepuisModale() {
             numero_lot: numeroLot
         });
 
-        // Mettre à jour le volume total conditionné de la bière
         if (!biere.volume_total_conditionne) {
             biere.volume_total_conditionne = 0;
         }
         biere.volume_total_conditionne += volumeTotalContenants;
         await updateItem('bieres', biere);
 
-        // Recharger les données et afficher
         allConditionnements = await loadData('conditionnements').catch(() => []);
         afficherTousConditionnements();
-
-        // Fermer la modale
         fermerModale('ajout-conditionnement-modal');
 
         alert(`Conditionnement enregistré:\n`
@@ -637,7 +609,7 @@ async function ajouterConditionnementDepuisModale() {
     }
 }
 
-// 16. Supprimer un conditionnement
+// Supprimer un conditionnement
 async function supprimerConditionnement(id) {
     try {
         const conditionnement = await loadItemById('conditionnements', id);
@@ -646,17 +618,14 @@ async function supprimerConditionnement(id) {
         if (confirm(`Voulez-vous vraiment supprimer ce conditionnement (Lot: ${conditionnement.numero_lot || 'N/A'}) ?`)) {
             await deleteItem('conditionnements', id);
 
-            // Mettre à jour l'historique de la bière
             const biere = allBieres.find(b => b.id === conditionnement.id_biere);
             if (biere) {
-                // Retirer de l'historique
                 if (biere.historique_conditionnement) {
                     biere.historique_conditionnement = biere.historique_conditionnement.filter(
                         h => h.numero_lot !== conditionnement.numero_lot
                     );
                 }
 
-                // Mettre à jour le volume total
                 if (biere.volume_total_conditionne) {
                     const contenant = TYPES_CONTENANTS.find(c => c.id === conditionnement.type_contenant);
                     if (contenant) {
@@ -667,7 +636,6 @@ async function supprimerConditionnement(id) {
                 await updateItem('bieres', biere);
             }
 
-            // Recharger les données et afficher
             allConditionnements = await loadData('conditionnements').catch(() => []);
             afficherTousConditionnements();
         }
@@ -677,12 +645,10 @@ async function supprimerConditionnement(id) {
     }
 }
 
-// 17. Initialisation
+// Initialisation
 document.addEventListener('DOMContentLoaded', function() {
-    // Charger les données initiales
     chargerDonneesInitiales();
 
-    // Gestion des clics en dehors des modales pour les fermer
     window.onclick = function(event) {
         const modals = document.getElementsByClassName('custom-modal');
         for (let modal of modals) {
@@ -692,6 +658,5 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
 
-    // Initialiser les filtres
     currentFilters = {};
 });
