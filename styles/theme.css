@@ -1052,4 +1052,36 @@ th.sorted-desc::after {
     padding-bottom: 8px;
 }
 
+/* Styles spécifiques pour la section ventes */
+#table-stocks-disponibles th,
+#table-historique-ventes th {
+    background-color: var(--crab-jaune);
+    color: var(--crab-noir);
+}
+
+.synthese-vente {
+    background-color: var(--crab-gris-fonce);
+    font-weight: bold;
+    border-top: 2px solid var(--crab-jaune);
+}
+
+.synthese-vente td {
+    padding-top: 8px;
+    padding-bottom: 8px;
+}
+
+/* Style pour les sélecteurs de vente */
+#select-biere-vente,
+#select-conditionnement-vente {
+    width: 100%;
+    background-color: var(--crab-gris-fonce);
+    color: var(--crab-blanc);
+    border: 1px solid var(--crab-jaune);
+}
+
+/* Style pour les boutons de vente */
+#ventes .btn {
+    margin-right: 10px;
+    margin-top: 10px;
+}
 

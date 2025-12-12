@@ -286,7 +286,7 @@
 </section>
 
 
-    <!-- Section Ventes complète -->
+<!-- Section Ventes complète -->
 <section id="ventes" class="tab" style="display: none;">
     <h2>Gestion des Ventes</h2>
 
@@ -345,12 +345,9 @@
                 <input type="text" id="nom-client-vente" class="form-control" required>
             </div>
 
-            <div style="margin-top: 1rem; display: flex; gap: 1rem;">
-                <button class="btn btn-primary" onclick="ventesEnregistrerVente()">
+            <div style="margin-top: 1rem;">
+                <button class="btn btn-primary" onclick="window.ventesEnregistrerVente()">
                     <i class="material-icons">save</i> Enregistrer Vente
-                </button>
-                <button class="btn btn-secondary" onclick="ventesGenererFacturePDF()">
-                    <i class="material-icons">picture_as_pdf</i> Générer Facture
                 </button>
             </div>
         </div>
@@ -380,6 +377,7 @@
         </div>
     </div>
 </section>
+
 
 
 
