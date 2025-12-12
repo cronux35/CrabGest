@@ -1,4 +1,4 @@
-// conditionnement.js - Version complète et fonctionnelle
+// conditionnement.js - Version adaptée au style existant
 let currentConditionnementId = null;
 let currentSortColumn = null;
 let currentSortDirection = 1;
@@ -106,7 +106,7 @@ function ajouterLigneFiltres() {
     const tdLot = document.createElement('td');
     const inputLot = document.createElement('input');
     inputLot.type = 'text';
-    inputLot.placeholder = 'Filtrer numéro de lot...';
+    inputLot.placeholder = 'Filtrer...';
     inputLot.className = 'filter-input';
     inputLot.dataset.column = '0';
     inputLot.addEventListener('input', () => {
@@ -193,7 +193,7 @@ function ajouterLigneFiltres() {
     const tdQuantite = document.createElement('td');
     const inputQuantite = document.createElement('input');
     inputQuantite.type = 'number';
-    inputQuantite.placeholder = 'Filtrer quantité...';
+    inputQuantite.placeholder = 'Filtrer...';
     inputQuantite.className = 'filter-input';
     inputQuantite.dataset.column = '4';
     inputQuantite.addEventListener('input', () => {
@@ -207,7 +207,7 @@ function ajouterLigneFiltres() {
     const tdVolume = document.createElement('td');
     const inputVolume = document.createElement('input');
     inputVolume.type = 'number';
-    inputVolume.placeholder = 'Filtrer volume...';
+    inputVolume.placeholder = 'Filtrer...';
     inputVolume.className = 'filter-input';
     inputVolume.dataset.column = '5';
     inputVolume.addEventListener('input', () => {
@@ -450,7 +450,7 @@ async function afficherHistoriqueBiere(idBiere) {
         currentFilters[1] = biere.nom;
         afficherTousConditionnements();
 
-        // Afficher aussi l'historique complet dans une modale
+        // Afficher aussi l'historique complet dans une modale personnalisée
         ouvrirModaleHistoriqueBiere(biere);
     } catch (error) {
         console.error("Erreur affichage historique bière:", error);
@@ -458,7 +458,7 @@ async function afficherHistoriqueBiere(idBiere) {
     }
 }
 
-// 12. Ouvrir la modale d'historique d'une bière
+// 12. Ouvrir la modale d'historique d'une bière (version personnalisée)
 function ouvrirModaleHistoriqueBiere(biere) {
     const modal = document.getElementById('historique-biere-modal');
     if (!modal) return;
@@ -474,7 +474,7 @@ function ouvrirModaleHistoriqueBiere(biere) {
     if (!biere.historique_conditionnement || biere.historique_conditionnement.length === 0) {
         content += "<p>Aucun conditionnement enregistré pour cette bière.</p>";
     } else {
-        content += `<table class="table table-sm">
+        content += `<table class="table">
             <thead>
                 <tr>
                     <th>Date</th>
@@ -506,11 +506,10 @@ function ouvrirModaleHistoriqueBiere(biere) {
     modalBody.innerHTML = content;
 
     // Afficher la modale
-    const modalInstance = new bootstrap.Modal(modal);
-    modalInstance.show();
+    modal.style.display = 'block';
 }
 
-// 13. Ouvrir la modale d'ajout de conditionnement
+// 13. Ouvrir la modale d'ajout de conditionnement (version personnalisée)
 function ouvrirModaleAjoutConditionnement() {
     const modal = document.getElementById('ajout-conditionnement-modal');
     if (!modal) return;
@@ -546,11 +545,15 @@ function ouvrirModaleAjoutConditionnement() {
     }
 
     // Afficher la modale
-    const modalInstance = new bootstrap.Modal(modal);
-    modalInstance.show();
+    modal.style.display = 'block';
 }
 
-// 14. Ajouter un conditionnement depuis la modale
+// 14. Fermer une modale
+function fermerModale(modalId) {
+    document.getElementById(modalId).style.display = 'none';
+}
+
+// 15. Ajouter un conditionnement depuis la modale
 async function ajouterConditionnementDepuisModale() {
     const idBiere = document.getElementById('modal-select-biere').value;
     const abv = parseFloat(document.getElementById('modal-abv').value);
@@ -623,9 +626,7 @@ async function ajouterConditionnementDepuisModale() {
         afficherTousConditionnements();
 
         // Fermer la modale
-        const modal = document.getElementById('ajout-conditionnement-modal');
-        const modalInstance = bootstrap.Modal.getInstance(modal);
-        modalInstance.hide();
+        fermerModale('ajout-conditionnement-modal');
 
         alert(`Conditionnement enregistré:\n`
             + `Numéro de lot: ${numeroLot}\n`
@@ -636,7 +637,7 @@ async function ajouterConditionnementDepuisModale() {
     }
 }
 
-// 15. Supprimer un conditionnement
+// 16. Supprimer un conditionnement
 async function supprimerConditionnement(id) {
     try {
         const conditionnement = await loadItemById('conditionnements', id);
@@ -676,10 +677,20 @@ async function supprimerConditionnement(id) {
     }
 }
 
-// 16. Initialisation
+// 17. Initialisation
 document.addEventListener('DOMContentLoaded', function() {
     // Charger les données initiales
     chargerDonneesInitiales();
+
+    // Gestion des clics en dehors des modales pour les fermer
+    window.onclick = function(event) {
+        const modals = document.getElementsByClassName('custom-modal');
+        for (let modal of modals) {
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        }
+    };
 
     // Initialiser les filtres
     currentFilters = {};
