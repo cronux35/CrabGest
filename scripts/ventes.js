@@ -1,5 +1,10 @@
+// Vérifier que jsPDF est chargé
+if (!window.jspdf) {
+    console.warn("jsPDF n'est pas chargé, la génération de PDF sera désactivée");
+}
+
 // Types de contenants (identique à conditionnement.js)
-const TYPES_CONTENANTS = {
+const VENTES_TYPES_CONTENANTS = {
     'canette_33cl': { nom: 'Canette 33cl', volume: 0.33, code: 'C33' },
     'canette_44cl': { nom: 'Canette 44cl', volume: 0.44, code: 'C44' },
     'bouteille_33cl': { nom: 'Bouteille 33cl', volume: 0.33, code: 'B33' },
@@ -9,41 +14,43 @@ const TYPES_CONTENANTS = {
     'fut_20l': { nom: 'Fût 20L', volume: 20, code: 'F20' }
 };
 
-// Variables globales
-let allVentes = [];
-let stocksDisponibles = [];
-let currentFactureData = null;
+// Variables globales spécifiques aux ventes
+let ventesAllBieres = [];
+let ventesAllVentes = [];
+let ventesStocksDisponibles = [];
+let ventesCurrentFactureData = null;
 
 // Charger les données initiales
-async function chargerDonneesVentes() {
+async function ventesChargerDonneesInitiales() {
     try {
         // Charger les données en parallèle
         const [ventes, conditionnements, bieres] = await Promise.all([
-            loadData('ventes'),
-            loadData('conditionnements'),
-            loadData('bieres')
+            loadData('ventes').catch(() => []),
+            loadData('conditionnements').catch(() => []),
+            loadData('bieres').catch(() => [])
         ]);
 
-        allVentes = ventes;
+        ventesAllVentes = ventes || [];
+        ventesAllBieres = bieres || [];
 
         // Calculer les stocks disponibles
-        calculerStocksDisponibles(conditionnements, bieres);
+        ventesCalculerStocksDisponibles(conditionnements || [], bieres || []);
 
         // Charger les sélecteurs
-        chargerSelecteursVentes(bieres);
+        ventesChargerSelecteursVentes();
 
         // Afficher les données
-        afficherStocksDisponibles();
-        afficherHistoriqueVentes();
+        ventesAfficherStocksDisponibles();
+        ventesAfficherHistoriqueVentes();
 
     } catch (error) {
-        console.error("Erreur chargement initial:", error);
+        console.error("Erreur chargement initial des ventes:", error);
     }
 }
 
 // Calculer les stocks disponibles
-function calculerStocksDisponibles(conditionnements, bieres) {
-    stocksDisponibles = [];
+function ventesCalculerStocksDisponibles(conditionnements, bieres) {
+    ventesStocksDisponibles = [];
 
     // Regrouper les conditionnements par bière et type
     const stocksParBiere = {};
@@ -60,17 +67,17 @@ function calculerStocksDisponibles(conditionnements, bieres) {
             };
         }
         stocksParBiere[key].quantite += cond.quantite;
-        stocksParBiere[key].volume_total += cond.volume_total || (cond.quantite * TYPES_CONTENANTS[cond.type_contenant]?.volume || 0);
+        stocksParBiere[key].volume_total += cond.volume_total || (cond.quantite * (VENTES_TYPES_CONTENANTS[cond.type_contenant]?.volume || 0));
     });
 
     // Convertir en tableau
-    stocksDisponibles = Object.values(stocksParBiere);
+    ventesStocksDisponibles = Object.values(stocksParBiere);
 
     // Ajouter les bières sans conditionnement
     bieres.forEach(biere => {
-        const hasStock = stocksDisponibles.some(s => s.id_biere === biere.id);
+        const hasStock = ventesStocksDisponibles.some(s => s.id_biere === biere.id);
         if (!hasStock) {
-            stocksDisponibles.push({
+            ventesStocksDisponibles.push({
                 id_biere: biere.id,
                 nom_biere: biere.nom,
                 type_contenant: null,
@@ -82,12 +89,12 @@ function calculerStocksDisponibles(conditionnements, bieres) {
 }
 
 // Charger les sélecteurs
-function chargerSelecteursVentes(bieres) {
+function ventesChargerSelecteursVentes() {
     // Sélecteur des bières
     const selectBiere = document.getElementById('select-biere-vente');
     if (selectBiere) {
         selectBiere.innerHTML = '<option value="">-- Sélectionner une bière --</option>';
-        bieres.forEach(biere => {
+        ventesAllBieres.forEach(biere => {
             const option = document.createElement('option');
             option.value = biere.id;
             option.textContent = biere.nom;
@@ -95,24 +102,24 @@ function chargerSelecteursVentes(bieres) {
         });
 
         selectBiere.addEventListener('change', function() {
-            chargerTypesConditionnement(this.value);
+            ventesChargerTypesConditionnement(this.value);
         });
     }
 }
 
 // Charger les types de conditionnement pour une bière
-function chargerTypesConditionnement(biereId) {
+function ventesChargerTypesConditionnement(biereId) {
     const selectConditionnement = document.getElementById('select-conditionnement-vente');
     if (!selectConditionnement) return;
 
     selectConditionnement.innerHTML = '<option value="">-- Sélectionner un type --</option>';
 
     // Filtrer les stocks pour cette bière
-    const stocksBiere = stocksDisponibles.filter(s => s.id_biere == biereId && s.quantite > 0);
+    const stocksBiere = ventesStocksDisponibles.filter(s => s.id_biere == biereId && s.quantite > 0);
 
     // Ajouter les options disponibles
     stocksBiere.forEach(stock => {
-        const contenant = TYPES_CONTENANTS[stock.type_contenant];
+        const contenant = VENTES_TYPES_CONTENANTS[stock.type_contenant];
         if (contenant) {
             const option = document.createElement('option');
             option.value = stock.type_contenant;
@@ -124,11 +131,11 @@ function chargerTypesConditionnement(biereId) {
 }
 
 // Afficher les stocks disponibles
-function afficherStocksDisponibles() {
+function ventesAfficherStocksDisponibles() {
     const tbody = document.querySelector('#table-stocks-disponibles tbody');
     if (!tbody) return;
 
-    if (stocksDisponibles.length === 0) {
+    if (ventesStocksDisponibles.length === 0) {
         tbody.innerHTML = `
             <tr>
                 <td colspan="4" style="text-align: center; padding: 20px;">
@@ -142,7 +149,7 @@ function afficherStocksDisponibles() {
     // Regrouper par bière
     const stocksParBiere = {};
 
-    stocksDisponibles.forEach(stock => {
+    ventesStocksDisponibles.forEach(stock => {
         if (stock.type_contenant) { // Ignorer les entrées sans conditionnement
             if (!stocksParBiere[stock.id_biere]) {
                 stocksParBiere[stock.id_biere] = {
@@ -153,7 +160,7 @@ function afficherStocksDisponibles() {
                 };
             }
 
-            const contenant = TYPES_CONTENANTS[stock.type_contenant];
+            const contenant = VENTES_TYPES_CONTENANTS[stock.type_contenant];
             stocksParBiere[stock.id_biere].types.push({
                 type: contenant.nom,
                 quantite: stock.quantite,
@@ -187,7 +194,7 @@ function afficherStocksDisponibles() {
 }
 
 // Enregistrer une vente
-async function enregistrerVente() {
+async function ventesEnregistrerVente() {
     const biereId = document.getElementById('select-biere-vente').value;
     const typeConditionnement = document.getElementById('select-conditionnement-vente').value;
     const quantite = parseInt(document.getElementById('quantite-vente').value);
@@ -202,7 +209,7 @@ async function enregistrerVente() {
 
     try {
         // Vérifier le stock disponible
-        const stockDispo = stocksDisponibles.find(s =>
+        const stockDispo = ventesStocksDisponibles.find(s =>
             s.id_biere == biereId && s.type_contenant === typeConditionnement);
 
         if (!stockDispo || stockDispo.quantite < quantite) {
@@ -234,54 +241,46 @@ async function enregistrerVente() {
         await addItem('ventes', vente);
 
         // Mettre à jour le stock
-        const conditionnementAModifier = stocksDisponibles.find(s =>
-            s.id_biere == biereId && s.type_contenant === typeConditionnement);
+        const conditionnements = await loadData('conditionnements').catch(() => []);
+        const condAMettreAJour = conditionnements
+            .filter(c => c.id_biere == biereId && c.type_contenant === typeConditionnement)
+            .sort((a, b) => new Date(a.date) - new Date(b.date)); // FIFO
 
-        if (conditionnementAModifier) {
-            conditionnementAModifier.quantite -= quantite;
-            conditionnementAModifier.volume_total -= quantite * TYPES_CONTENANTS[typeConditionnement].volume;
+        let quantiteRestante = quantite;
+        for (const cond of condAMettreAJour) {
+            if (quantiteRestante <= 0) break;
 
-            // Mettre à jour le conditionnement en base de données
-            const conditionnements = await loadData('conditionnements');
-            const condAMettreAJour = conditionnements
-                .filter(c => c.id_biere == biereId && c.type_contenant === typeConditionnement)
-                .sort((a, b) => new Date(a.date) - new Date(b.date)); // FIFO
+            const quantiteADebiter = Math.min(cond.quantite, quantiteRestante);
+            cond.quantite -= quantiteADebiter;
+            cond.volume_total -= quantiteADebiter * (VENTES_TYPES_CONTENANTS[cond.type_contenant]?.volume || 0);
 
-            let quantiteRestante = quantite;
-            for (const cond of condAMettreAJour) {
-                if (quantiteRestante <= 0) break;
-
-                const quantiteADebiter = Math.min(cond.quantite, quantiteRestante);
-                cond.quantite -= quantiteADebiter;
-                cond.volume_total -= quantiteADebiter * TYPES_CONTENANTS[cond.type_contenant].volume;
-
-                if (cond.quantite <= 0) {
-                    await deleteItem('conditionnements', cond.id);
-                } else {
-                    await updateItem('conditionnements', cond);
-                }
-
-                quantiteRestante -= quantiteADebiter;
+            if (cond.quantite <= 0) {
+                await deleteItem('conditionnements', cond.id);
+            } else {
+                await updateItem('conditionnements', cond);
             }
 
-            // Recharger les stocks
-            const [conditionnements, bieres] = await Promise.all([
-                loadData('conditionnements'),
-                loadData('bieres')
-            ]);
-            calculerStocksDisponibles(conditionnements, bieres);
+            quantiteRestante -= quantiteADebiter;
         }
 
         // Stocker les données pour la facture
-        currentFactureData = {
+        ventesCurrentFactureData = {
             ...vente,
-            contenant_nom: TYPES_CONTENANTS[typeConditionnement].nom,
+            contenant_nom: VENTES_TYPES_CONTENANTS[typeConditionnement]?.nom || typeConditionnement,
             date: new Date().toLocaleDateString('fr-FR')
         };
 
+        // Recharger les stocks
+        const [nouveauxConditionnements, nouvellesBieres] = await Promise.all([
+            loadData('conditionnements').catch(() => []),
+            loadData('bieres').catch(() => [])
+        ]);
+
+        ventesCalculerStocksDisponibles(nouveauxConditionnements, nouvellesBieres);
+
         // Rafraîchir l'affichage
-        afficherStocksDisponibles();
-        afficherHistoriqueVentes();
+        ventesAfficherStocksDisponibles();
+        ventesAfficherHistoriqueVentes();
 
         alert(`Vente enregistrée avec succès!`);
     } catch (error) {
@@ -291,11 +290,11 @@ async function enregistrerVente() {
 }
 
 // Afficher l'historique des ventes
-function afficherHistoriqueVentes() {
+function ventesAfficherHistoriqueVentes() {
     const tbody = document.querySelector('#table-historique-ventes tbody');
     if (!tbody) return;
 
-    if (allVentes.length === 0) {
+    if (ventesAllVentes.length === 0) {
         tbody.innerHTML = `
             <tr>
                 <td colspan="8" style="text-align: center; padding: 20px;">
@@ -306,8 +305,8 @@ function afficherHistoriqueVentes() {
         return;
     }
 
-    tbody.innerHTML = allVentes.map(vente => {
-        const contenant = TYPES_CONTENANTS[vente.type_contenant];
+    tbody.innerHTML = ventesAllVentes.map(vente => {
+        const contenant = VENTES_TYPES_CONTENANTS[vente.type_contenant];
         return `
             <tr>
                 <td>${new Date(vente.date).toLocaleDateString('fr-FR')}</td>
@@ -318,7 +317,7 @@ function afficherHistoriqueVentes() {
                 <td>${vente.prix_unitaire.toFixed(2)}€</td>
                 <td>${vente.total.toFixed(2)}€</td>
                 <td>
-                    <button class="action-btn info-btn" title="Voir détails" onclick="genererFacturePDF(${vente.id})">
+                    <button class="action-btn info-btn" title="Voir détails" onclick="ventesGenererFacturePDF(${vente.id})">
                         <i class="material-icons">picture_as_pdf</i>
                     </button>
                 </td>
@@ -328,17 +327,17 @@ function afficherHistoriqueVentes() {
 }
 
 // Générer une facture PDF
-function genererFacturePDF(venteId) {
+function ventesGenererFacturePDF(venteId) {
     // Si un ID est fourni, utiliser cette vente
-    let venteData = currentFactureData;
+    let venteData = ventesCurrentFactureData;
     if (venteId) {
-        venteData = allVentes.find(v => v.id == venteId);
+        venteData = ventesAllVentes.find(v => v.id == venteId);
         if (!venteData) return;
 
-        const contenant = TYPES_CONTENANTS[venteData.type_contenant];
+        const contenant = VENTES_TYPES_CONTENANTS[venteData.type_contenant];
         venteData = {
             ...venteData,
-            contenant_nom: contenant.nom,
+            contenant_nom: contenant?.nom || venteData.type_contenant,
             date: new Date(venteData.date).toLocaleDateString('fr-FR')
         };
     }
@@ -348,8 +347,14 @@ function genererFacturePDF(venteId) {
         return;
     }
 
+    // Vérifier si jsPDF est disponible
+    if (!window.jspdf) {
+        alert("La génération de PDF n'est pas disponible dans cet environnement. Veuillez utiliser une version locale de l'application.");
+        return;
+    }
+
     // Créer un nouveau document PDF
-    const doc = new jsPDF();
+    const doc = new jspdf.jsPDF();
 
     // Titre
     doc.setFontSize(20);
@@ -377,7 +382,7 @@ function genererFacturePDF(venteId) {
     doc.text("© 2025 CrabGest - Association CRAB", 105, 280, { align: 'center' });
 
     // Enregistrer le PDF
-    doc.save(`Facture_${venteData.id}_${venteData.client}.pdf`);
+    doc.save(`Facture_${venteData.id}_${venteData.client.replace(/\s+/g, '_')}.pdf`);
 }
 
 // Initialisation
@@ -387,7 +392,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (ventesTab) {
         const observer = new MutationObserver(function(mutations) {
             if (ventesTab.style.display !== 'none') {
-                chargerDonneesVentes();
+                ventesChargerDonneesInitiales();
                 observer.disconnect();
             }
         });

@@ -23,6 +23,17 @@
 <script src="ventes.js"></script>
     <!-- CSP pour éviter les blocages -->
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' fonts.googleapis.com; font-src 'self' fonts.gstatic.com; img-src 'self' data:">
+    <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self';
+    script-src 'self' https://cdnjs.cloudflare.com;
+    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+    font-src 'self' https://fonts.gstatic.com;
+    img-src 'self' data:;
+    connect-src 'self';
+    object-src 'none';
+    frame-src 'none';
+">
+
 </head>
 <body>
     <header>
@@ -276,10 +287,8 @@
 </section>
 
 
-
-
-      <!-- Section Ventes complète -->
-<section id="ventes" class="tab">
+    <!-- Section Ventes complète -->
+<section id="ventes" class="tab" style="display: none;">
     <h2>Gestion des Ventes</h2>
 
     <!-- Section Stocks Disponibles -->
@@ -338,10 +347,10 @@
             </div>
 
             <div style="margin-top: 1rem; display: flex; gap: 1rem;">
-                <button class="btn btn-primary" onclick="enregistrerVente()">
+                <button class="btn btn-primary" onclick="ventesEnregistrerVente()">
                     <i class="material-icons">save</i> Enregistrer Vente
                 </button>
-                <button class="btn btn-secondary" onclick="genererFacturePDF()">
+                <button class="btn btn-secondary" onclick="ventesGenererFacturePDF()">
                     <i class="material-icons">picture_as_pdf</i> Générer Facture
                 </button>
             </div>
@@ -372,6 +381,7 @@
         </div>
     </div>
 </section>
+
 
 
         <!-- Douane -->
@@ -438,6 +448,29 @@
     <script src="scripts/douane.js"></script>
     <!-- Bibliothèques locales -->
     <script src="lib/chart.min.js"></script>
-    <script src="lib/jspdf.umd.min.js"></script>
+    <!-- À la fin du body, remplacez vos scripts existants par : -->
+<script>
+    // Chargement dynamique de jsPDF
+    function loadJSPDF() {
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+        script.integrity = 'sha512-ZASB4ukorPfGqxHJMZFwWZisEJStIwo9ndW3xSd+u7WqYQZzWXCmZNWd+X0aWqgYfXPJNoKWXWBiAWmJWYb/g==';
+        script.crossOrigin = 'anonymous';
+        script.onload = function() {
+            window.jspdf = window.jspdf.jsPDF;
+            console.log("jsPDF chargé avec succès");
+        };
+        document.head.appendChild(script);
+    }
+
+    // Charger jsPDF quand la page est prête
+    document.addEventListener('DOMContentLoaded', loadJSPDF);
+</script>
+
+<!-- Chargement local des scripts -->
+<script src="db.js"></script>
+<script src="conditionnement.js"></script>
+<script src="ventes.js"></script>
+
 </body>
 </html>
