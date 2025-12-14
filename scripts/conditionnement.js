@@ -84,7 +84,7 @@ async function ajouterConditionnement() {
     };
 
     try {
-        await saveData('conditionnements', conditionnement);
+        await addItem('conditionnements', conditionnement);
         afficherConditionnements();
         fermerModaleConditionnement();
     } catch (error) {

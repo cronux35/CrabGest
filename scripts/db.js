@@ -144,6 +144,29 @@ async function loadData(storeName) {
     }
 }
 
+
+// Sauvegarder ou mettre à jour un élément
+async function saveData(storeName, item) {
+    try {
+        const database = await openDB();
+        return new Promise((resolve, reject) => {
+            const transaction = database.transaction([storeName], 'readwrite');
+            const store = transaction.objectStore(storeName);
+            const request = store.put(item);
+
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = (event) => reject(event.target.error);
+        });
+    } catch (error) {
+        console.error(`Erreur lors de la sauvegarde dans ${storeName}:`, error);
+        throw error;
+    }
+}
+
+// Mettre à jour un élément (alias pour saveData)
+const updateData = saveData;
+
+
 // Charger un élément par ID
 async function loadItemById(storeName, id) {
     try {

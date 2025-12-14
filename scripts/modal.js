@@ -138,6 +138,14 @@ document.addEventListener('DOMContentLoaded', function() {
     setupModalCloseHandlers();
 });
 
+function openConditionnementModal() {
+    openModal('modale-conditionnement');
+}
+
+function closeConditionnementModal() {
+    closeModal('modale-conditionnement');
+}
+
 
 function openDeleteModal(message, callback) {
     const modal = document.getElementById('deleteModal');
