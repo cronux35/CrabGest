@@ -26,6 +26,13 @@ async function chargerSelecteurBieresConditionnement() {
     const bieres = await loadData('bieres').catch(() => []);
     select.innerHTML = '';
     listbox.innerHTML = '';
+
+    // Ajouter une option vide pour "Toutes les bières"
+    const optionToutes = document.createElement('option');
+    optionToutes.value = "";
+    optionToutes.textContent = "-- Toutes les bières --";
+    listbox.appendChild(optionToutes);
+
     bieres.forEach(biere => {
         const option = document.createElement('option');
         option.value = biere.nom;
@@ -103,19 +110,26 @@ async function ajouterConditionnement() {
     }
 }
 
-
-// Afficher les conditionnements
-async function afficherConditionnements() {
+// Afficher les conditionnements (avec filtre par bière)
+async function afficherConditionnements(biereNom = null) {
     const tbody = document.querySelector('#table-conditionnements tbody');
     tbody.innerHTML = '';
     const conditionnements = await loadData('conditionnements').catch(() => []);
 
-    if (conditionnements.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">Aucun conditionnement enregistré</td></tr>';
+    // Filtrer par bière si un nom est fourni
+    const conditionnementsFiltres = biereNom
+        ? conditionnements.filter(cond => cond.biere === biereNom)
+        : conditionnements;
+
+    if (conditionnementsFiltres.length === 0) {
+        const message = biereNom
+            ? `Aucun conditionnement pour la bière "${biereNom}"`
+            : "Aucun conditionnement enregistré";
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center;">${message}</td></tr>`;
         return;
     }
 
-    conditionnements.forEach(cond => {
+    conditionnementsFiltres.forEach(cond => {
         if (!cond.biere || !cond.typeContenant) {
             console.error("Conditionnement invalide :", cond);
             return;
@@ -146,34 +160,17 @@ async function afficherConditionnements() {
     });
 }
 
-
-
 // Supprimer un conditionnement
 async function supprimerConditionnement(id) {
     try {
         await deleteData('conditionnements', id);
-        afficherConditionnements();
+        const listbox = document.getElementById('listbox-bieres');
+        const biereNom = listbox.value;
+        afficherConditionnements(biereNom === "" ? null : biereNom);
     } catch (error) {
         console.error("Erreur suppression conditionnement:", error);
         alert("Erreur lors de la suppression");
     }
-}
-
-// Afficher l'historique pour une bière
-async function afficherHistoriqueBiere(biereNom) {
-    const conditionnements = await loadData('conditionnements').catch(() => []);
-    const historique = conditionnements.filter(cond => cond.biere === biereNom);
-
-    if (historique.length === 0) {
-        alert(`Aucun historique pour la bière "${biereNom}"`);
-        return;
-    }
-
-    let message = `Historique pour "${biereNom}" :\n\n`;
-    historique.forEach(cond => {
-        message += `Lot ${cond.numeroLot} : ${cond.quantite} x ${TYPES_CONTENANTS.find(c => c.id === cond.typeContenant).nom} (${cond.volume.toFixed(2)}L) le ${new Date(cond.date).toLocaleDateString()}\n`;
-    });
-    alert(message);
 }
 
 // Initialisation
@@ -182,4 +179,10 @@ document.addEventListener('DOMContentLoaded', function() {
     chargerSelecteurContenants();
     afficherConditionnements();
     document.getElementById('date-conditionnement').valueAsDate = new Date();
+
+    // Écouteur pour le filtre dynamique
+    document.getElementById('listbox-bieres').addEventListener('change', function() {
+        const biereNom = this.value;
+        afficherConditionnements(biereNom === "" ? null : biereNom);
+    });
 });
