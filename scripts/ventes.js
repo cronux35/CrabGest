@@ -242,7 +242,6 @@ async function enregistrerVente() {
             conditionnementAModifier.volume_total -= quantite * TYPES_CONTENANTS[typeConditionnement].volume;
 
             // Mettre à jour le conditionnement en base de données
-            const conditionnements = await loadData('conditionnements');
             const condAMettreAJour = conditionnements
                 .filter(c => c.id_biere == biereId && c.type_contenant === typeConditionnement)
                 .sort((a, b) => new Date(a.date) - new Date(b.date)); // FIFO
