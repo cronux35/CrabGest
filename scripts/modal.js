@@ -127,23 +127,6 @@ function setupModalCloseHandlers() {
     });
 }
 
-// Remplacer l'écouteur DOMContentLoaded existant
-document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('.close').forEach(function(closeBtn) {
-        closeBtn.addEventListener('click', function() {
-            closeModal(closeBtn.closest('.modal').id);
-        });
-    });
-
-    window.addEventListener('click', function(event) {
-        if (event.target.classList.contains('modal')) {
-            closeModal(event.target.id);
-        }
-    });
-
-    setupModalCloseHandlers();
-});
-
 function openConditionnementModal() {
     openModal('modale-conditionnement');
 }
@@ -167,6 +150,7 @@ function openDeleteModal(message, callback) {
     openModal('deleteModal');
 }
 
+// Garde un seul bloc DOMContentLoaded
 document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.close').forEach(function(closeBtn) {
         closeBtn.addEventListener('click', function() {
@@ -180,6 +164,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // Écouteurs pour la modale de suppression
     document.getElementById('confirmDelete').addEventListener('click', function() {
         if (currentDeleteCallback) {
             currentDeleteCallback();

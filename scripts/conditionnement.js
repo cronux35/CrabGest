@@ -64,7 +64,7 @@ function ouvrirModaleAjoutConditionnement() {
 
 // Fermer la modale
 function fermerModaleConditionnement() {
-    document.getElementById('modale-conditionnement').style.display = 'none';
+    closeConditionnementModal();
 }
 
 // Ajouter un conditionnement
