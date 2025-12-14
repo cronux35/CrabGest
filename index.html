@@ -21,7 +21,17 @@
     window.jspdf = window.jspdf.jsPDF;
 </script>
     <!-- CSP pour éviter les blocages -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' fonts.googleapis.com; font-src 'self' fonts.gstatic.com; img-src 'self' data:">
+    <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self';
+    script-src 'self' https://cdnjs.cloudflare.com;
+    connect-src 'self' https://cdnjs.cloudflare.com;
+    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+    font-src 'self' https://fonts.gstatic.com;
+    img-src 'self' data:;
+    object-src 'none';
+    frame-src 'none';
+">
+
 </head>
 <body>
     <header>
@@ -224,7 +234,7 @@
 <!-- Modale pour ajouter un conditionnement -->
 <div id="modale-conditionnement" class="custom-modal">
     <div class="modal-content">
-        <span class="close" onclick="fermerModaleConditionnement()">&times;</span>
+        <span class="close">&times;</span>
         <h3>Ajouter un conditionnement</h3>
         <form id="form-conditionnement">
             <div class="form-group">
