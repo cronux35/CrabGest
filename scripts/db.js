@@ -103,15 +103,19 @@ async function saveData(storeName, data) {
             const transaction = database.transaction([storeName], 'readwrite');
             const store = transaction.objectStore(storeName);
 
-            // Effacer les anciennes données
+            // Vérifie que `data` est un tableau
+            if (!Array.isArray(data)) {
+                data = [data]; // Convertit en tableau si ce n'est pas déjà le cas
+            }
+
+            // Efface les anciennes données
             const clearRequest = store.clear();
 
             clearRequest.onsuccess = () => {
-                // Ajouter les nouvelles données
+                // Ajoute les nouvelles données
                 data.forEach(item => {
-                    const itemToSave = {...item};
-                    if (itemToSave.id) delete itemToSave.id; // Laisser IndexedDB générer l'ID
-                    store.add(itemToSave);
+                    if (item.id) delete item.id; // Laisser IndexedDB générer l'ID
+                    store.add(item);
                 });
                 resolve();
             };
@@ -125,6 +129,7 @@ async function saveData(storeName, data) {
         throw error;
     }
 }
+
 
 // Charger des données
 async function loadData(storeName) {

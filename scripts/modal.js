@@ -7,10 +7,16 @@ function openModal(modalId) {
     if (modal) modal.style.display = "block";
 }
 
+// Assure-toi que l'ID de la modale est correct
 function closeModal(modalId) {
     const modal = document.getElementById(modalId);
-    if (modal) modal.style.display = "none";
+    if (modal) {
+        modal.style.display = "none";
+    } else {
+        console.error(`Modale avec l'ID ${modalId} non trouvée.`);
+    }
 }
+
 
 function openEditModal(type, id, data) {
     currentEditType = type;

@@ -1,14 +1,3 @@
-// Types de contenants (identique à conditionnement.js)
-const TYPES_CONTENANTS = {
-    'canette_33cl': { nom: 'Canette 33cl', volume: 0.33, code: 'C33' },
-    'canette_44cl': { nom: 'Canette 44cl', volume: 0.44, code: 'C44' },
-    'bouteille_33cl': { nom: 'Bouteille 33cl', volume: 0.33, code: 'B33' },
-    'bouteille_50cl': { nom: 'Bouteille 50cl', volume: 0.50, code: 'B50' },
-    'bouteille_75cl': { nom: 'Bouteille 75cl', volume: 0.75, code: 'B75' },
-    'fut_sodakeg_19l': { nom: 'Fût SodaKeg 19L', volume: 19, code: 'FS19' },
-    'fut_20l': { nom: 'Fût 20L', volume: 20, code: 'F20' }
-};
-
 // Variables globales
 let allVentes = [];
 let stocksDisponibles = [];
