@@ -60,6 +60,8 @@ function chargerSelecteurContenants() {
 // Ouvrir la modale d'ajout
 function ouvrirModaleAjoutConditionnement() {
     document.getElementById('modale-conditionnement').style.display = 'block';
+    // Réattacher les écouteurs si nécessaire
+    document.querySelector('#modale-conditionnement .close').onclick = closeConditionnementModal;
 }
 
 // Fermer la modale
@@ -103,7 +105,7 @@ async function ajouterConditionnement() {
     try {
         await addItem('conditionnements', conditionnement);
         afficherConditionnements();
-        fermerModaleConditionnement();
+        closeConditionnementModal();
     } catch (error) {
         console.error("Erreur lors de l'ajout du conditionnement :", error);
         alert("Erreur lors de l'ajout");
