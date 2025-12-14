@@ -68,12 +68,22 @@ async function ajouterConditionnement() {
     const quantite = parseInt(document.getElementById('quantite-contenant').value);
     const date = document.getElementById('date-conditionnement').value;
 
+    // Vérifie que tous les champs sont remplis
+    if (!biereNom || isNaN(abv) || !typeContenant || isNaN(quantite) || !date) {
+        alert("Tous les champs sont obligatoires.");
+        return;
+    }
+
     const contenant = TYPES_CONTENANTS.find(c => c.id === typeContenant);
+    if (!contenant) {
+        alert("Type de contenant invalide.");
+        return;
+    }
+
     const volumeTotal = contenant.volume * quantite;
     const numeroLot = genererNumeroLot(biereNom, typeContenant, date);
 
     const conditionnement = {
-        id: Date.now().toString(),
         biere: biereNom,
         abv,
         typeContenant,
@@ -88,10 +98,11 @@ async function ajouterConditionnement() {
         afficherConditionnements();
         fermerModaleConditionnement();
     } catch (error) {
-        console.error("Erreur ajout conditionnement:", error);
+        console.error("Erreur lors de l'ajout du conditionnement :", error);
         alert("Erreur lors de l'ajout");
     }
 }
+
 
 // Afficher les conditionnements
 async function afficherConditionnements() {
@@ -105,13 +116,11 @@ async function afficherConditionnements() {
     }
 
     conditionnements.forEach(cond => {
-        // Vérifie que `cond` et `cond.biere` existent
-        if (!cond || !cond.biere) {
+        if (!cond.biere || !cond.typeContenant) {
             console.error("Conditionnement invalide :", cond);
             return;
         }
 
-        // Trouve le contenant correspondant
         const contenant = TYPES_CONTENANTS.find(c => c.id === cond.typeContenant);
         if (!contenant) {
             console.error(`Type de contenant inconnu : ${cond.typeContenant}`);
@@ -136,6 +145,7 @@ async function afficherConditionnements() {
         tbody.appendChild(row);
     });
 }
+
 
 
 // Supprimer un conditionnement
