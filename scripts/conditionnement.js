@@ -105,15 +105,28 @@ async function afficherConditionnements() {
     }
 
     conditionnements.forEach(cond => {
+        // Vérifie que `cond` et `cond.biere` existent
+        if (!cond || !cond.biere) {
+            console.error("Conditionnement invalide :", cond);
+            return;
+        }
+
+        // Trouve le contenant correspondant
+        const contenant = TYPES_CONTENANTS.find(c => c.id === cond.typeContenant);
+        if (!contenant) {
+            console.error(`Type de contenant inconnu : ${cond.typeContenant}`);
+            return;
+        }
+
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td>${cond.numeroLot}</td>
-            <td>${cond.biere}</td>
-            <td>${cond.abv}</td>
-            <td>${TYPES_CONTENANTS.find(c => c.id === cond.typeContenant).nom}</td>
-            <td>${cond.quantite}</td>
-            <td>${cond.volume.toFixed(2)}</td>
-            <td>${new Date(cond.date).toLocaleDateString()}</td>
+            <td>${cond.numeroLot || 'N/A'}</td>
+            <td>${cond.biere || 'N/A'}</td>
+            <td>${cond.abv || 'N/A'}</td>
+            <td>${contenant.nom || 'N/A'}</td>
+            <td>${cond.quantite || 'N/A'}</td>
+            <td>${cond.volume ? cond.volume.toFixed(2) : 'N/A'}</td>
+            <td>${cond.date ? new Date(cond.date).toLocaleDateString() : 'N/A'}</td>
             <td>
                 <button onclick="supprimerConditionnement('${cond.id}')" class="btn btn-danger">
                     <i class="material-icons">delete</i>
@@ -123,6 +136,7 @@ async function afficherConditionnements() {
         tbody.appendChild(row);
     });
 }
+
 
 // Supprimer un conditionnement
 async function supprimerConditionnement(id) {
