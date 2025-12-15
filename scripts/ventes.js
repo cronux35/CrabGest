@@ -245,31 +245,90 @@ async function genererFacture() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
 
-    // En-tête
-    doc.setFontSize(16);
-    doc.text(`Facture - ${currentClient.nom}`, 10, 10);
-    doc.setFontSize(12);
-    doc.text(`Date: ${new Date().toLocaleDateString()}`, 10, 20);
-    doc.text(`Adresse: ${currentClient.adresse}`, 10, 30);
-    if (currentClient.siret) doc.text(`SIRET: ${currentClient.siret}`, 10, 40);
+    // Coordonnées du CRAB
+    const crabNom = "Association CRAB";
+    const crabAdresse = "Adresse du CRAB";
+    const crabTelephone = "Téléphone du CRAB";
+    const crabEmail = "Email du CRAB";
+    const crabSiret = "SIRET du CRAB";
+    const crabTva = "N° de TVA du CRAB";
+    const crabEntrepositaire = "N° d'entrepositaire agréé du CRAB";
 
-    // Lignes de commande
-    let y = 50;
+    // En-tête avec les coordonnées du CRAB
+    doc.setFontSize(12);
+    doc.text(crabNom, 10, 10);
+    doc.text(crabAdresse, 10, 17);
+    doc.text(`Tel: ${crabTelephone}`, 10, 24);
+    doc.text(`Email: ${crabEmail}`, 10, 31);
+    doc.text(`SIRET: ${crabSiret}`, 10, 38);
+    doc.text(`N° de TVA: ${crabTva}`, 10, 45);
+    doc.text(`N° Entrepositaire: ${crabEntrepositaire}`, 10, 52);
+
+    // Informations du client
+    doc.text(`Facture - ${currentClient.nom}`, 105, 10, { align: 'right' });
+    doc.text(`Date: ${new Date().toLocaleDateString()}`, 105, 17, { align: 'right' });
+    doc.text(`Adresse: ${currentClient.adresse}`, 105, 24, { align: 'right' });
+    if (currentClient.siret) doc.text(`SIRET: ${currentClient.siret}`, 105, 31, { align: 'right' });
+
+    // Titre de la facture
+    doc.setFontSize(16);
+    doc.text("FACTURE", 105, 60, { align: 'center' });
+
+    // Tableau des lignes de commande
+    const startY = 70;
+    doc.setFontSize(12);
+    doc.text("Article", 10, startY);
+    doc.text("Libellé court", 40, startY);
+    doc.text("Lot", 70, startY);
+    doc.text("Quantité", 90, startY);
+    doc.text("P.U. HT", 110, startY);
+    doc.text("Montant HT", 150, startY);
+
+    let y = startY + 7;
+    let totalHT = 0;
+
     currentCommande.forEach(ligne => {
-        doc.text(
-            `${ligne.biere} (${TYPES_CONTENANTS.find(c => c.id === ligne.typeContenant).nom}) - Lot: ${ligne.lot} - ${ligne.quantite} x ${ligne.prixUnitaire.toFixed(2)} = ${ligne.total.toFixed(2)}`,
-            10,
-            y
-        );
-        y += 10;
+        const contenant = TYPES_CONTENANTS.find(c => c.id === ligne.typeContenant);
+        const montantHT = ligne.quantite * ligne.prixUnitaire;
+        totalHT += montantHT;
+
+        doc.text(ligne.biere, 10, y);
+        doc.text(`${contenant.nom}`, 40, y);
+        doc.text(ligne.lot, 70, y); // Ajout du numéro de lot
+        doc.text(ligne.quantite.toString(), 90, y);
+        doc.text(ligne.prixUnitaire.toFixed(2), 110, y);
+        doc.text(montantHT.toFixed(2), 150, y);
+
+        y += 7;
     });
 
-    // Total
-    const total = currentCommande.reduce((sum, ligne) => sum + ligne.total, 0);
-    doc.text(`Total: ${total.toFixed(2)}`, 10, y + 10);
+    // Ligne de total HT
+    doc.setFont("helvetica", "bold");
+    doc.text("Total HT:", 110, y + 7);
+    doc.text(totalHT.toFixed(2), 150, y + 7);
 
+    // TVA et Total TTC
+    const tvaRate = 0.20; // Taux de TVA à 20%
+    const tvaAmount = totalHT * tvaRate;
+    const totalTTC = totalHT + tvaAmount;
+
+    doc.text("TVA (20%):", 110, y + 14);
+    doc.text(tvaAmount.toFixed(2), 150, y + 14);
+
+    doc.text("Total TTC:", 110, y + 21);
+    doc.text(totalTTC.toFixed(2), 150, y + 21);
+
+    // Pied de page
+    doc.setFontSize(10);
+    doc.text("Date d'échéance: 30/11/2025", 10, y + 35);
+    doc.text("Mode de règlement: Virement bancaire", 10, y + 42);
+    doc.text("IBAN: FR76 3000 1007 9412 3456 7890 144", 10, y + 49);
+    doc.text("BIC: CMCIFRPP", 10, y + 56);
+
+    // Sauvegarder le PDF
     doc.save(`facture_${currentClient.nom}_${new Date().toISOString().split('T')[0]}.pdf`);
 }
+
 
 // Afficher l'historique des ventes
 async function afficherVentes() {
