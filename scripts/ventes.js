@@ -245,6 +245,18 @@ async function genererFacture() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
 
+    // Charger le logo (assure-toi que le chemin est correct)
+    const logo = new Image();
+    logo.src = 'assets/images/crab-logo.png';
+
+    // Attendre que le logo soit chargé
+    await new Promise((resolve) => {
+        logo.onload = resolve;
+    });
+
+    // Ajouter le logo en haut à gauche
+    doc.addImage(logo, 'PNG', 10, 5, 40, 20);
+
     // Coordonnées du CRAB
     const crabNom = "Association CRAB";
     const crabAdresse = "Adresse du CRAB";
@@ -256,73 +268,87 @@ async function genererFacture() {
 
     // En-tête avec les coordonnées du CRAB
     doc.setFontSize(12);
-    doc.text(crabNom, 10, 10);
-    doc.text(crabAdresse, 10, 17);
-    doc.text(`Tel: ${crabTelephone}`, 10, 24);
-    doc.text(`Email: ${crabEmail}`, 10, 31);
-    doc.text(`SIRET: ${crabSiret}`, 10, 38);
-    doc.text(`N° de TVA: ${crabTva}`, 10, 45);
-    doc.text(`N° Entrepositaire: ${crabEntrepositaire}`, 10, 52);
+    doc.setTextColor(50); // Couleur sombre pour le texte
+    doc.text(crabNom, 60, 10);
+    doc.text(crabAdresse, 60, 17);
+    doc.text(`Tel: ${crabTelephone}`, 60, 24);
+    doc.text(`Email: ${crabEmail}`, 60, 31);
+    doc.text(`SIRET: ${crabSiret}`, 60, 38);
+    doc.text(`N° de TVA: ${crabTva}`, 60, 45);
+    doc.text(`N° Entrepositaire: ${crabEntrepositaire}`, 60, 52);
 
     // Informations du client
-    doc.text(`Facture - ${currentClient.nom}`, 105, 10, { align: 'right' });
-    doc.text(`Date: ${new Date().toLocaleDateString()}`, 105, 17, { align: 'right' });
-    doc.text(`Adresse: ${currentClient.adresse}`, 105, 24, { align: 'right' });
-    if (currentClient.siret) doc.text(`SIRET: ${currentClient.siret}`, 105, 31, { align: 'right' });
+    doc.setTextColor(50);
+    doc.text(`Facture - ${currentClient.nom}`, 150, 10, { align: 'right' });
+    doc.text(`Date: ${new Date().toLocaleDateString()}`, 150, 17, { align: 'right' });
+    doc.text(`Adresse: ${currentClient.adresse}`, 150, 24, { align: 'right' });
+    if (currentClient.siret) doc.text(`SIRET: ${currentClient.siret}`, 150, 31, { align: 'right' });
 
     // Titre de la facture
     doc.setFontSize(16);
+    doc.setTextColor(0, 102, 204); // Bleu pour le titre
     doc.text("FACTURE", 105, 60, { align: 'center' });
 
     // Tableau des lignes de commande
     const startY = 70;
     doc.setFontSize(12);
-    doc.text("Article", 10, startY);
-    doc.text("Libellé court", 40, startY);
-    doc.text("Lot", 70, startY);
-    doc.text("Quantité", 90, startY);
-    doc.text("P.U. HT", 110, startY);
-    doc.text("Montant HT", 150, startY);
+    doc.setTextColor(50);
 
-    let y = startY + 7;
+    // En-tête du tableau
+    doc.setDrawColor(0, 102, 204); // Bleu pour les lignes
+    doc.setLineWidth(0.5);
+    doc.line(10, startY, 200, startY); // Ligne horizontale
+
+    doc.text("Article", 20, startY + 5);
+    doc.text("Libellé court", 50, startY + 5);
+    doc.text("Lot", 80, startY + 5);
+    doc.text("Quantité", 110, startY + 5);
+    doc.text("P.U. HT", 140, startY + 5);
+    doc.text("Montant HT", 170, startY + 5);
+
+    let y = startY + 10;
     let totalHT = 0;
 
+    // Lignes du tableau
     currentCommande.forEach(ligne => {
         const contenant = TYPES_CONTENANTS.find(c => c.id === ligne.typeContenant);
         const montantHT = ligne.quantite * ligne.prixUnitaire;
         totalHT += montantHT;
 
-        doc.text(ligne.biere, 10, y);
-        doc.text(`${contenant.nom}`, 40, y);
-        doc.text(ligne.lot, 70, y); // Ajout du numéro de lot
-        doc.text(ligne.quantite.toString(), 90, y);
-        doc.text(ligne.prixUnitaire.toFixed(2), 110, y);
-        doc.text(montantHT.toFixed(2), 150, y);
+        doc.text(ligne.biere, 20, y);
+        doc.text(`${contenant.nom}`, 50, y);
+        doc.text(ligne.lot, 80, y);
+        doc.text(ligne.quantite.toString(), 110, y);
+        doc.text(ligne.prixUnitaire.toFixed(2), 140, y);
+        doc.text(montantHT.toFixed(2), 170, y);
 
-        y += 7;
+        doc.line(10, y + 2, 200, y + 2); // Ligne horizontale sous chaque ligne de tableau
+        y += 10;
     });
 
     // Ligne de total HT
     doc.setFont("helvetica", "bold");
-    doc.text("Total HT:", 110, y + 7);
-    doc.text(totalHT.toFixed(2), 150, y + 7);
+    doc.text("Total HT:", 140, y + 7);
+    doc.text(totalHT.toFixed(2), 170, y + 7);
+    doc.line(140, y + 8, 200, y + 8); // Ligne horizontale sous le total HT
 
     // TVA et Total TTC
     const tvaRate = 0.20; // Taux de TVA à 20%
     const tvaAmount = totalHT * tvaRate;
     const totalTTC = totalHT + tvaAmount;
 
-    doc.text("TVA (20%):", 110, y + 14);
-    doc.text(tvaAmount.toFixed(2), 150, y + 14);
-
-    doc.text("Total TTC:", 110, y + 21);
-    doc.text(totalTTC.toFixed(2), 150, y + 21);
+    doc.text("TVA (20%):", 140, y + 14);
+    doc.text(tvaAmount.toFixed(2), 170, y + 14);
+    doc.text("Total TTC:", 140, y + 21);
+    doc.text(totalTTC.toFixed(2), 170, y + 21);
+    doc.line(140, y + 22, 200, y + 22); // Ligne horizontale sous le total TTC
 
     // Pied de page
     doc.setFontSize(10);
+    doc.setTextColor(100); // Gris pour le pied de page
     doc.text("Date d'échéance: 30/11/2025", 10, y + 35);
     doc.text("Mode de règlement: Virement bancaire", 10, y + 42);
-    doc.text("IBAN: FR76 3000 1007 9412 3456 7890 144", 10, y + 49);
+    doc.text("IBAN: FR76 30001007941234567890144", 10, y + 49);
     doc.text("BIC: CMCIFRPP", 10, y + 56);
 
     // Sauvegarder le PDF
