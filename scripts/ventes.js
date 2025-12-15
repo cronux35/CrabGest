@@ -246,6 +246,7 @@ async function validerCommande() {
         console.error("Erreur lors de la validation de la commande :", error);
         alert("Erreur lors de la validation");
     }
+    genererFacture();
 }
 
 
