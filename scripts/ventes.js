@@ -247,7 +247,7 @@ async function genererFacture() {
 
     // Charger le logo (assure-toi que le chemin est correct)
     const logo = new Image();
-    logo.src = 'assets/images/crab-logo.png';
+    logo.src = './assets/images/crab-logo.png';
 
     // Attendre que le logo soit chargé
     await new Promise((resolve) => {
