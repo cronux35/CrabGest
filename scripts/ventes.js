@@ -1,14 +1,3 @@
-// Types de contenants (à adapter selon ta configuration)
-const TYPES_CONTENANTS = [
-    { id: 'canette_44cl', nom: 'Canette 44cl', volume: 0.44 },
-    { id: 'canette_33cl', nom: 'Canette 33cl', volume: 0.33 },
-    { id: 'bouteille_33cl', nom: 'Bouteille 33cl', volume: 0.33 },
-    { id: 'bouteille_50cl', nom: 'Bouteille 50cl', volume: 0.50 },
-    { id: 'bouteille_75cl', nom: 'Bouteille 75cl', volume: 0.75 },
-    { id: 'fut_sodakeg_19l', nom: 'Fût SodaKeg 19L', volume: 19 },
-    { id: 'fut_20l', nom: 'Fût 20L', volume: 20 }
-];
-
 // Variables globales
 let currentClient = null;
 let currentCommande = [];
