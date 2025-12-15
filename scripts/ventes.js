@@ -64,6 +64,7 @@ async function afficherStockDisponible() {
     }
 }
 
+
 // Afficher les infos d'un client
 async function afficherInfosClient(clientId) {
     if (!clientId) {
@@ -210,12 +211,14 @@ async function validerCommande() {
         return;
     }
 
+    const total = currentCommande.reduce((sum, ligne) => sum + ligne.total, 0);
+
     const vente = {
         id: Date.now().toString(),
         date: new Date().toISOString().split('T')[0],
         clientId: currentClient.id,
         lignes: currentCommande,
-        total: currentCommande.reduce((sum, ligne) => sum + ligne.total, 0)
+        total: total // Assurez-vous que le total est bien défini
     };
 
     try {
@@ -229,6 +232,7 @@ async function validerCommande() {
         alert("Erreur lors de la validation");
     }
 }
+
 
 // Générer la facture PDF
 async function genererFacture() {
@@ -313,6 +317,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const btnAjouterLigne = document.getElementById('btn-ajouter-ligne');
     const btnValiderCommande = document.getElementById('btn-valider-commande');
     const btnGenererFacture = document.getElementById('btn-generer-facture');
+    document.getElementById('select-biere-commande').addEventListener('change', afficherStockDisponible);
+    document.getElementById('select-type-contenant-commande').addEventListener('change', afficherStockDisponible);
 
     if (selectClient) {
         selectClient.addEventListener('change', function() {
