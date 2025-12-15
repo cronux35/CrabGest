@@ -155,6 +155,10 @@ async function ajouterLigneCommande() {
     const lot = lotsDisponibles[0];
     const contenant = TYPES_CONTENANTS.find(c => c.id === typeContenant);
 
+    // Mettre à jour le stock immédiatement
+    lot.quantite -= quantite;
+    await updateItem('conditionnements', lot);
+
     currentCommande.push({
         biere: biereNom,
         typeContenant,
@@ -165,7 +169,9 @@ async function ajouterLigneCommande() {
     });
 
     afficherCommande();
+    afficherStockDisponible(); // Mettre à jour l'affichage du stock
 }
+
 
 
 // Afficher la commande en cours
