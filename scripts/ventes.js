@@ -263,8 +263,9 @@ async function afficherVentes() {
         return;
     }
 
-    ventes.forEach(vente => {
-        const client = await loadData('clients').then(clients => clients.find(c => c.id == vente.clientId));
+    for (const vente of ventes) {
+        const clients = await loadData('clients').catch(() => []);
+        const client = clients.find(c => c.id == vente.clientId);
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>${vente.date}</td>
@@ -277,8 +278,9 @@ async function afficherVentes() {
             </td>
         `;
         tbody.appendChild(row);
-    });
+    }
 }
+
 
 // Écouteurs d'événements
 document.addEventListener('DOMContentLoaded', function() {
