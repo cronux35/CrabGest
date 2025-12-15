@@ -40,13 +40,38 @@ function chargerTypesContenants() {
     });
 }
 
+// Afficher le stock disponible
+async function afficherStockDisponible() {
+    const biereNom = document.getElementById('select-biere-commande').value;
+    const typeContenant = document.getElementById('select-type-contenant-commande').value;
+    const stockDisponibleElement = document.getElementById('stock-disponible');
+
+    if (!biereNom || !typeContenant) {
+        stockDisponibleElement.textContent = '';
+        return;
+    }
+
+    const conditionnements = await loadData('conditionnements').catch(() => []);
+    const lotsDisponibles = conditionnements.filter(c => c.biere === biereNom && c.typeContenant === typeContenant);
+    const stockTotal = lotsDisponibles.reduce((total, lot) => total + lot.quantite, 0);
+
+    if (stockTotal > 0) {
+        stockDisponibleElement.textContent = `Stock disponible : ${stockTotal}`;
+        stockDisponibleElement.style.color = 'green';
+    } else {
+        stockDisponibleElement.textContent = 'Stock insuffisant';
+        stockDisponibleElement.style.color = 'red';
+    }
+}
+
 // Afficher les infos d'un client
 async function afficherInfosClient(clientId) {
     if (!clientId) {
         document.getElementById('infos-client').style.display = 'none';
         return;
     }
-    const client = await loadData('clients').then(clients => clients.find(c => c.id == clientId));
+    const clients = await loadData('clients').catch(() => []);
+    const client = clients.find(c => c.id == clientId);
     if (client) {
         currentClient = client;
         document.getElementById('client-nom').textContent = client.nom;
@@ -89,9 +114,9 @@ async function enregistrerClient() {
 
     try {
         await addItem('clients', client);
-        chargerClients();
+        await chargerClients();
         document.getElementById('select-client').value = client.id;
-        afficherInfosClient(client.id);
+        await afficherInfosClient(client.id);
         fermerModaleClient();
     } catch (error) {
         console.error("Erreur lors de l'ajout du client :", error);
@@ -104,13 +129,14 @@ async function ajouterLigneCommande() {
     const biereNom = document.getElementById('select-biere-commande').value;
     const typeContenant = document.getElementById('select-type-contenant-commande').value;
     const quantite = parseInt(document.getElementById('quantite-commande').value);
+    const prixUnitaire = parseFloat(document.getElementById('prix-unitaire-commande').value);
 
     if (!currentClient) {
         alert("Veuillez sélectionner un client.");
         return;
     }
-    if (!biereNom || !typeContenant || isNaN(quantite) || quantite < 1) {
-        alert("Tous les champs sont obligatoires.");
+    if (!biereNom || !typeContenant || isNaN(quantite) || quantite < 1 || isNaN(prixUnitaire) || prixUnitaire <= 0) {
+        alert("Tous les champs sont obligatoires et le prix unitaire doit être supérieur à 0.");
         return;
     }
 
@@ -127,7 +153,6 @@ async function ajouterLigneCommande() {
 
     const lot = lotsDisponibles[0];
     const contenant = TYPES_CONTENANTS.find(c => c.id === typeContenant);
-    const prixUnitaire = 5; // À adapter selon ta logique de prix
 
     currentCommande.push({
         biere: biereNom,
@@ -198,7 +223,7 @@ async function validerCommande() {
         alert("Commande validée avec succès !");
         currentCommande = [];
         afficherCommande();
-        afficherVentes();
+        await afficherVentes();
     } catch (error) {
         console.error("Erreur lors de la validation de la commande :", error);
         alert("Erreur lors de la validation");
@@ -269,7 +294,6 @@ async function afficherVentes() {
         tbody.appendChild(row);
     }
 }
-
 
 // Écouteurs d'événements
 document.addEventListener('DOMContentLoaded', function() {

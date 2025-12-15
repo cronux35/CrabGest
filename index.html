@@ -263,7 +263,9 @@
     </div>
 </div>
 
-
+<!-------------------->
+<!-- Section Ventes -->
+<!-------------------->
 <section id="ventes" class="tab">
     <h2>Gestion des Ventes</h2>
 
@@ -274,7 +276,7 @@
             <select id="select-client" class="form-control">
                 <option value="">-- Sélectionner un client --</option>
             </select>
-            <button id="btn-nouveau-client" class="btn btn-primary">
+            <button id="btn-nouveau-client" class="btn btn-info">
                 <i class="material-icons">person_add</i> Nouveau Client
             </button>
         </div>
@@ -297,10 +299,14 @@
             <select id="select-type-contenant-commande" class="form-control">
                 <option value="">-- Sélectionner un contenant --</option>
             </select>
-            <input type="number" id="quantite-commande" class="form-control" placeholder="Quantité" min="1">
-            <button id="btn-ajouter-ligne" class="btn btn-primary">
-                <i class="material-icons">add</i> Ajouter à la commande
-            </button>
+            <div id="stock-disponible" style="margin: 10px 0; font-weight: bold; color: green;"></div>
+            <div style="display: flex; align-items: center;">
+                <input type="number" id="quantite-commande" class="form-control" placeholder="Quantité" min="1" style="margin-right: 10px;">
+                <input type="number" id="prix-unitaire-commande" class="form-control" placeholder="Prix unitaire" step="0.01" style="margin-right: 10px;">
+                <button id="btn-ajouter-ligne" class="btn btn-primary">
+                    <i class="material-icons">add</i> Ajouter à la commande
+                </button>
+            </div>
         </div>
         <div class="table-responsive">
             <table id="table-commande" class="table">
@@ -319,10 +325,10 @@
             </table>
         </div>
         <div class="form-group">
-            <button id="btn-valider-commande" class="btn btn-primary">
+            <button id="btn-valider-commande" class="btn btn-success">
                 <i class="material-icons">check</i> Valider la commande
             </button>
-            <button id="btn-generer-facture" class="btn btn-primary">
+            <button id="btn-generer-facture" class="btn btn-warning">
                 <i class="material-icons">picture_as_pdf</i> Générer Facture
             </button>
         </div>
