@@ -282,32 +282,70 @@ async function afficherVentes() {
 
 // Écouteurs d'événements
 document.addEventListener('DOMContentLoaded', function() {
+    console.log("DOM chargé, écouteurs attachés"); // Log pour vérifier que le DOM est bien chargé
+
     // Charger les données
     chargerClients();
     chargerBieres();
     chargerTypesContenants();
     afficherVentes();
 
-    // Sélection d'un client
-    document.getElementById('select-client').addEventListener('change', function() {
-        afficherInfosClient(this.value);
-    });
+    // Écouteurs d'événements
+    const selectClient = document.getElementById('select-client');
+    const btnNouveauClient = document.getElementById('btn-nouveau-client');
+    const closeModalClient = document.querySelector('#modale-client .close');
+    const btnEnregistrerClient = document.getElementById('btn-enregistrer-client');
+    const btnAjouterLigne = document.getElementById('btn-ajouter-ligne');
+    const btnValiderCommande = document.getElementById('btn-valider-commande');
+    const btnGenererFacture = document.getElementById('btn-generer-facture');
 
-    // Bouton pour ajouter un client
-    document.getElementById('btn-nouveau-client').addEventListener('click', ouvrirModaleClient);
+    if (selectClient) {
+        selectClient.addEventListener('change', function() {
+            console.log("Client sélectionné :", this.value); // Log pour vérifier que l'événement est déclenché
+            afficherInfosClient(this.value);
+        });
+    }
 
-    // Bouton pour fermer la modale client
-    document.querySelector('#modale-client .close').addEventListener('click', fermerModaleClient);
+    if (btnNouveauClient) {
+        btnNouveauClient.addEventListener('click', function() {
+            console.log("Bouton Nouveau Client cliqué"); // Log pour vérifier que l'événement est déclenché
+            ouvrirModaleClient();
+        });
+    }
 
-    // Bouton pour enregistrer un client
-    document.getElementById('btn-enregistrer-client').addEventListener('click', enregistrerClient);
+    if (closeModalClient) {
+        closeModalClient.addEventListener('click', function() {
+            console.log("Fermer modale client"); // Log pour vérifier que l'événement est déclenché
+            fermerModaleClient();
+        });
+    }
 
-    // Bouton pour ajouter une ligne à la commande
-    document.getElementById('btn-ajouter-ligne').addEventListener('click', ajouterLigneCommande);
+    if (btnEnregistrerClient) {
+        btnEnregistrerClient.addEventListener('click', function() {
+            console.log("Bouton Enregistrer Client cliqué"); // Log pour vérifier que l'événement est déclenché
+            enregistrerClient();
+        });
+    }
 
-    // Bouton pour valider la commande
-    document.getElementById('btn-valider-commande').addEventListener('click', validerCommande);
+    if (btnAjouterLigne) {
+        btnAjouterLigne.addEventListener('click', function() {
+            console.log("Bouton Ajouter Ligne cliqué"); // Log pour vérifier que l'événement est déclenché
+            ajouterLigneCommande();
+        });
+    }
 
-    // Bouton pour générer la facture
-    document.getElementById('btn-generer-facture').addEventListener('click', genererFacture);
+    if (btnValiderCommande) {
+        btnValiderCommande.addEventListener('click', function() {
+            console.log("Bouton Valider Commande cliqué"); // Log pour vérifier que l'événement est déclenché
+            validerCommande();
+        });
+    }
+
+    if (btnGenererFacture) {
+        btnGenererFacture.addEventListener('click', function() {
+            console.log("Bouton Générer Facture cliqué"); // Log pour vérifier que l'événement est déclenché
+            genererFacture();
+        });
+    }
 });
+
