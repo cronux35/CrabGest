@@ -234,6 +234,7 @@ async function validerCommande() {
 }
 
 
+
 // Générer la facture PDF
 async function genererFacture() {
     if (!currentClient || currentCommande.length === 0) {
@@ -284,11 +285,13 @@ async function afficherVentes() {
     for (const vente of ventes) {
         const clients = await loadData('clients').catch(() => []);
         const client = clients.find(c => c.id == vente.clientId);
+        // Vérifiez que le total est défini, sinon utilisez 0
+        const total = vente.total !== undefined ? vente.total.toFixed(2) : '0.00';
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>${vente.date}</td>
             <td>${client ? client.nom : 'Inconnu'}</td>
-            <td>${vente.total.toFixed(2)}</td>
+            <td>${total}</td>
             <td>
                 <button class="btn btn-info" data-vente-id="${vente.id}">
                     <i class="material-icons">visibility</i>
@@ -298,6 +301,7 @@ async function afficherVentes() {
         tbody.appendChild(row);
     }
 }
+
 
 // Écouteurs d'événements
 document.addEventListener('DOMContentLoaded', function() {
