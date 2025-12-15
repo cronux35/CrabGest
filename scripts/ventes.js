@@ -167,6 +167,7 @@ async function ajouterLigneCommande() {
     afficherCommande();
 }
 
+
 // Afficher la commande en cours
 function afficherCommande() {
     const tbody = document.querySelector('#table-commande tbody');
@@ -218,20 +219,35 @@ async function validerCommande() {
         date: new Date().toISOString().split('T')[0],
         clientId: currentClient.id,
         lignes: currentCommande,
-        total: total // Assurez-vous que le total est bien défini
+        total: total
     };
 
     try {
+        // Enregistrer la vente
         await addItem('ventes', vente);
+
+        // Mettre à jour les stocks
+        for (const ligne of currentCommande) {
+            const conditionnements = await loadData('conditionnements').catch(() => []);
+            const lot = conditionnements.find(c => c.numeroLot === ligne.lot);
+
+            if (lot) {
+                lot.quantite -= ligne.quantite;
+                await updateItem('conditionnements', lot);
+            }
+        }
+
         alert("Commande validée avec succès !");
         currentCommande = [];
         afficherCommande();
         await afficherVentes();
+        await afficherStockDisponible(); // Mettre à jour l'affichage du stock
     } catch (error) {
         console.error("Erreur lors de la validation de la commande :", error);
         alert("Erreur lors de la validation");
     }
 }
+
 
 
 

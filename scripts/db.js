@@ -230,6 +230,7 @@ async function updateItem(storeName, item) {
     }
 }
 
+
 // Supprimer un élément
 async function deleteItem(storeName, id) {
     try {
