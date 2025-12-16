@@ -1063,4 +1063,13 @@ th.sorted-desc::after {
     font-weight: bold;
 }
 
+#stock-disponible {
+    font-size: 0.9em;
+}
+
+#quantite-commande {
+    min-width: 120px;
+}
+
+
 
