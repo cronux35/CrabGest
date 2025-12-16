@@ -1056,10 +1056,4 @@ th.sorted-desc::after {
     position: relative;
 }
 
-#btn-toggle-table-stocks {
-    position: absolute;
-    right: 10px;
-    top: -20px;
-}
-
 
