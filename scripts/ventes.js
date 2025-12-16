@@ -237,7 +237,7 @@ async function ajouterLigneCommande() {
     });
 
     afficherCommande();
-    afficherStockDisponible(); // Mettre à jour l'affichage du stock
+    afficherStocksDisponibles(); // Mettre à jour l'affichage du stock
 }
 
 
