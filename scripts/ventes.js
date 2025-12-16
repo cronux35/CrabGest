@@ -40,8 +40,35 @@ function chargerTypesContenants() {
     });
 }
 
-// Afficher le stock disponible
-async function afficherStocksDisponibles() {
+// Charger les bières pour le filtre
+async function chargerBieresFiltre() {
+    const selectBiereFiltre = document.getElementById('select-filtre-biere');
+    selectBiereFiltre.innerHTML = '<option value="">-- Filtrer par bière --</option>';
+    const bieres = await loadData('bieres').catch(() => []);
+    bieres.forEach(biere => {
+        const option = document.createElement('option');
+        option.value = biere.nom;
+        option.textContent = biere.nom;
+        selectBiereFiltre.appendChild(option);
+    });
+}
+
+// Afficher ou masquer la section "Stocks Disponibles"
+function toggleStocksDisponibles() {
+    const section = document.getElementById('stocks-disponibles-section');
+    const btnToggle = document.getElementById('btn-toggle-stocks');
+    if (section.style.display === 'none') {
+        section.style.display = 'block';
+        btnToggle.innerHTML = '<i class="material-icons">visibility_off</i> Masquer';
+    } else {
+        section.style.display = 'none';
+        btnToggle.innerHTML = '<i class="material-icons">visibility</i> Afficher';
+    }
+}
+
+
+// Afficher les stocks disponibles avec filtre par bière
+async function afficherStocksDisponibles(biereFiltre = '') {
     const tbody = document.querySelector('#table-stocks-disponibles tbody');
     tbody.innerHTML = '';
     const conditionnements = await loadData('conditionnements').catch(() => []);
@@ -55,6 +82,10 @@ async function afficherStocksDisponibles() {
     const stocksParBiereEtContenant = {};
 
     conditionnements.forEach(cond => {
+        if (biereFiltre && cond.biere !== biereFiltre) {
+            return;
+        }
+
         const key = `${cond.biere}-${cond.typeContenant}`;
         if (!stocksParBiereEtContenant[key]) {
             stocksParBiereEtContenant[key] = {
@@ -458,6 +489,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const btnGenererFacture = document.getElementById('btn-generer-facture');
     document.getElementById('select-biere-commande').addEventListener('change', afficherStockDisponible);
     document.getElementById('select-type-contenant-commande').addEventListener('change', afficherStockDisponible);
+
+
+    // Bouton pour masquer/afficher la section "Stocks Disponibles"
+    document.getElementById('btn-toggle-stocks').addEventListener('click', toggleStocksDisponibles);
+
+    // Filtrer les stocks par bière
+    document.getElementById('select-filtre-biere').addEventListener('change', function() {
+        afficherStocksDisponibles(this.value);
+    });
 
     if (selectClient) {
         selectClient.addEventListener('change', function() {

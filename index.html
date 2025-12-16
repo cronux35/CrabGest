@@ -289,9 +289,19 @@
         </div>
     </div>
 
-      <!-- Section Stocks Disponibles -->
-    <div class="card">
-        <h3>Stocks Disponibles</h3>
+  <!-- Section Stocks Disponibles -->
+    <div class="card" id="stocks-disponibles-section">
+        <h3>
+            Stocks Disponibles
+            <button id="btn-toggle-stocks" class="btn btn-sm btn-secondary" style="float: right;">
+                <i class="material-icons">visibility_off</i> Masquer
+            </button>
+        </h3>
+        <div class="form-group">
+            <select id="select-filtre-biere" class="form-control">
+                <option value="">-- Filtrer par bière --</option>
+            </select>
+        </div>
         <div class="table-responsive">
             <table id="table-stocks-disponibles" class="table">
                 <thead>
@@ -306,6 +316,7 @@
             </table>
         </div>
     </div>
+
 
     <!-- Section Commande -->
     <div class="card">
