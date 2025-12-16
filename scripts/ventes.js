@@ -493,8 +493,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const btnAjouterLigne = document.getElementById('btn-ajouter-ligne');
     const btnValiderCommande = document.getElementById('btn-valider-commande');
     const btnGenererFacture = document.getElementById('btn-generer-facture');
-    document.getElementById('select-biere-commande').addEventListener('change', afficherStockDisponible);
-    document.getElementById('select-type-contenant-commande').addEventListener('change', afficherStockDisponible);
+    document.getElementById('select-biere-commande').addEventListener('change', afficherStocksDisponibles);
+    document.getElementById('select-type-contenant-commande').addEventListener('change', afficherStocksDisponibles);
 
 
     // Bouton pour masquer/afficher la section "Stocks Disponibles"
