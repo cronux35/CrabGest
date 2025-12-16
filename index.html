@@ -327,17 +327,17 @@
                 <option value="">-- Sélectionner une bière --</option>
             </select>
             <select id="select-type-contenant-commande" class="form-control">
-            <option value="">-- Sélectionner un contenant --</option>
-                <input type="number" id="quantite-commande" class="form-control" placeholder="Quantité" min="1">
-            <input type="number" id="prix-unitaire-commande" class="form-control" placeholder="Prix unitaire" step="0.01" style="margin-right: 10px;">
-            <div id="stock-disponible" style="font-weight: bold; margin-top: 5px;"></div>
-            </div>
+                <option value="">-- Sélectionner un contenant --</option>
+            </select>
+            <input type="number" id="quantite-commande" class="form-control" placeholder="Quantité" min="1">
+            <div id="stock-disponible" style="font-weight: bold; margin-top: 5px;"></div>        
+        </div>
             <button id="btn-ajouter-ligne" class="btn btn-primary">
                 <i class="material-icons">add</i> Ajouter à la commande
             </button>
-            </div>
-            <div id="stock-disponible" style="margin: 10px 0; font-weight: bold;"></div>
-        </div>
+        <div id="stock-disponible" style="margin: 10px 0; font-weight: bold;"></div>
+        
+    </div>
         <div class="table-responsive">
             <table id="table-commande" class="table">
                 <thead>
