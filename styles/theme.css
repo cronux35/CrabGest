@@ -1059,7 +1059,7 @@ th.sorted-desc::after {
 #btn-toggle-table-stocks {
     position: absolute;
     right: 10px;
-    top: 0;
+    top: -20px;
 }
 
 
