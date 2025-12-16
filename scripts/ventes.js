@@ -57,15 +57,15 @@ async function chargerBieresFiltre() {
 
 // Afficher ou masquer la section "Stocks Disponibles"
 function toggleStocksDisponibles() {
-    const section = document.getElementById('stocks-disponibles-section');
-    const btnToggle = document.getElementById('btn-toggle-stocks');
+    const tableContainer = document.getElementById('table-stocks-container');
+    const btnToggle = document.getElementById('btn-toggle-table-stocks');
 
-    if (section.style.display === 'none') {
-        section.style.display = 'block';
-        btnToggle.innerHTML = '<i class="material-icons">visibility_off</i> Masquer';
+    if (tableContainer.style.display === 'none') {
+        tableContainer.style.display = 'block';
+        btnToggle.innerHTML = '<i class="material-icons">visibility_off</i> Masquer le tableau';
     } else {
-        section.style.display = 'none';
-        btnToggle.innerHTML = '<i class="material-icons">visibility</i> Afficher';
+        tableContainer.style.display = 'none';
+        btnToggle.innerHTML = '<i class="material-icons">visibility</i> Afficher le tableau';
     }
 }
 
@@ -498,7 +498,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
     // Bouton pour masquer/afficher la section "Stocks Disponibles"
-    document.getElementById('btn-toggle-stocks').addEventListener('click', toggleStocksDisponibles);
+    const btnToggleTableStocks = document.getElementById('btn-toggle-table-stocks');
+    if (btnToggleTableStocks) {
+        btnToggleTableStocks.addEventListener('click', toggleStocksDisponibles);
+    } else {
+        console.error("Élément btn-toggle-table-stocks non trouvé.");
+    }
 
     // Filtrer les stocks par bière
     document.getElementById('select-filtre-biere').addEventListener('change', function() {
