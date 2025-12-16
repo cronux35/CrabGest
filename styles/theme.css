@@ -1056,4 +1056,11 @@ th.sorted-desc::after {
     position: relative;
 }
 
+#stock-disponible {
+    margin-left: auto;
+    margin-right: 0;
+    text-align: right;
+    font-weight: bold;
+}
+
 
