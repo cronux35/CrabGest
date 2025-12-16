@@ -41,28 +41,54 @@ function chargerTypesContenants() {
 }
 
 // Afficher le stock disponible
-async function afficherStockDisponible() {
-    const biereNom = document.getElementById('select-biere-commande').value;
-    const typeContenant = document.getElementById('select-type-contenant-commande').value;
-    const stockDisponibleElement = document.getElementById('stock-disponible');
+async function afficherStocksDisponibles() {
+    const tbody = document.querySelector('#table-stocks-disponibles tbody');
+    tbody.innerHTML = '';
+    const conditionnements = await loadData('conditionnements').catch(() => []);
 
-    if (!biereNom || !typeContenant) {
-        stockDisponibleElement.textContent = '';
+    if (conditionnements.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Aucun stock disponible</td></tr>';
         return;
     }
 
-    const conditionnements = await loadData('conditionnements').catch(() => []);
-    const lotsDisponibles = conditionnements.filter(c => c.biere === biereNom && c.typeContenant === typeContenant);
-    const stockTotal = lotsDisponibles.reduce((total, lot) => total + lot.quantite, 0);
+    // Regrouper les conditionnements par bière et type de contenant
+    const stocksParBiereEtContenant = {};
 
-    if (stockTotal > 0) {
-        stockDisponibleElement.textContent = `Stock disponible : ${stockTotal}`;
-        stockDisponibleElement.style.color = 'green';
-    } else {
-        stockDisponibleElement.textContent = 'Stock insuffisant';
-        stockDisponibleElement.style.color = 'red';
+    conditionnements.forEach(cond => {
+        const key = `${cond.biere}-${cond.typeContenant}`;
+        if (!stocksParBiereEtContenant[key]) {
+            stocksParBiereEtContenant[key] = {
+                biere: cond.biere,
+                typeContenant: cond.typeContenant,
+                lots: []
+            };
+        }
+        stocksParBiereEtContenant[key].lots.push({
+            numeroLot: cond.numeroLot,
+            quantite: cond.quantite
+        });
+    });
+
+    // Afficher les stocks
+    for (const key in stocksParBiereEtContenant) {
+        const stock = stocksParBiereEtContenant[key];
+        const contenant = TYPES_CONTENANTS.find(c => c.id === stock.typeContenant);
+
+        const totalQuantite = stock.lots.reduce((total, lot) => total + lot.quantite, 0);
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${stock.biere}</td>
+            <td>${contenant ? contenant.nom : 'Inconnu'}</td>
+            <td>
+                ${stock.lots.map(lot => `<div>${lot.numeroLot} (${lot.quantite})</div>`).join('')}
+            </td>
+            <td>${totalQuantite}</td>
+        `;
+        tbody.appendChild(row);
     }
 }
+
 
 
 // Afficher les infos d'un client
@@ -420,6 +446,7 @@ document.addEventListener('DOMContentLoaded', function() {
     chargerBieres();
     chargerTypesContenants();
     afficherVentes();
+    afficherStocksDisponibles(); // Ajouter cet appel
 
     // Écouteurs d'événements
     const selectClient = document.getElementById('select-client');
