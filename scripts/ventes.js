@@ -44,6 +44,7 @@ function chargerTypesContenants() {
 async function chargerBieresFiltre() {
     const selectBiereFiltre = document.getElementById('select-filtre-biere');
     selectBiereFiltre.innerHTML = '<option value="">-- Filtrer par bière --</option>';
+
     const bieres = await loadData('bieres').catch(() => []);
     bieres.forEach(biere => {
         const option = document.createElement('option');
@@ -53,10 +54,12 @@ async function chargerBieresFiltre() {
     });
 }
 
+
 // Afficher ou masquer la section "Stocks Disponibles"
 function toggleStocksDisponibles() {
     const section = document.getElementById('stocks-disponibles-section');
     const btnToggle = document.getElementById('btn-toggle-stocks');
+
     if (section.style.display === 'none') {
         section.style.display = 'block';
         btnToggle.innerHTML = '<i class="material-icons">visibility_off</i> Masquer';
@@ -65,6 +68,7 @@ function toggleStocksDisponibles() {
         btnToggle.innerHTML = '<i class="material-icons">visibility</i> Afficher';
     }
 }
+
 
 
 // Afficher les stocks disponibles avec filtre par bière
@@ -119,6 +123,7 @@ async function afficherStocksDisponibles(biereFiltre = '') {
         tbody.appendChild(row);
     }
 }
+
 
 
 
@@ -475,9 +480,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Charger les données
     chargerClients();
     chargerBieres();
+    chargerBieresFiltre();
     chargerTypesContenants();
     afficherVentes();
-    afficherStocksDisponibles(); // Ajouter cet appel
+    afficherStocksDisponibles(); // Afficher les stocks dispos
 
     // Écouteurs d'événements
     const selectClient = document.getElementById('select-client');
