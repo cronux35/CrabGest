@@ -1052,4 +1052,14 @@ th.sorted-desc::after {
     padding-bottom: 8px;
 }
 
+#stocks-disponibles-section h3 {
+    position: relative;
+}
+
+#btn-toggle-table-stocks {
+    position: absolute;
+    right: 10px;
+    top: 0;
+}
+
 
