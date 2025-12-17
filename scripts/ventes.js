@@ -326,32 +326,120 @@ async function validerCommande() {
     };
 
     try {
-        // Enregistrer la vente
         await addItem('ventes', vente);
-
-        // Mettre à jour les stocks
-        for (const ligne of currentCommande) {
-            const conditionnements = await loadData('conditionnements').catch(() => []);
-            const lot = conditionnements.find(c => c.numeroLot === ligne.lot);
-
-            if (lot) {
-                lot.quantite -= ligne.quantite;
-                await updateItem('conditionnements', lot);
-            }
-        }
-
         alert("Commande validée avec succès !");
         currentCommande = [];
         afficherCommande();
         await afficherVentes();
-        await afficherStockDisponible(); // Mettre à jour l'affichage du stock
     } catch (error) {
         console.error("Erreur lors de la validation de la commande :", error);
         alert("Erreur lors de la validation");
     }
-    genererFacture();
 }
 
+
+async function genererFactureDepuisVente(venteId) {
+    const ventes = await loadData('ventes').catch(() => []);
+    const vente = ventes.find(v => v.id == venteId);
+
+    if (!vente) {
+        alert("Vente non trouvée.");
+        return;
+    }
+
+    const clients = await loadData('clients').catch(() => []);
+    const client = clients.find(c => c.id == vente.clientId);
+
+    if (!client) {
+        alert("Client non trouvé.");
+        return;
+    }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    // Coordonnées du CRAB
+    const crabNom = "Association CRAB";
+    const crabAdresse = "Adresse du CRAB";
+    const crabTelephone = "Téléphone du CRAB";
+    const crabEmail = "Email du CRAB";
+    const crabSiret = "SIRET du CRAB";
+    const crabTva = "N° de TVA du CRAB";
+    const crabEntrepositaire = "N° d'entrepositaire agréé du CRAB";
+
+    // En-tête avec les coordonnées du CRAB
+    doc.setFontSize(12);
+    doc.text(crabNom, 10, 10);
+    doc.text(crabAdresse, 10, 17);
+    doc.text(`Tel: ${crabTelephone}`, 10, 24);
+    doc.text(`Email: ${crabEmail}`, 10, 31);
+    doc.text(`SIRET: ${crabSiret}`, 10, 38);
+    doc.text(`N° de TVA: ${crabTva}`, 10, 45);
+    doc.text(`N° Entrepositaire: ${crabEntrepositaire}`, 10, 52);
+
+    // Informations du client
+    doc.text(`Facture - ${client.nom}`, 150, 10, { align: 'right' });
+    doc.text(`Date: ${vente.date}`, 150, 17, { align: 'right' });
+    doc.text(`Adresse: ${client.adresse}`, 150, 24, { align: 'right' });
+    if (client.siret) doc.text(`SIRET: ${client.siret}`, 150, 31, { align: 'right' });
+
+    // Titre de la facture
+    doc.setFontSize(16);
+    doc.text("FACTURE", 105, 60, { align: 'center' });
+
+    // Tableau des lignes de commande
+    const startY = 70;
+    doc.setFontSize(12);
+    doc.text("Article", 10, startY);
+    doc.text("Libellé court", 40, startY);
+    doc.text("Lot", 70, startY);
+    doc.text("Quantité", 110, startY);
+    doc.text("P.U. HT", 140, startY);
+    doc.text("Montant HT", 170, startY);
+
+    let y = startY + 7;
+    let totalHT = 0;
+
+    vente.lignes.forEach(ligne => {
+        const contenant = TYPES_CONTENANTS.find(c => c.id === ligne.typeContenant);
+        const montantHT = ligne.quantite * ligne.prixUnitaire;
+        totalHT += montantHT;
+
+        doc.text(ligne.biere, 10, y);
+        doc.text(`${contenant.nom}`, 40, y);
+        doc.text(ligne.lot, 70, y);
+        doc.text(ligne.quantite.toString(), 110, y);
+        doc.text(ligne.prixUnitaire.toFixed(2), 140, y);
+        doc.text(montantHT.toFixed(2), 170, y);
+
+        y += 7;
+    });
+
+    // Ligne de total HT
+    doc.setFont("helvetica", "bold");
+    doc.text("Total HT:", 140, y + 7);
+    doc.text(totalHT.toFixed(2), 170, y + 7);
+
+    // TVA et Total TTC
+    const tvaRate = 0.20; // Taux de TVA à 20%
+    const tvaAmount = totalHT * tvaRate;
+    const totalTTC = totalHT + tvaAmount;
+
+    doc.text("TVA (20%):", 140, y + 14);
+    doc.text(tvaAmount.toFixed(2), 170, y + 14);
+    doc.text("Total TTC:", 140, y + 21);
+    doc.text(totalTTC.toFixed(2), 170, y + 21);
+
+    // Pied de page
+    doc.setFontSize(10);
+    doc.text("Date d'échéance: 30/11/2025", 10, y + 35);
+    doc.text("Mode de règlement: Virement bancaire", 10, y + 42);
+    doc.text("IBAN: FR76 30001007941234567890144", 10, y + 49);
+    doc.text("BIC: CMCIFRPP", 10, y + 56);
+
+    // Sauvegarder le PDF
+    doc.save(`facture_${client.nom}_${vente.date}.pdf`);
+}
 
 
 
@@ -490,7 +578,6 @@ async function afficherVentes() {
     for (const vente of ventes) {
         const clients = await loadData('clients').catch(() => []);
         const client = clients.find(c => c.id == vente.clientId);
-        // Vérifiez que le total est défini, sinon utilisez 0
         const total = vente.total !== undefined ? vente.total.toFixed(2) : '0.00';
         const row = document.createElement('tr');
         row.innerHTML = `
@@ -498,14 +585,15 @@ async function afficherVentes() {
             <td>${client ? client.nom : 'Inconnu'}</td>
             <td>${total}</td>
             <td>
-                <button class="btn btn-info" data-vente-id="${vente.id}">
-                    <i class="material-icons">visibility</i>
+                <button class="btn btn-info" onclick="genererFactureDepuisVente('${vente.id}')">
+                    <i class="material-icons">picture_as_pdf</i>
                 </button>
             </td>
         `;
         tbody.appendChild(row);
     }
 }
+
 
 
 // Écouteurs d'événements
