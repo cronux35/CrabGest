@@ -217,10 +217,20 @@ async function enregistrerClient() {
 
 // Ajouter une ligne à la commande
 async function ajouterLigneCommande() {
-    const biereNom = document.getElementById('select-biere-commande').value;
-    const typeContenant = document.getElementById('select-type-contenant-commande').value;
-    const quantite = parseInt(document.getElementById('quantite-commande').value);
-    const prixUnitaire = parseFloat(document.getElementById('prix-unitaire-commande').value);
+    const biereNomElement = document.getElementById('select-biere-commande');
+    const typeContenantElement = document.getElementById('select-type-contenant-commande');
+    const quantiteElement = document.getElementById('quantite-commande');
+    const prixUnitaireElement = document.getElementById('prix-unitaire-commande');
+
+    if (!biereNomElement || !typeContenantElement || !quantiteElement || !prixUnitaireElement) {
+        console.error("Un ou plusieurs éléments requis sont introuvables dans le DOM.");
+        return;
+    }
+
+    const biereNom = biereNomElement.value;
+    const typeContenant = typeContenantElement.value;
+    const quantite = parseInt(quantiteElement.value);
+    const prixUnitaire = parseFloat(prixUnitaireElement.value);
 
     if (!currentClient) {
         alert("Veuillez sélectionner un client.");
@@ -245,10 +255,6 @@ async function ajouterLigneCommande() {
     const lot = lotsDisponibles[0];
     const contenant = TYPES_CONTENANTS.find(c => c.id === typeContenant);
 
-    // Mettre à jour le stock immédiatement
-    lot.quantite -= quantite;
-    await updateItem('conditionnements', lot);
-
     currentCommande.push({
         biere: biereNom,
         typeContenant,
@@ -259,8 +265,9 @@ async function ajouterLigneCommande() {
     });
 
     afficherCommande();
-    afficherStocksDisponibles(); // Mettre à jour l'affichage du stock
+    afficherStockDisponible();
 }
+
 
 
 
@@ -579,10 +586,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     if (btnAjouterLigne) {
-        btnAjouterLigne.addEventListener('click', function() {
-            console.log("Bouton Ajouter Ligne cliqué"); // Log pour vérifier que l'événement est déclenché
-            ajouterLigneCommande();
-        });
+        btnAjouterLigne.addEventListener('click', ajouterLigneCommande);
+    } else {
+        console.error("Élément btn-ajouter-ligne non trouvé.");
+    }
     }
 
     if (btnValiderCommande) {
