@@ -437,12 +437,10 @@ async function genererFactureDepuisVente(venteId) {
     // Tableau des lignes de commande
     const startY = 160;
     doc.setFontSize(12);
-    doc.text("qté", 15, startY);
-    doc.text("description", 40, startY);
-    doc.text("lot", 100, startY);
-    doc.text("quantité", 120, startY);
-    doc.text("prix unitaire HT", 150, startY);
-    doc.text("montant HT", 180, startY);
+    doc.text("Qté", 15, startY);
+    doc.text("Description", 35, startY);
+    doc.text("P.U. HT", 130, startY);
+    doc.text("Montant HT", 160, startY);
 
     // Dessiner les lignes du tableau
     doc.line(10, startY + 5, 200, startY + 5);
@@ -462,11 +460,10 @@ async function genererFactureDepuisVente(venteId) {
         ddm.setFullYear(ddm.getFullYear() + 3); // DDM = date de conditionnement + 3 ans
 
         doc.text(ligne.quantite.toString(), 15, y);
-        doc.text(`${ligne.biere}, ABV = ${biereInfo.abv}%`, 40, y);
-        doc.text(ligne.lot, 100, y);
-        doc.text(ligne.quantite.toFixed(2), 120, y);
-        doc.text(`${ligne.prixUnitaire.toFixed(2)} €`, 150, y);
-        doc.text(`${montantHT.toFixed(2)} €`, 180, y);
+        doc.text(`${ligne.biere}, ABV = ${biereInfo.abv}%, Lot: ${ligne.lot}, DDM: ${ddm.toLocaleDateString()}`,
+                 35, y, { maxWidth: 90 });
+        doc.text(`${ligne.prixUnitaire.toFixed(2)} €`, 130, y);
+        doc.text(`${montantHT.toFixed(2)} €`, 160, y);
 
         // Dessiner une ligne sous chaque ligne de tableau
         doc.line(10, y + 5, 200, y + 5);
@@ -475,19 +472,19 @@ async function genererFactureDepuisVente(venteId) {
 
     // Ligne de total
     doc.setFont("helvetica", "bold");
-    doc.text("Total HT:", 150, y + 10);
-    doc.text(`${totalHT.toFixed(2)} €`, 180, y + 10);
+    doc.text("Total HT:", 130, y + 10);
+    doc.text(`${totalHT.toFixed(2)} €`, 160, y + 10);
 
     // TVA et Total TTC
     const tvaRate = 0.20; // Taux de TVA à 20%
     const tvaAmount = totalHT * tvaRate;
     const totalTTC = totalHT + tvaAmount;
 
-    doc.text(`TVA (20%):`, 150, y + 20);
-    doc.text(`${tvaAmount.toFixed(2)} €`, 180, y + 20);
+    doc.text(`TVA (20%):`, 130, y + 20);
+    doc.text(`${tvaAmount.toFixed(2)} €`, 160, y + 20);
 
-    doc.text(`Total TTC:`, 150, y + 30);
-    doc.text(`${totalTTC.toFixed(2)} €`, 180, y + 30);
+    doc.text(`Total TTC:`, 130, y + 30);
+    doc.text(`${totalTTC.toFixed(2)} €`, 160, y + 30);
 
     // Pied de page
     doc.setFontSize(10);
@@ -505,6 +502,7 @@ function getEcheanceDate(dateFacture) {
     date.setMonth(date.getMonth() + 1);
     return date.toLocaleDateString();
 }
+
 
 
 // Fonctions à implémenter selon votre structure de données
