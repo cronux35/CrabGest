@@ -391,9 +391,14 @@ async function genererFactureDepuisVente(venteId) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
 
-    // Logo CRAB (à remplacer par une image base64 ou un chemin correct)
-    var img = new Image()
-    img.src = 'assets/images/logoFacture.png'
+    // Logo CRAB
+    var img = new Image();
+    img.src = 'assets/images/logoFacture.png';
+
+    // Attendre que le logo soit chargé
+    await new Promise((resolve) => {
+        img.onload = resolve;
+    });
 
     // Ajouter le logo
     doc.addImage(img, 'PNG', 15, 10, 50, 30);
@@ -402,12 +407,13 @@ async function genererFactureDepuisVente(venteId) {
     const emetteur = factureInfos.emetteur;
     doc.setFontSize(12);
     doc.text(emetteur.nom, 15, 50);
-    doc.text(`${emetteur.adresse}`, 15, 57);
+    doc.text(emetteur.adresse, 15, 57);
     doc.text(`${emetteur.codePostal} ${emetteur.ville}`, 15, 64);
-    doc.text(emetteur.telephone, 15, 71);
-    doc.text(emetteur.email, 15, 78);
-    doc.text(`N° SIREN : ${emetteur.siren}`, 15, 85);
-    doc.text(`N° d’entrepositaire : ${emetteur.entrepositaire}`, 15, 92);
+    doc.text(`Tel: ${emetteur.telephone}`, 15, 71);
+    doc.text(`Email: ${emetteur.email}`, 15, 78);
+    doc.text(`SIRET: ${emetteur.siren}`, 15, 85);
+    doc.text(`N° de TVA: ${emetteur.tva}`, 15, 92);
+    doc.text(`N° Entrepositaire: ${emetteur.entrepositaire}`, 15, 99);
 
     // Informations de la facture
     doc.setFontSize(14);
@@ -433,10 +439,15 @@ async function genererFactureDepuisVente(venteId) {
     doc.setFontSize(12);
     doc.text("qté", 15, startY);
     doc.text("description", 40, startY);
-    doc.text("prix unitaire HT Droits Payés", 120, startY);
-    doc.text("total de la ligne", 170, startY);
+    doc.text("lot", 100, startY);
+    doc.text("quantité", 120, startY);
+    doc.text("prix unitaire HT", 150, startY);
+    doc.text("montant HT", 180, startY);
 
-    let y = startY + 7;
+    // Dessiner les lignes du tableau
+    doc.line(10, startY + 5, 200, startY + 5);
+
+    let y = startY + 10;
     let totalHT = 0;
 
     // Lignes du tableau
@@ -444,50 +455,57 @@ async function genererFactureDepuisVente(venteId) {
         const montantHT = ligne.quantite * ligne.prixUnitaire;
         totalHT += montantHT;
 
-        // Récupérer les informations de la bière (à adapter selon votre structure de données)
+        // Récupérer les informations de la bière
         const biereInfo = await getBiereInfo(ligne.biere);
         const dateConditionnement = await getDateConditionnement(ligne.lot);
         const ddm = new Date(dateConditionnement);
         ddm.setFullYear(ddm.getFullYear() + 3); // DDM = date de conditionnement + 3 ans
 
         doc.text(ligne.quantite.toString(), 15, y);
-        doc.text(`${ligne.biere}, ABV = ${biereInfo.abv}%, ${ligne.lot} (DDM ${ddm.toLocaleDateString()})`, 40, y);
-        doc.text(`${ligne.prixUnitaire.toFixed(2)} €`, 140, y, { align: 'right' });
-        doc.text(`${montantHT.toFixed(2)} €`, 190, y, { align: 'right' });
+        doc.text(`${ligne.biere}, ABV = ${biereInfo.abv}%`, 40, y);
+        doc.text(ligne.lot, 100, y);
+        doc.text(ligne.quantite.toFixed(2), 120, y);
+        doc.text(`${ligne.prixUnitaire.toFixed(2)} €`, 150, y);
+        doc.text(`${montantHT.toFixed(2)} €`, 180, y);
 
+        // Dessiner une ligne sous chaque ligne de tableau
+        doc.line(10, y + 5, 200, y + 5);
         y += 10;
     }
 
     // Ligne de total
     doc.setFont("helvetica", "bold");
-    doc.text("Sous-total", 140, y + 10, { align: 'right' });
-    doc.text(`${totalHT.toFixed(2)} €`, 190, y + 10, { align: 'right' });
+    doc.text("Total HT:", 150, y + 10);
+    doc.text(`${totalHT.toFixed(2)} €`, 180, y + 10);
 
-    doc.text("T.V.A.", 140, y + 20, { align: 'right' });
-    doc.text("0 €", 190, y + 20, { align: 'right' });
+    // TVA et Total TTC
+    const tvaRate = 0.20; // Taux de TVA à 20%
+    const tvaAmount = totalHT * tvaRate;
+    const totalTTC = totalHT + tvaAmount;
 
-    doc.text("Total", 140, y + 30, { align: 'right' });
-    doc.text(`${totalHT.toFixed(2)} €`, 190, y + 30, { align: 'right' });
+    doc.text(`TVA (20%):`, 150, y + 20);
+    doc.text(`${tvaAmount.toFixed(2)} €`, 180, y + 20);
 
-    // Note sur la TVA
+    doc.text(`Total TTC:`, 150, y + 30);
+    doc.text(`${totalTTC.toFixed(2)} €`, 180, y + 30);
+
+    // Pied de page
     doc.setFontSize(10);
-    doc.text(`1. ${emetteur.noteTVA}`, 15, y + 50);
-
-    // Informations bancaires
-    doc.text(`IBAN : ${emetteur.iban}`, 15, y + 60);
-    doc.text(`BIC – Swift : ${emetteur.bic}`, 15, y + 67);
+    doc.text(`Date d'échéance: ${getEcheanceDate(vente.date)}`, 15, y + 50);
+    doc.text("Mode de règlement: Virement bancaire", 15, y + 57);
+    doc.text(`IBAN: ${emetteur.iban}`, 15, y + 64);
+    doc.text(`BIC: ${emetteur.bic}`, 15, y + 71);
 
     // Sauvegarder le PDF
     doc.save(`Facture_${client.nom}_${vente.date}.pdf`);
 }
 
-
-// Fonction pour calculer la date d'échéance
 function getEcheanceDate(dateFacture) {
     const date = new Date(dateFacture);
     date.setMonth(date.getMonth() + 1);
     return date.toLocaleDateString();
 }
+
 
 // Fonctions à implémenter selon votre structure de données
 async function getBiereInfo(biereNom) {
