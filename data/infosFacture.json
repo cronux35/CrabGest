@@ -1,0 +1,15 @@
+{
+  "emetteur": {
+    "nom": "Collectif Rennais des Amateur·rice·s de Bières",
+    "adresse": "10 rue André Gallais",
+    "codePostal": "35200",
+    "ville": "RENNES",
+    "telephone": "06.45.78.11.07",
+    "email": "crab@danthine-navarro.com",
+    "siren": "900378043",
+    "entrepositaire": "FR100000N3406",
+    "iban": "FR76 1360 6000 2946 3182 9631 632",
+    "bic": "AGRIFRPP836",
+    "noteTVA": "Association sans but lucratif exonérée de TVA en application des articles 206, 1 bis et 261, 7 du Code général des impôts."
+  }
+}

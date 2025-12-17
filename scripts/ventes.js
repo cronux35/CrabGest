@@ -338,6 +338,33 @@ async function validerCommande() {
 }
 
 
+async function loadFactureInfos() {
+    try {
+        const response = await fetch('data/infosFacture.json');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error("Erreur lors du chargement des informations de facture :", error);
+        return null;
+    }
+}
+
+
+async function loadFactureInfos() {
+    try {
+        const response = await fetch('data/infosFacture.json');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error("Erreur lors du chargement des informations de facture :", error);
+        return null;
+    }
+}
+
 async function genererFactureDepuisVente(venteId) {
     const ventes = await loadData('ventes').catch(() => []);
     const vente = ventes.find(v => v.id == venteId);
@@ -355,24 +382,32 @@ async function genererFactureDepuisVente(venteId) {
         return;
     }
 
+    const factureInfos = await loadFactureInfos();
+    if (!factureInfos) {
+        alert("Impossible de charger les informations de facture.");
+        return;
+    }
+
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
 
     // Logo CRAB (à remplacer par une image base64 ou un chemin correct)
     var img = new Image()
     img.src = 'assets/images/logoFacture.png'
+
     // Ajouter le logo
     doc.addImage(img, 'PNG', 15, 10, 50, 30);
 
-    // Coordonnées du CRAB
+    // Coordonnées de l'émetteur
+    const emetteur = factureInfos.emetteur;
     doc.setFontSize(12);
-    doc.text("Collectif Rennais des Amateur·rice·s de Bières", 15, 50);
-    doc.text("10 rue André Gallais", 15, 57);
-    doc.text("35200 RENNES", 15, 64);
-    doc.text("06.45.78.11.07", 15, 71);
-    doc.text("crab@danthine-navarro.com", 15, 78);
-    doc.text("N° SIREN : 900378043", 15, 85);
-    doc.text("N° d’entrepositaire : FR100000N3406", 15, 92);
+    doc.text(emetteur.nom, 15, 50);
+    doc.text(`${emetteur.adresse}`, 15, 57);
+    doc.text(`${emetteur.codePostal} ${emetteur.ville}`, 15, 64);
+    doc.text(emetteur.telephone, 15, 71);
+    doc.text(emetteur.email, 15, 78);
+    doc.text(`N° SIREN : ${emetteur.siren}`, 15, 85);
+    doc.text(`N° d’entrepositaire : ${emetteur.entrepositaire}`, 15, 92);
 
     // Informations de la facture
     doc.setFontSize(14);
@@ -410,8 +445,8 @@ async function genererFactureDepuisVente(venteId) {
         totalHT += montantHT;
 
         // Récupérer les informations de la bière (à adapter selon votre structure de données)
-        const biereInfo = await getBiereInfo(ligne.biere); // Vous devez implémenter cette fonction
-        const dateConditionnement = await getDateConditionnement(ligne.lot); // Vous devez implémenter cette fonction
+        const biereInfo = await getBiereInfo(ligne.biere);
+        const dateConditionnement = await getDateConditionnement(ligne.lot);
         const ddm = new Date(dateConditionnement);
         ddm.setFullYear(ddm.getFullYear() + 3); // DDM = date de conditionnement + 3 ans
 
@@ -436,15 +471,16 @@ async function genererFactureDepuisVente(venteId) {
 
     // Note sur la TVA
     doc.setFontSize(10);
-    doc.text("1. Association sans but lucratif exonérée de TVA en application des articles 206, 1 bis et 261, 7 du Code général des impôts.", 15, y + 50);
+    doc.text(`1. ${emetteur.noteTVA}`, 15, y + 50);
 
     // Informations bancaires
-    doc.text("IBAN : FR76 1360 6000 2946 3182 9631 632", 15, y + 60);
-    doc.text("BIC – Swift : AGRIFRPP836", 15, y + 67);
+    doc.text(`IBAN : ${emetteur.iban}`, 15, y + 60);
+    doc.text(`BIC – Swift : ${emetteur.bic}`, 15, y + 67);
 
     // Sauvegarder le PDF
     doc.save(`Facture_${client.nom}_${vente.date}.pdf`);
 }
+
 
 // Fonction pour calculer la date d'échéance
 function getEcheanceDate(dateFacture) {
