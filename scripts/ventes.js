@@ -590,7 +590,6 @@ document.addEventListener('DOMContentLoaded', function() {
     } else {
         console.error("Élément btn-ajouter-ligne non trouvé.");
     }
-    }
 
     if (btnValiderCommande) {
         btnValiderCommande.addEventListener('click', function() {
