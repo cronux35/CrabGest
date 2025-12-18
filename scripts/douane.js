@@ -6,8 +6,8 @@ async function genererDeclarationDouane() {
         return;
     }
 
-    const conditionnements = await loadData('conditionnements');
-    const declarations = await loadData('declarations_douanes');
+    const conditionnements = await loadData('conditionnements').catch(() => []);
+    const declarations = await loadData('declarations_douanes').catch(() => []);
 
     // Filtrer les conditionnements du mois
     const conditionnementsMois = conditionnements.filter(c => new Date(c.date).toISOString().startsWith(mois));
@@ -42,14 +42,14 @@ async function genererDeclarationDouane() {
     const totalDroits = droitsParBiere.reduce((total, b) => total + b.droits, 0);
 
     // Ajouter la déclaration
-    const declaration = {
+    declarations.push({
         mois,
         bières: droitsParBiere,
         montant_total_droits: totalDroits,
         date: new Date().toISOString()
-    };
+    });
 
-    await saveData('declarations_douanes', declaration);
+    await saveData('declarations_douanes', declarations);
 
     afficherDeclarations();
     alert(`Déclaration pour ${new Date(mois).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })} générée. Montant des droits: ${totalDroits.toFixed(2)} €.`);
@@ -58,7 +58,7 @@ async function genererDeclarationDouane() {
 
 // Fonction pour afficher les déclarations douanières
 async function afficherDeclarations() {
-    const declarations = await loadData('declarations_douanes');
+    const declarations = await loadData('declarations_douanes').catch(() => []);
     const tbody = document.querySelector('#table-douane tbody');
 
     if (!tbody) {
@@ -93,6 +93,7 @@ async function afficherDeclarations() {
 
 
 
+
 // Fonction pour charger les mois disponibles
 async function chargerMoisDisponibles() {
     const selectMois = document.getElementById('select-mois-douane');
@@ -106,7 +107,7 @@ async function chargerMoisDisponibles() {
     // Extraire les mois uniques
     const moisUniques = [...new Set(conditionnements.map(c => new Date(c.date).toISOString().substring(0, 7)))];
 
-    selectMois.innerHTML = '';
+    selectMois.innerHTML = '<option value="">-- Sélectionner un mois --</option>';
     moisUniques.forEach(mois => {
         const option = document.createElement('option');
         option.value = mois;
@@ -114,6 +115,7 @@ async function chargerMoisDisponibles() {
         selectMois.appendChild(option);
     });
 }
+
 
 // Écouteurs d'événements
 document.addEventListener('DOMContentLoaded', function() {

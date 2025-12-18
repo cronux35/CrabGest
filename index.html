@@ -48,17 +48,16 @@
   const analytics = getAnalytics(app);
 </script>
 
-    <!-- CSP pour éviter les blocages -->
+<!-- CSP pour éviter les blocages -->
 <meta http-equiv="Content-Security-Policy" content="
     default-src 'self';
-    script-src 'self' https://cdnjs.cloudflare.com https://www.gstatic.com 'unsafe-inline';
-    connect-src 'self' https://cdnjs.cloudflare.com;
+    script-src 'self' https://cdnjs.cloudflare.com https://www.gstatic.com https://www.googletagmanager.com 'unsafe-inline' 'unsafe-eval';
+    connect-src 'self' https://cdnjs.cloudflare.com https://www.gstatic.com https://firebase.googleapis.com https://firebaseinstallations.googleapis.com;
+    img-src 'self' data:;
     style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
     font-src 'self' https://fonts.gstatic.com;
-    img-src 'self' data:;
-    object-src 'none';
-    frame-src 'none';
 ">
+
 </head>
 <body>
     <header>
@@ -438,32 +437,33 @@
 
 
     <!-- Douane -->
-    <section id="douane" class="tab">
-        <h2>Déclarations Douanières</h2>
-        <div class="card">
-            <div class="form-group">
-                <select id="select-mois-douane" class="form-control">
-                    <option value="">-- Sélectionner un mois --</option>
-                </select>
-                <button onclick="genererDeclarationDouane()" class="btn btn-primary">Générer Déclaration</button>
-            </div>
-            <div class="table-responsive">
-                <table id="table-douane" class="table">
-                    <thead>
-                        <tr>
-                            <th>Mois</th>
-                            <th>Bière</th>
-                            <th>Volume (L)</th>
-                            <th>ABV</th>
-                            <th>Droits (€)</th>
-                            <th>Lots</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </div>
+<section id="douane" class="tab">
+    <h2>Déclarations Douanières</h2>
+    <div class="card">
+        <div class="form-group">
+            <select id="select-mois-douane" class="form-control">
+                <option value="">-- Sélectionner un mois --</option>
+            </select>
+            <button onclick="genererDeclarationDouane()" class="btn btn-primary">Générer Déclaration</button>
         </div>
-    </section>
+        <div class="table-responsive">
+            <table id="table-douane" class="table">
+                <thead>
+                    <tr>
+                        <th>Mois</th>
+                        <th>Bière</th>
+                        <th>Volume (L)</th>
+                        <th>ABV</th>
+                        <th>Droits (€)</th>
+                        <th>Lots</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
 
     </main>
 
