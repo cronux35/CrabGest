@@ -94,6 +94,7 @@ async function afficherDeclarations() {
 
 
 
+
 // Fonction pour charger les mois disponibles
 async function chargerMoisDisponibles() {
     const selectMois = document.getElementById('select-mois-douane');
@@ -103,6 +104,11 @@ async function chargerMoisDisponibles() {
     }
 
     const conditionnements = await loadData('conditionnements').catch(() => []);
+
+    if (!conditionnements || conditionnements.length === 0) {
+        console.log("Aucun conditionnement trouvé.");
+        return;
+    }
 
     // Extraire les mois uniques
     const moisUniques = [...new Set(conditionnements.map(c => new Date(c.date).toISOString().substring(0, 7)))];
@@ -115,6 +121,8 @@ async function chargerMoisDisponibles() {
         selectMois.appendChild(option);
     });
 }
+
+
 
 
 // Écouteurs d'événements
