@@ -91,6 +91,60 @@ async function afficherDeclarations() {
     });
 }
 
+async function afficherConditionnementsParMois() {
+    const mois = document.getElementById('select-mois-douane').value;
+    if (!mois) {
+        alert("Veuillez sélectionner un mois.");
+        return;
+    }
+
+    const conditionnements = await loadData('conditionnements').catch(() => []);
+    const conditionnementsMois = conditionnements.filter(c => new Date(c.date).toISOString().startsWith(mois));
+
+    if (!conditionnementsMois || conditionnementsMois.length === 0) {
+        alert("Aucun conditionnement trouvé pour ce mois.");
+        return;
+    }
+
+    // Regrouper les conditionnements par bière
+    const bièresConditionnées = conditionnementsMois.reduce((acc, c) => {
+        if (!acc[c.id_biere]) {
+            acc[c.id_biere] = {
+                nom: c.nom_biere,
+                volume: 0,
+                abv: c.abv,
+                lots: []
+            };
+        }
+        acc[c.id_biere].volume += c.volume_litres;
+        if (!acc[c.id_biere].lots.includes(c.numeroLot)) {
+            acc[c.id_biere].lots.push(c.numeroLot);
+        }
+        return acc;
+    }, {});
+
+    const tbody = document.querySelector('#table-douane tbody');
+    if (!tbody) {
+        console.error("Élément table-douane tbody non trouvé.");
+        return;
+    }
+
+    tbody.innerHTML = '';
+
+    Object.entries(bièresConditionnées).forEach(([id, b]) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${new Date(mois).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}</td>
+            <td>${b.nom}</td>
+            <td>${b.volume.toFixed(2)} L</td>
+            <td>${b.abv}°</td>
+            <td>${b.lots.join(', ')}</td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+
 
 
 
@@ -125,8 +179,10 @@ async function chargerMoisDisponibles() {
 
 
 
+
 // Écouteurs d'événements
 document.addEventListener('DOMContentLoaded', function() {
     chargerMoisDisponibles();
-    afficherDeclarations();
 });
+
+document.getElementById('select-mois-douane').addEventListener('change', afficherConditionnementsParMois);
