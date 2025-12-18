@@ -438,33 +438,34 @@
 </section>
 
 
-        <!-- Douane -->
-        <section id="douane" class="tab">
-            <h2>Déclarations Douanières</h2>
-            <div class="card">
-                <div class="form-group">
-                    <select id="select-mois-douane" class="form-control">
-                        <option value="2025-12">Décembre 2025</option>
-                    </select>
-                    <button onclick="genererDeclarationDouane()" class="btn btn-primary">Générer Déclaration</button>
-                </div>
-                <div class="table-responsive">
-                    <table id="table-douane" class="table">
-                        <thead>
-                            <tr>
-                                <th>Mois</th>
-                                <th>Bière</th>
-                                <th>Volume (L)</th>
-                                <th>ABV</th>
-                                <th>Droits (€)</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
+    <!-- Douane -->
+    <section id="douane" class="tab">
+        <h2>Déclarations Douanières</h2>
+        <div class="card">
+            <div class="form-group">
+                <select id="select-mois-douane" class="form-control">
+                    <option value="">-- Sélectionner un mois --</option>
+                </select>
+                <button onclick="genererDeclarationDouane()" class="btn btn-primary">Générer Déclaration</button>
             </div>
-        </section>
+            <div class="table-responsive">
+                <table id="table-douane" class="table">
+                    <thead>
+                        <tr>
+                            <th>Mois</th>
+                            <th>Bière</th>
+                            <th>Volume (L)</th>
+                            <th>ABV</th>
+                            <th>Droits (€)</th>
+                            <th>Lots</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
     </main>
 
     <!-- Modales -->
@@ -487,7 +488,7 @@
     </div>
 
     <footer>
-        <p>© 2025 CrabGest - Association CRAB</p>
+        <p>© 2026 CrabBrewGest - Association CRAB (Collectif Rennais des amateur·rice·s de bières)</p>
     </footer>
 
     <!-- Scripts locaux chargés à la fin du body -->
