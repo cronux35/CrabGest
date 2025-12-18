@@ -1,8 +1,13 @@
 // Fonction pour générer une déclaration douanière mensuelle
 async function genererDeclarationDouane() {
     const mois = document.getElementById('select-mois-douane').value;
-    const conditionnements = await loadData('conditionnements').catch(() => []);
-    const declarations = await loadData('declarations_douanes').catch(() => []);
+    if (!mois) {
+        alert("Veuillez sélectionner un mois.");
+        return;
+    }
+
+    const conditionnements = await loadData('conditionnements');
+    const declarations = await loadData('declarations_douanes');
 
     // Filtrer les conditionnements du mois
     const conditionnementsMois = conditionnements.filter(c => new Date(c.date).toISOString().startsWith(mois));
@@ -37,22 +42,23 @@ async function genererDeclarationDouane() {
     const totalDroits = droitsParBiere.reduce((total, b) => total + b.droits, 0);
 
     // Ajouter la déclaration
-    declarations.push({
+    const declaration = {
         mois,
         bières: droitsParBiere,
         montant_total_droits: totalDroits,
         date: new Date().toISOString()
-    });
+    };
 
-    await saveData('declarations_douanes', declarations);
+    await saveData('declarations_douanes', declaration);
 
     afficherDeclarations();
-    alert(`Déclaration pour ${mois} générée. Montant des droits: ${totalDroits} €.`);
+    alert(`Déclaration pour ${new Date(mois).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })} générée. Montant des droits: ${totalDroits.toFixed(2)} €.`);
 }
+
 
 // Fonction pour afficher les déclarations douanières
 async function afficherDeclarations() {
-    const declarations = await loadData('declarations_douanes').catch(() => []);
+    const declarations = await loadData('declarations_douanes');
     const tbody = document.querySelector('#table-douane tbody');
 
     if (!tbody) {
@@ -62,26 +68,30 @@ async function afficherDeclarations() {
 
     tbody.innerHTML = '';
 
-    if (declarations.length === 0) {
+    if (!declarations || declarations.length === 0) {
         tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Aucune déclaration douanière enregistrée</td></tr>';
         return;
     }
 
     declarations.forEach(dec => {
-        dec.bières.forEach(b => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${dec.mois}</td>
-                <td>${b.nom}</td>
-                <td>${b.volume.toFixed(2)} L</td>
-                <td>${b.abv}°</td>
-                <td>${b.droits.toFixed(2)} €</td>
-                <td>${b.lots.join(', ')}</td>
-            `;
-            tbody.appendChild(row);
-        });
+        if (dec.bières && dec.bières.length > 0) {
+            dec.bières.forEach(b => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${new Date(dec.mois).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}</td>
+                    <td>${b.nom}</td>
+                    <td>${b.volume ? b.volume.toFixed(2) : '0.00'} L</td>
+                    <td>${b.abv ? b.abv : '0'}°</td>
+                    <td>${b.droits ? b.droits.toFixed(2) : '0.00'} €</td>
+                    <td>${b.lots ? b.lots.join(', ') : ''}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
     });
 }
+
+
 
 // Fonction pour charger les mois disponibles
 async function chargerMoisDisponibles() {
