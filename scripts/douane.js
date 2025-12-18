@@ -131,7 +131,12 @@ async function afficherConditionnementsParMois() {
 
     tbody.innerHTML = '';
 
+    // Calcul du volume total pour toutes les bières
+    let volumeTotalGlobal = 0;
+
     Object.entries(bièresConditionnées).forEach(([id, b]) => {
+        volumeTotalGlobal += b.volume;
+
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>${new Date(mois).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}</td>
@@ -142,7 +147,18 @@ async function afficherConditionnementsParMois() {
         `;
         tbody.appendChild(row);
     });
+
+    // Ajouter une ligne pour le volume total global
+    const totalRow = document.createElement('tr');
+    totalRow.innerHTML = `
+        <td colspan="2"><strong>Volume Total Conditionné</strong></td>
+        <td><strong>${volumeTotalGlobal.toFixed(2)} L</strong></td>
+        <td colspan="3"></td>
+    `;
+    tbody.appendChild(totalRow);
 }
+
+
 
 
 
