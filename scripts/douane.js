@@ -90,6 +90,7 @@ async function afficherDeclarations() {
         }
     });
 }
+
 async function afficherConditionnementsParMois() {
     const mois = document.getElementById('select-mois-douane').value;
     if (!mois) {
@@ -98,7 +99,11 @@ async function afficherConditionnementsParMois() {
     }
 
     const conditionnements = await loadData('conditionnements').catch(() => []);
-    const conditionnementsMois = conditionnements.filter(c => new Date(c.date).toISOString().startsWith(mois));
+
+    const conditionnementsMois = conditionnements.filter(c => {
+        const conditionnementDate = new Date(c.date);
+        return conditionnementDate.toISOString().startsWith(mois);
+    });
 
     if (!conditionnementsMois || conditionnementsMois.length === 0) {
         alert("Aucun conditionnement trouvé pour ce mois.");
@@ -107,22 +112,20 @@ async function afficherConditionnementsParMois() {
 
     // Regrouper les conditionnements par bière
     const bièresConditionnées = conditionnementsMois.reduce((acc, c) => {
-        if (!acc[c.id_biere]) {
-            acc[c.id_biere] = {
-                nom: c.biere || `Bière Inconnue (ID: ${c.id_biere})`, // Utiliser la clé "biere" pour le nom
+        if (!acc[c.biere]) {
+            acc[c.biere] = {
+                nom: c.biere,
                 volume: 0,
                 abv: c.abv || 0,
                 lots: []
             };
         }
-        // Assurez-vous que volume_litres est un nombre
-        const volume = parseFloat(c.volume_litres) || 0;
-        acc[c.id_biere].volume += volume;
-        if (!acc[c.id_biere].lots.includes(c.numeroLot)) {
-            acc[c.id_biere].lots.push(c.numeroLot);
+        // Utiliser le champ 'volume' pour le calcul
+        const volume = parseFloat(c.volume) || 0;
+        acc[c.biere].volume += volume;
+        if (!acc[c.biere].lots.includes(c.numeroLot)) {
+            acc[c.biere].lots.push(c.numeroLot);
         }
-        console.info("volume = ")
-        console.info(acc)
         return acc;
     }, {});
 
@@ -134,11 +137,11 @@ async function afficherConditionnementsParMois() {
 
     tbody.innerHTML = '';
 
-    Object.entries(bièresConditionnées).forEach(([id, b]) => {
+    Object.entries(bièresConditionnées).forEach(([biere, b]) => {
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>${new Date(mois).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}</td>
-            <td>${b.biere}</td>
+            <td>${b.nom}</td>
             <td>${b.volume.toFixed(2)} L</td>
             <td>${b.abv}°</td>
             <td>${b.lots.join(', ')}</td>
