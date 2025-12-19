@@ -106,11 +106,15 @@ async function afficherConditionnementsParMois() {
         return;
     }
 
+    // Charger les bières pour obtenir les noms
+    const bieres = await loadData('bieres').catch(() => []);
+
     // Regrouper les conditionnements par bière
     const bièresConditionnées = conditionnementsMois.reduce((acc, c) => {
         if (!acc[c.id_biere]) {
+            const biere = bieres.find(b => b.id === c.id_biere);
             acc[c.id_biere] = {
-                nom: c.biere,
+                nom: biere ? biere.nom : `Bière ${c.id_biere}`,
                 volume: 0,
                 abv: c.abv,
                 lots: []
@@ -131,31 +135,17 @@ async function afficherConditionnementsParMois() {
 
     tbody.innerHTML = '';
 
-    // Calcul du volume total pour toutes les bières
-    let volumeTotalGlobal = 0;
-
     Object.entries(bièresConditionnées).forEach(([id, b]) => {
-        volumeTotalGlobal += b.volume;
-
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>${new Date(mois).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}</td>
-            <td>${b.biere}</td>
+            <td>${b.nom}</td>
             <td>${b.volume.toFixed(2)} L</td>
             <td>${b.abv}°</td>
             <td>${b.lots.join(', ')}</td>
         `;
         tbody.appendChild(row);
     });
-
-    // Ajouter une ligne pour le volume total global
-    const totalRow = document.createElement('tr');
-    totalRow.innerHTML = `
-        <td colspan="2"><strong>Volume Total Conditionné</strong></td>
-        <td><strong>${volumeTotalGlobal.toFixed(2)} L</strong></td>
-        <td colspan="3"></td>
-    `;
-    tbody.appendChild(totalRow);
 }
 
 
