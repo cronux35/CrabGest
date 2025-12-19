@@ -1,9 +1,9 @@
 let db;
 let dbReady = false;
 const dbName = 'CrabGestDB';
-const dbVersion = 2; // Version actuelle
+const dbVersion = 2;
 
-// Stores disponibles
+// Stores disponibles pour IndexedDB
 const stores = [
     { name: 'stocks', keyPath: 'id', autoIncrement: true },
     { name: 'bieres', keyPath: 'id', autoIncrement: true },
@@ -15,7 +15,24 @@ const stores = [
     { name: 'declarations_douanes', keyPath: 'id', autoIncrement: true }
 ];
 
-// Initialiser la base de données
+// Configuration pour Firestore
+import { initializeApp } from 'firebase/app';
+import { getFirestore, collection, getDocs, addDoc, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyC1ZP89QSoWubkcnMJJ6cinIAlFXXnTefU",
+    authDomain: "crabbrewgest.firebaseapp.com",
+    projectId: "crabbrewgest",
+    storageBucket: "crabbrewgest.firebasestorage.app",
+    messagingSenderId: "156226949050",
+    appId: "1:156226949050:web:52b3e666cc31e7963d5783",
+    measurementId: "G-MY8FH7L6K1"
+  };
+  
+const app = initializeApp(firebaseConfig);
+const firestoreDb = getFirestore(app);
+
+// Initialiser la base de données IndexedDB
 function openDB() {
     return new Promise((resolve, reject) => {
         if (dbReady) {
@@ -38,101 +55,17 @@ function openDB() {
 
         request.onupgradeneeded = (event) => {
             const db = event.target.result;
-
-            // Vérifier si le store 'recettes' existe et doit être migré vers 'bieres'
-            if (event.oldVersion < 2 && db.objectStoreNames.contains('recettes')) {
-                try {
-                    const recettes = [];
-                    const transaction = event.target.transaction;
-                    const oldStore = transaction.objectStore('recettes');
-                    const cursorRequest = oldStore.openCursor();
-
-                    cursorRequest.onsuccess = (e) => {
-                        const cursor = e.target.result;
-                        if (cursor) {
-                            recettes.push(cursor.value);
-                            cursor.continue();
-                        } else {
-                            // Créer le nouveau store 'bieres' s'il n'existe pas
-                            if (!db.objectStoreNames.contains('bieres')) {
-                                const newStore = db.createObjectStore('bieres', { keyPath: 'id', autoIncrement: true });
-                                newStore.createIndex('nom', 'nom', { unique: false });
-
-                                // Copier les données
-                                recettes.forEach(recette => newStore.add(recette));
-                            }
-                            db.deleteObjectStore('recettes');
-                        }
-                    };
-                } catch (error) {
-                    console.error("Erreur lors de la migration des recettes:", error);
-                }
-            }
-
-            // Créer les stores s'ils n'existent pas
             stores.forEach(store => {
                 if (!db.objectStoreNames.contains(store.name)) {
-                    const objectStore = db.createObjectStore(store.name, {
-                        keyPath: store.keyPath,
-                        autoIncrement: store.autoIncrement
-                    });
-
-                    // Créer des index si nécessaire
-                    if (store.name === 'stocks') {
-                        objectStore.createIndex('type', 'type', { unique: false });
-                        objectStore.createIndex('nom', 'nom', { unique: false });
-                    } else if (store.name === 'bieres') {
-                        objectStore.createIndex('nom', 'nom', { unique: false });
-                    }
+                    db.createObjectStore(store.name, { keyPath: store.keyPath, autoIncrement: store.autoIncrement });
                 }
             });
-        };
-
-        request.onblocked = (event) => {
-            console.warn("La base de données est bloquée par une autre connexion. Fermer les autres onglets utilisant cette application.");
-            reject(new Error("Base de données bloquée"));
         };
     });
 }
 
-// Sauvegarder des données
-async function saveData(storeName, data) {
-    try {
-        const database = await openDB();
-        return new Promise((resolve, reject) => {
-            const transaction = database.transaction([storeName], 'readwrite');
-            const store = transaction.objectStore(storeName);
-
-            // Vérifie que `data` est un tableau
-            if (!Array.isArray(data)) {
-                data = [data]; // Convertit en tableau si ce n'est pas déjà le cas
-            }
-
-            // Efface les anciennes données
-            const clearRequest = store.clear();
-
-            clearRequest.onsuccess = () => {
-                // Ajoute les nouvelles données
-                data.forEach(item => {
-                    if (item.id) delete item.id; // Laisser IndexedDB générer l'ID
-                    store.add(item);
-                });
-                resolve();
-            };
-
-            clearRequest.onerror = (event) => reject(event.target.error);
-            transaction.oncomplete = () => resolve();
-            transaction.onerror = (event) => reject(event.target.error);
-        });
-    } catch (error) {
-        console.error(`Erreur lors de la sauvegarde dans ${storeName}:`, error);
-        throw error;
-    }
-}
-
-
-// Charger des données
-async function loadData(storeName) {
+// Charger des données depuis IndexedDB
+async function loadDataFromIndexedDB(storeName) {
     try {
         const database = await openDB();
         return new Promise((resolve, reject) => {
@@ -145,19 +78,19 @@ async function loadData(storeName) {
         });
     } catch (error) {
         console.error(`Erreur lors du chargement depuis ${storeName}:`, error);
-        throw error;
+        return [];
     }
 }
 
-
-// Sauvegarder ou mettre à jour un élément
-async function saveData(storeName, item) {
+// Sauvegarder des données dans IndexedDB
+async function saveDataToIndexedDB(storeName, data) {
     try {
         const database = await openDB();
         return new Promise((resolve, reject) => {
             const transaction = database.transaction([storeName], 'readwrite');
             const store = transaction.objectStore(storeName);
-            const request = store.put(item);
+
+            const request = store.put(data);
 
             request.onsuccess = () => resolve(request.result);
             request.onerror = (event) => reject(event.target.error);
@@ -168,50 +101,58 @@ async function saveData(storeName, item) {
     }
 }
 
-// Mettre à jour un élément (alias pour saveData)
-const updateData = saveData;
+// Charger des données depuis Firestore
+async function loadDataFromFirestore(collectionName) {
+  try {
+    const querySnapshot = await getDocs(collection(firestoreDb, collectionName));
+    const data = [];
+    querySnapshot.forEach((doc) => {
+      data.push({ id: doc.id, ...doc.data() });
+    });
+    return data;
+  } catch (error) {
+    console.error(`Erreur lors du chargement des données pour ${collectionName}:`, error);
+    return [];
+  }
+}
 
+// Sauvegarder des données dans Firestore
+async function saveDataToFirestore(collectionName, data) {
+  try {
+    const docRef = await addDoc(collection(firestoreDb, collectionName), data);
+    console.log("Document écrit avec l'ID: ", docRef.id);
+    return docRef.id;
+  } catch (error) {
+    console.error(`Erreur lors de la sauvegarde dans ${collectionName}:`, error);
+    throw error;
+  }
+}
 
-// Charger un élément par ID
-async function loadItemById(storeName, id) {
+// Fonctions combinées pour charger les données
+async function loadData(storeName) {
+    // Charger depuis Firestore
+    let data = await loadDataFromFirestore(storeName);
+    if (data.length === 0) {
+        // Si Firestore ne retourne rien, charger depuis IndexedDB
+        data = await loadDataFromIndexedDB(storeName);
+    }
+    return data;
+}
+
+// Fonctions combinées pour sauvegarder les données
+async function saveData(storeName, data) {
     try {
-        const database = await openDB();
-        return new Promise((resolve, reject) => {
-            const transaction = database.transaction([storeName], 'readonly');
-            const store = transaction.objectStore(storeName);
-            const request = store.get(parseInt(id));
-
-            request.onsuccess = () => resolve(request.result);
-            request.onerror = (event) => reject(event.target.error);
-        });
+        // Sauvegarder dans Firestore
+        await saveDataToFirestore(storeName, data);
+        // Sauvegarder dans IndexedDB
+        await saveDataToIndexedDB(storeName, data);
     } catch (error) {
-        console.error(`Erreur lors du chargement de l'élément ${id} depuis ${storeName}:`, error);
+        console.error(`Erreur lors de la sauvegarde dans ${storeName}:`, error);
         throw error;
     }
 }
 
-// Ajouter un seul élément
-async function addItem(storeName, item) {
-    try {
-        const database = await openDB();
-        return new Promise((resolve, reject) => {
-            const transaction = database.transaction([storeName], 'readwrite');
-            const store = transaction.objectStore(storeName);
-
-            const itemToAdd = {...item};
-            if (itemToAdd.id) delete itemToAdd.id; // Laisser IndexedDB générer l'ID
-            const request = store.add(itemToAdd);
-
-            request.onsuccess = () => resolve(request.result);
-            request.onerror = (event) => reject(event.target.error);
-        });
-    } catch (error) {
-        console.error(`Erreur lors de l'ajout dans ${storeName}:`, error);
-        throw error;
-    }
-}
-
-// Mettre à jour un élément
+// Mettre à jour un élément dans IndexedDB
 async function updateItem(storeName, item) {
     try {
         const database = await openDB();
@@ -230,8 +171,7 @@ async function updateItem(storeName, item) {
     }
 }
 
-
-// Supprimer un élément
+// Supprimer un élément dans IndexedDB
 async function deleteItem(storeName, id) {
     try {
         const database = await openDB();
@@ -250,7 +190,7 @@ async function deleteItem(storeName, id) {
     }
 }
 
-// Fermer la base de données
+// Fermer la base de données IndexedDB
 function closeDB() {
     if (db) {
         db.close();
@@ -259,13 +199,17 @@ function closeDB() {
     }
 }
 
-// Initialiser la base de données au chargement
+// Initialiser la base de données IndexedDB au chargement
 openDB().catch(error => {
     console.error("Erreur initiale lors de l'ouverture de la base de données:", error);
-    // En cas d'erreur initiale, on peut essayer de fermer les connexions existantes
     if (error.name === 'InvalidStateError') {
         closeDB();
-        // Réessayer après un court délai
         setTimeout(openDB, 1000);
     }
 });
+
+// Exporter les fonctions pour les rendre accessibles globalement
+window.loadData = loadData;
+window.saveData = saveData;
+window.updateItem = updateItem;
+window.deleteItem = deleteItem;
