@@ -16,7 +16,7 @@ async function genererDeclarationDouane() {
     const bièresDeclarees = conditionnementsMois.reduce((acc, c) => {
         if (!acc[c.id_biere]) {
             acc[c.id_biere] = {
-                nom: c.nom_biere,
+                nom: c.biere,
                 volume: 0,
                 abv: c.abv,
                 lots: []
@@ -32,7 +32,7 @@ async function genererDeclarationDouane() {
     // Calcul des droits (exemple: 1€/L/°)
     const droitsParBiere = Object.entries(bièresDeclarees).map(([id, b]) => ({
         id_biere: parseInt(id),
-        nom: b.nom,
+        nom: b.biere,
         volume: b.volume,
         abv: b.abv,
         lots: b.lots,
@@ -79,7 +79,7 @@ async function afficherDeclarations() {
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>${new Date(dec.mois).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}</td>
-                    <td>${b.nom}</td>
+                    <td>${b.biere}</td>
                     <td>${b.volume ? b.volume.toFixed(2) : '0.00'} L</td>
                     <td>${b.abv ? b.abv : '0'}°</td>
                     <td>${b.droits ? b.droits.toFixed(2) : '0.00'} €</td>
@@ -110,7 +110,7 @@ async function afficherConditionnementsParMois() {
     const bièresConditionnées = conditionnementsMois.reduce((acc, c) => {
         if (!acc[c.id_biere]) {
             acc[c.id_biere] = {
-                nom: c.nom,
+                nom: c.biere,
                 volume: 0,
                 abv: c.abv,
                 lots: []
@@ -140,16 +140,24 @@ async function afficherConditionnementsParMois() {
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>${new Date(mois).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}</td>
-            <td>${b.nom}</td>
-            <td>${volumeTotalGlobal.toFixed(2)} L</td>
+            <td>${b.biere}</td>
+            <td>${b.volume.toFixed(2)} L</td>
             <td>${b.abv}°</td>
             <td>${b.lots.join(', ')}</td>
         `;
         tbody.appendChild(row);
     });
 
+    // Ajouter une ligne pour le volume total global
+    const totalRow = document.createElement('tr');
+    totalRow.innerHTML = `
+        <td colspan="2"><strong>Volume Total Conditionné</strong></td>
+        <td><strong>${volumeTotalGlobal.toFixed(2)} L</strong></td>
+        <td colspan="3"></td>
+    `;
     tbody.appendChild(totalRow);
 }
+
 
 
 
