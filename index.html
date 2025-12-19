@@ -18,6 +18,11 @@
     <link rel="icon" type="image/png" href="assets/images/crab-logo.png">
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <!-- Ajoutez ces scripts dans votre fichier HTML, généralement dans la section <head> -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.11/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.11/firebase-firestore-compat.js"></script>
+
 <script>
     // Initialiser jsPDF
     window.jspdf = window.jspdf.jsPDF;
@@ -92,7 +97,7 @@
                 </div>
                 <div class="table-responsive">
                     <label for="biere-select">Filtrer par bière :</label>
-                    <select id="biere-select">
+                    <select id="biere-select" class="form-control">
                     <option value="">-- Toutes les bières --</option>
                     <!-- Les options seront remplies dynamiquement via JavaScript -->
                     </select>

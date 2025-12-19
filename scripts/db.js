@@ -1,3 +1,4 @@
+// Configuration pour IndexedDB
 let db;
 let dbReady = false;
 const dbName = 'CrabGestDB';
@@ -14,23 +15,6 @@ const stores = [
     { name: 'clients', keyPath: 'id', autoIncrement: true },
     { name: 'declarations_douanes', keyPath: 'id', autoIncrement: true }
 ];
-
-// Configuration pour Firestore
-import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, getDocs, addDoc, doc, updateDoc, deleteDoc } from 'firebase/firestore';
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyC1ZP89QSoWubkcnMJJ6cinIAlFXXnTefU",
-    authDomain: "crabbrewgest.firebaseapp.com",
-    projectId: "crabbrewgest",
-    storageBucket: "crabbrewgest.firebasestorage.app",
-    messagingSenderId: "156226949050",
-    appId: "1:156226949050:web:52b3e666cc31e7963d5783",
-    measurementId: "G-MY8FH7L6K1"
-  };
-  
-const app = initializeApp(firebaseConfig);
-const firestoreDb = getFirestore(app);
 
 // Initialiser la base de données IndexedDB
 function openDB() {
@@ -101,39 +85,74 @@ async function saveDataToIndexedDB(storeName, data) {
     }
 }
 
+// Fermer la base de données IndexedDB
+function closeDB() {
+    if (db) {
+        db.close();
+        dbReady = false;
+        db = null;
+    }
+}
+
+// Initialiser la base de données IndexedDB au chargement
+openDB().catch(error => {
+    console.error("Erreur initiale lors de l'ouverture de la base de données:", error);
+    if (error.name === 'InvalidStateError') {
+        closeDB();
+        setTimeout(openDB, 1000);
+    }
+});
+
+// Configuration pour Firestore
+let firestoreDb;
+
+function initializeFirestore() {
+    const firebaseConfig = {
+        apiKey: "VOTRE_API_KEY",
+        authDomain: "VOTRE_AUTH_DOMAIN",
+        projectId: "VOTRE_PROJECT_ID",
+        storageBucket: "VOTRE_STORAGE_BUCKET",
+        messagingSenderId: "VOTRE_MESSAGING_SENDER_ID",
+        appId: "VOTRE_APP_ID"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    firestoreDb = firebase.firestore();
+}
+
 // Charger des données depuis Firestore
 async function loadDataFromFirestore(collectionName) {
-  try {
-    const querySnapshot = await getDocs(collection(firestoreDb, collectionName));
-    const data = [];
-    querySnapshot.forEach((doc) => {
-      data.push({ id: doc.id, ...doc.data() });
-    });
-    return data;
-  } catch (error) {
-    console.error(`Erreur lors du chargement des données pour ${collectionName}:`, error);
-    return [];
-  }
+    if (!firestoreDb) initializeFirestore();
+    try {
+        const querySnapshot = await firestoreDb.collection(collectionName).get();
+        const data = [];
+        querySnapshot.forEach((doc) => {
+            data.push({ id: doc.id, ...doc.data() });
+        });
+        return data;
+    } catch (error) {
+        console.error(`Erreur lors du chargement des données pour ${collectionName}:`, error);
+        return [];
+    }
 }
 
 // Sauvegarder des données dans Firestore
 async function saveDataToFirestore(collectionName, data) {
-  try {
-    const docRef = await addDoc(collection(firestoreDb, collectionName), data);
-    console.log("Document écrit avec l'ID: ", docRef.id);
-    return docRef.id;
-  } catch (error) {
-    console.error(`Erreur lors de la sauvegarde dans ${collectionName}:`, error);
-    throw error;
-  }
+    if (!firestoreDb) initializeFirestore();
+    try {
+        const docRef = await firestoreDb.collection(collectionName).add(data);
+        console.log("Document écrit avec l'ID: ", docRef.id);
+        return docRef.id;
+    } catch (error) {
+        console.error(`Erreur lors de la sauvegarde dans ${collectionName}:`, error);
+        throw error;
+    }
 }
 
 // Fonctions combinées pour charger les données
 async function loadData(storeName) {
-    // Charger depuis Firestore
     let data = await loadDataFromFirestore(storeName);
     if (data.length === 0) {
-        // Si Firestore ne retourne rien, charger depuis IndexedDB
         data = await loadDataFromIndexedDB(storeName);
     }
     return data;
@@ -142,9 +161,7 @@ async function loadData(storeName) {
 // Fonctions combinées pour sauvegarder les données
 async function saveData(storeName, data) {
     try {
-        // Sauvegarder dans Firestore
         await saveDataToFirestore(storeName, data);
-        // Sauvegarder dans IndexedDB
         await saveDataToIndexedDB(storeName, data);
     } catch (error) {
         console.error(`Erreur lors de la sauvegarde dans ${storeName}:`, error);
@@ -189,24 +206,6 @@ async function deleteItem(storeName, id) {
         throw error;
     }
 }
-
-// Fermer la base de données IndexedDB
-function closeDB() {
-    if (db) {
-        db.close();
-        dbReady = false;
-        db = null;
-    }
-}
-
-// Initialiser la base de données IndexedDB au chargement
-openDB().catch(error => {
-    console.error("Erreur initiale lors de l'ouverture de la base de données:", error);
-    if (error.name === 'InvalidStateError') {
-        closeDB();
-        setTimeout(openDB, 1000);
-    }
-});
 
 // Exporter les fonctions pour les rendre accessibles globalement
 window.loadData = loadData;
