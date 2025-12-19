@@ -401,7 +401,7 @@ async function genererFactureDepuisVente(venteId) {
     });
 
     // Ajouter le logo
-    doc.addImage(img, 'PNG', 15, 10, 60, 60);
+    doc.addImage(img, 'PNG', 15, 10, 40, 40);
 
     // Coordonnées de l'émetteur
     const emetteur = factureInfos.emetteur;

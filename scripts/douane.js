@@ -90,7 +90,6 @@ async function afficherDeclarations() {
         }
     });
 }
-
 async function afficherConditionnementsParMois() {
     const mois = document.getElementById('select-mois-douane').value;
     if (!mois) {
@@ -106,21 +105,19 @@ async function afficherConditionnementsParMois() {
         return;
     }
 
-    // Charger les bières pour obtenir les noms
-    const bieres = await loadData('bieres').catch(() => []);
-
     // Regrouper les conditionnements par bière
     const bièresConditionnées = conditionnementsMois.reduce((acc, c) => {
         if (!acc[c.id_biere]) {
-            const biere = bieres.find(b => b.id === c.id_biere);
             acc[c.id_biere] = {
-                nom: biere ? biere.nom : `Bière ${c.id_biere}`,
+                nom: c.biere || `Bière Inconnue (ID: ${c.id_biere})`, // Utiliser la clé "biere" pour le nom
                 volume: 0,
-                abv: c.abv,
+                abv: c.abv || 0,
                 lots: []
             };
         }
-        acc[c.id_biere].volume += c.volume_litres;
+        // Assurez-vous que volume_litres est un nombre
+        const volume = parseFloat(c.volume_litres) || 0;
+        acc[c.id_biere].volume += volume;
         if (!acc[c.id_biere].lots.includes(c.numeroLot)) {
             acc[c.id_biere].lots.push(c.numeroLot);
         }
@@ -147,6 +144,7 @@ async function afficherConditionnementsParMois() {
         tbody.appendChild(row);
     });
 }
+
 
 
 
