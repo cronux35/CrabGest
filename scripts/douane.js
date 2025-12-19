@@ -121,6 +121,8 @@ async function afficherConditionnementsParMois() {
         if (!acc[c.id_biere].lots.includes(c.numeroLot)) {
             acc[c.id_biere].lots.push(c.numeroLot);
         }
+        console.info("volume = ")
+        console.info(acc)
         return acc;
     }, {});
 
@@ -136,7 +138,7 @@ async function afficherConditionnementsParMois() {
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>${new Date(mois).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}</td>
-            <td>${b.nom}</td>
+            <td>${b.biere}</td>
             <td>${b.volume.toFixed(2)} L</td>
             <td>${b.abv}°</td>
             <td>${b.lots.join(', ')}</td>
@@ -144,14 +146,6 @@ async function afficherConditionnementsParMois() {
         tbody.appendChild(row);
     });
 }
-
-
-
-
-
-
-
-
 
 
 // Fonction pour charger les mois disponibles
