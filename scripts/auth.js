@@ -117,53 +117,83 @@ async function signInWithGoogle() {
         if (!auth) throw new Error("Auth non initialisé.");
 
         const provider = new firebase.auth.GoogleAuthProvider();
-        // Ajouter des scopes si nécessaire
         provider.addScope('profile');
         provider.addScope('email');
 
-        const userCredential = await auth.signInWithPopup(provider);
-        const user = userCredential.user;
-
-        const firestoreDb = window.DB.initializeFirestore();
-        try {
-            const userDoc = await firestoreDb.collection('users').doc(user.uid).get();
-            if (!userDoc.exists) {
-                await firestoreDb.collection('users').doc(user.uid).set({
-                    email: user.email,
-                    displayName: user.displayName,
-                    validated: false,
-                    role: 'user',
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                await auth.signOut();
-                return { success: false, message: "Compte Google créé. Validation requise par un administrateur." };
-            } else if (!userDoc.data().validated) {
-                await auth.signOut();
-                return { success: false, message: "Compte Google non validé. Contactez un administrateur." };
+        // Utiliser signInWithRedirect à la place de signInWithPopup si COOP pose problème
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            // En développement local, utiliser signInWithPopup avec un fallback
+            try {
+                const userCredential = await auth.signInWithPopup(provider);
+                return await handleGoogleUser(userCredential.user);
+            } catch (popupError) {
+                if (popupError.code === 'auth/popup-closed-by-user') {
+                    // Si la popup est fermée, utiliser signInWithRedirect
+                    await auth.signInWithRedirect(provider);
+                    return { success: false, message: "Redirection vers Google pour authentification. Veuillez revenir après la connexion." };
+                }
+                throw popupError;
             }
-        } catch (error) {
-            console.error("[Auth] Impossible de vérifier le statut de l'utilisateur Google:", error);
-            // Fallback : on suppose que l'utilisateur est valide
+        } else {
+            // En production, utiliser signInWithRedirect pour éviter les problèmes COOP
+            await auth.signInWithRedirect(provider);
+            return { success: false, message: "Redirection vers Google pour authentification. Veuillez revenir après la connexion." };
         }
-
-        return { success: true, user: { uid: user.uid, email: user.email, displayName: user.displayName } };
     } catch (error) {
         console.error("[Auth] Erreur connexion Google:", error);
         let message = "Une erreur est survenue avec la connexion Google.";
         if (error.code === 'auth/popup-closed-by-user') {
-            message = "La fenêtre de connexion a été fermée.";
-        } else if (error.code === 'auth/cancelled-popup-request') {
-            message = "Une autre fenêtre de connexion est déjà ouverte.";
+            message = "La fenêtre de connexion a été fermée. Veuillez réessayer.";
         } else if (error.code === 'auth/network-request-failed') {
             message = "Erreur réseau. Vérifiez votre connexion internet.";
         } else if (error.code === 'auth/internal-error') {
             message = "Erreur interne. Vérifiez que les cookies tiers sont autorisés pour ce site.";
-        } else if (error.code === 'permission-denied') {
-            message = "Permissions insuffisantes. Contactez l'administrateur.";
         }
         return { success: false, message: message };
     }
 }
+
+async function handleGoogleUser(user) {
+    try {
+        const firestoreDb = window.DB.initializeFirestore();
+        const userDoc = await firestoreDb.collection('users').doc(user.uid).get();
+
+        if (!userDoc.exists) {
+            await firestoreDb.collection('users').doc(user.uid).set({
+                email: user.email,
+                displayName: user.displayName,
+                validated: false,
+                role: 'user',
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            await auth.signOut();
+            return { success: false, message: "Compte Google créé. Validation requise par un administrateur." };
+        } else if (!userDoc.data().validated) {
+            await auth.signOut();
+            return { success: false, message: "Compte Google non validé. Contactez un administrateur." };
+        }
+
+        return { success: true, user: { uid: user.uid, email: user.email, displayName: user.displayName } };
+    } catch (error) {
+        console.error("[Auth] Erreur traitement utilisateur Google:", error);
+        return { success: false, message: "Erreur lors du traitement de l'utilisateur Google." };
+    }
+}
+
+// Gérer la redirection après signInWithRedirect
+async function handleRedirectResult() {
+    try {
+        const result = await auth.getRedirectResult();
+        if (result) {
+            return await handleGoogleUser(result.user);
+        }
+        return { success: false, message: "Aucun résultat de redirection." };
+    } catch (error) {
+        console.error("[Auth] Erreur lors de la redirection:", error);
+        return { success: false, message: "Erreur lors de la redirection Google." };
+    }
+}
+
 
 
 // Déconnexion

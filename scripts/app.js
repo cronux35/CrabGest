@@ -1,4 +1,21 @@
 document.addEventListener('DOMContentLoaded', function() {
+
+    // Gérer le résultat de la redirection Google Auth
+    async function checkRedirectResult() {
+        if (window.Auth?.handleRedirectResult) {
+            const result = await window.Auth.handleRedirectResult();
+            if (result.success) {
+                // Si la redirection a réussi, recharger la page pour déclencher onAuthStateChanged
+                window.location.reload();
+            } else if (result.message) {
+                alert(result.message);
+            }
+        }
+    }
+
+    // Appeler cette fonction au chargement
+    checkRedirectResult();
+
     // =============================================
     // 1. Initialisation de l'application et Auth
     // =============================================
@@ -188,24 +205,35 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-            // Connexion avec Google
-            document.getElementById('google-login')?.addEventListener('click', async () => {
-                try {
-                    const result = await window.Auth.signInWithGoogle();
-                    if (!result.success) {
-                        const errorElement = document.getElementById('google-error');
-                        if (errorElement) {
-                            errorElement.textContent = result.message;
-                            errorElement.style.display = 'block';
-                        } else {
-                            alert(result.message);
-                        }
+        // Connexion avec Google
+        document.getElementById('google-login')?.addEventListener('click', async () => {
+            const errorElement = document.getElementById('google-error');
+            const messageElement = document.getElementById('google-message');
+
+            if (errorElement) errorElement.style.display = 'none';
+            if (messageElement) messageElement.style.display = 'none';
+
+            try {
+                const result = await window.Auth.signInWithGoogle();
+                if (!result.success) {
+                    if (errorElement) {
+                        errorElement.textContent = result.message;
+                        errorElement.style.display = 'block';
+                    } else {
+                        alert(result.message);
                     }
-                } catch (error) {
-                    console.error("[App] Erreur inattendue avec Google:", error);
-                    alert("Une erreur inattendue est survenue. Veuillez réessayer.");
                 }
-            });
+            } catch (error) {
+                console.error("[App] Erreur inattendue avec Google:", error);
+                if (errorElement) {
+                    errorElement.textContent = "Une erreur inattendue est survenue. Veuillez réessayer.";
+                    errorElement.style.display = 'block';
+                } else {
+                    alert("Une erreur est survenue. Veuillez réessayer.");
+                }
+            }
+        });
+
 
 
         document.getElementById('logout')?.addEventListener('click', async () => {

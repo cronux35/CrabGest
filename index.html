@@ -13,7 +13,8 @@
     style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
     font-src 'self' https://fonts.gstatic.com;
     object-src 'none';
-    frame-src 'none';
+    frame-src 'self' https://accounts.google.com;
+    child-src 'self' https://accounts.google.com">
     ">
 
     <title>CrabBrewGest - Gestion de Brasserie</title>
@@ -119,6 +120,7 @@
         </div>
     </div>
     <div id="google-error" style="color: red; display: none;"></div>
+    <div id="google-message" style="color: green; display: none;"></div>
 </div>
 
 <!-- Conteneur principal de l'application (masqué avant connexion) -->
