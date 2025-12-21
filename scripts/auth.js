@@ -2,25 +2,23 @@
 // Module d'authentification Firebase pour CrabGest
 // Gère : inscription, connexion, validation admin, écoute d'état
 
-// Initialisation différée pour éviter les conflits
-let auth;
-let firestoreDb;
+
+let auth; // Ne pas redéclarer firestoreDb, on utilisera celle de DB
 
 function initializeAuth(firestoreInstance) {
     if (!firebase.apps.length) {
         const firebaseConfig = {
-               apiKey: "AIzaSyC1ZP89QSoWubkcnMJJ6cinIAlFXXnTefU",
-                authDomain: "crabbrewgest.firebaseapp.com",
-                projectId: "crabbrewgest",
-                storageBucket: "crabbrewgest.firebasestorage.app",
-                messagingSenderId: "156226949050",
-                appId: "1:156226949050:web:52b3e666cc31e7963d5783",
-                measurementId: "G-MY8FH7L6K1"
+            apiKey: "AIzaSyC1ZP89QSoWubkcnMJJ6cinIAlFXXnTefU",
+            authDomain: "crabbrewgest.firebaseapp.com",
+            projectId: "crabbrewgest",
+            storageBucket: "crabbrewgest.firebasestorage.app",
+            messagingSenderId: "156226949050",
+            appId: "1:156226949050:web:52b3e666cc31e7963d5783",
+            measurementId: "G-MY8FH7L6K1"
         };
         firebase.initializeApp(firebaseConfig);
     }
     auth = firebase.auth();
-    firestoreDb = firestoreInstance;
     console.log("[Auth] Module d'authentification initialisé.");
 }
 
@@ -31,8 +29,8 @@ async function signUpWithEmail(email, password, displayName) {
         const userCredential = await auth.createUserWithEmailAndPassword(email, password);
         const user = userCredential.user;
 
-        // Créer un document utilisateur dans Firestore (non validé par défaut)
-        await firestoreDb.collection('users').doc(user.uid).set({
+        // Utiliser firestoreDb passé en paramètre via initializeAuth
+        await firestoreInstance.collection('users').doc(user.uid).set({
             email: user.email,
             displayName: displayName,
             validated: false,
@@ -41,13 +39,16 @@ async function signUpWithEmail(email, password, displayName) {
         });
 
         await user.sendEmailVerification();
-        await auth.signOut(); // Déconnecter après inscription
+        await auth.signOut();
         return { success: true, message: "Inscription réussie. Votre compte sera validé par un administrateur." };
     } catch (error) {
         console.error("[Auth] Erreur d'inscription:", error);
         return { success: false, message: error.message };
     }
 }
+
+// ... (le reste du fichier reste inchangé, mais remplacez toutes les occurrences de firestoreDb par firestoreInstance)
+
 
 // Connexion avec email/mot de passe
 async function signInWithEmail(email, password) {
@@ -57,7 +58,7 @@ async function signInWithEmail(email, password) {
         const user = userCredential.user;
 
         // Vérifier la validation
-        const userDoc = await firestoreDb.collection('users').doc(user.uid).get();
+        const userDoc = await firestoreDBAuth.collection('users').doc(user.uid).get();
         if (!userDoc.exists || !userDoc.data().validated) {
             await auth.signOut();
             return { success: false, message: "Compte non validé. Contactez un administrateur." };
@@ -79,9 +80,9 @@ async function signInWithGoogle() {
         const user = userCredential.user;
 
         // Vérifier/Créer le document utilisateur
-        const userDoc = await firestoreDb.collection('users').doc(user.uid).get();
+        const userDoc = await firestoreDBAuth.collection('users').doc(user.uid).get();
         if (!userDoc.exists) {
-            await firestoreDb.collection('users').doc(user.uid).set({
+            await firestoreDBAuth.collection('users').doc(user.uid).set({
                 email: user.email,
                 displayName: user.displayName,
                 validated: false,
@@ -116,7 +117,7 @@ async function signOut() {
 // Valider un utilisateur (réservé admin)
 async function validateUser(uid) {
     try {
-        await firestoreDb.collection('users').doc(uid).update({ validated: true });
+        await firestoreDBAuth.collection('users').doc(uid).update({ validated: true });
         console.log(`[Auth] Utilisateur ${uid} validé.`);
         return { success: true };
     } catch (error) {
@@ -128,7 +129,7 @@ async function validateUser(uid) {
 // Lister les utilisateurs non validés (réservé admin)
 async function getUnvalidatedUsers() {
     try {
-        const snapshot = await firestoreDb.collection('users').where('validated', '==', false).get();
+        const snapshot = await firestoreDBAuth.collection('users').where('validated', '==', false).get();
         const users = snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() }));
         return { success: true, users };
     } catch (error) {
@@ -141,7 +142,7 @@ async function getUnvalidatedUsers() {
 function onAuthStateChanged(callback) {
     return auth.onAuthStateChanged(async (user) => {
         if (user) {
-            const userDoc = await firestoreDb.collection('users').doc(user.uid).get();
+            const userDoc = await firestoreDBAuth.collection('users').doc(user.uid).get();
             callback(userDoc.exists && userDoc.data().validated ? { loggedIn: true, user: { uid: user.uid, ...userDoc.data() } } : { loggedIn: false });
         } else {
             callback({ loggedIn: false });

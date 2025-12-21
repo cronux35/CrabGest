@@ -2,29 +2,33 @@ document.addEventListener('DOMContentLoaded', async function() {
     // =============================================
     // 1. Initialisation de l'application et Auth
     // =============================================
+     // Attendre que DB soit disponible
+    function waitForDB() {
+        if (window.DB && window.DB.initializeFirestore) {
+            initializeApp();
+        } else {
+            setTimeout(waitForDB, 100);
+        }
+    }
+
     async function initializeApp() {
         try {
-            // Initialiser Firestore et Auth
             const firestoreDb = window.DB.initializeFirestore();
-            window.Auth.initialize(firestoreDb);
+            window.Auth.initialize(firestoreDb); // Passer l'instance à Auth
 
-            // Écouter les changements d'état d'authentification
             window.Auth.onAuthStateChanged(async (authState) => {
                 if (authState.loggedIn) {
                     console.log("[App] Utilisateur connecté:", authState.user);
                     await showAppUI(authState.user);
-                    await initData(); // Charger les données seulement si authentifié
+                    await initData();
                 } else {
-                    console.log("[App] Aucun utilisateur connecté. Affichage du formulaire d'authentification.");
                     showAuthUI();
                 }
             });
-
-            // Configurer les événements UI pour l'authentification
             setupAuthEventListeners();
         } catch (error) {
-            console.error("[App] Erreur lors de l'initialisation:", error);
-            alert("Erreur d'initialisation. Voir la console pour plus de détails.");
+            console.error("[App] Erreur d'initialisation:", error);
+            alert("Erreur d'initialisation. Voir la console.");
         }
     }
 
@@ -221,4 +225,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         console.error("[App] Erreur fatale:", error);
         alert("Impossible de démarrer l'application. Veuillez actualiser la page.");
     });
+    
+waitForDB(); // Lancer la vérification
 });
