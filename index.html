@@ -7,8 +7,8 @@
     <!-- CSP pour éviter les blocages -->
     <meta http-equiv="Content-Security-Policy" content="
     default-src 'self';
-    script-src 'self' https://cdnjs.cloudflare.com https://www.gstatic.com https://cdn.firebase.com https://www.googletagmanager.com 'unsafe-inline' 'unsafe-eval';
-    connect-src 'self' https://cdnjs.cloudflare.com https://www.gstatic.com https://*.firebaseio.com https://firebase.googleapis.com https://firebaseinstallations.googleapis.com https://*.googleapis.com https://*.google-analytics.com https://*.analytics.google.com;
+    script-src 'self' https://cdnjs.cloudflare.com https://www.gstatic.com https://cdn.firebase.com https://apis.google.com https://www.googletagmanager.com 'unsafe-inline' 'unsafe-eval';
+    connect-src 'self' https://apis.google.com https://cdnjs.cloudflare.com https://www.gstatic.com https://*.firebaseio.com https://firebase.googleapis.com https://firebaseinstallations.googleapis.com https://*.googleapis.com https://*.google-analytics.com https://*.analytics.google.com;
     img-src 'self' data: https://*.googleapis.com https://firebase.storage.googleapis.com https://upload.wikimedia.org;
     style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
     font-src 'self' https://fonts.gstatic.com;
@@ -118,6 +118,7 @@
             <p><a href="#" id="show-login">Déjà un compte ? Se connecter</a></p>
         </div>
     </div>
+    <div id="google-error" style="color: red; display: none;"></div>
 </div>
 
 <!-- Conteneur principal de l'application (masqué avant connexion) -->

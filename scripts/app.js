@@ -188,14 +188,25 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        document.getElementById('google-login')?.addEventListener('click', async () => {
-            if (!window.Auth?.signInWithGoogle) {
-                alert("Connexion Google non disponible.");
-                return;
-            }
-            const result = await window.Auth.signInWithGoogle();
-            if (!result.success) alert(result.message);
-        });
+            // Connexion avec Google
+            document.getElementById('google-login')?.addEventListener('click', async () => {
+                try {
+                    const result = await window.Auth.signInWithGoogle();
+                    if (!result.success) {
+                        const errorElement = document.getElementById('google-error');
+                        if (errorElement) {
+                            errorElement.textContent = result.message;
+                            errorElement.style.display = 'block';
+                        } else {
+                            alert(result.message);
+                        }
+                    }
+                } catch (error) {
+                    console.error("[App] Erreur inattendue avec Google:", error);
+                    alert("Une erreur inattendue est survenue. Veuillez réessayer.");
+                }
+            });
+
 
         document.getElementById('logout')?.addEventListener('click', async () => {
             if (window.Auth?.signOut) {
