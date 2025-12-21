@@ -1,22 +1,10 @@
 // auth.js
-// Module d'authentification Firebase pour CrabGest
-// Gère : inscription, connexion, validation admin, écoute d'état
+let auth;
 
-
-let auth; // Ne pas redéclarer firestoreDb, on utilisera celle de DB
-
-function initializeAuth(firestoreInstance) {
-    if (!firebase.apps.length) {
-        const firebaseConfig = {
-            apiKey: "AIzaSyC1ZP89QSoWubkcnMJJ6cinIAlFXXnTefU",
-            authDomain: "crabbrewgest.firebaseapp.com",
-            projectId: "crabbrewgest",
-            storageBucket: "crabbrewgest.firebasestorage.app",
-            messagingSenderId: "156226949050",
-            appId: "1:156226949050:web:52b3e666cc31e7963d5783",
-            measurementId: "G-MY8FH7L6K1"
-        };
-        firebase.initializeApp(firebaseConfig);
+function initializeAuth() {
+    if (typeof firebase === 'undefined') {
+        console.error("[Auth] Firebase non chargé.");
+        return;
     }
     auth = firebase.auth();
     console.log("[Auth] Module d'authentification initialisé.");
@@ -25,12 +13,16 @@ function initializeAuth(firestoreInstance) {
 // Inscription avec email/mot de passe
 async function signUpWithEmail(email, password, displayName) {
     try {
-        console.log(`[Auth] Tentative d'inscription pour ${email}`);
+        if (!window.DB || !window.DB.initializeFirestore) {
+            throw new Error("DB non initialisé. Vérifiez que db.js est chargé.");
+        }
+        const firestoreDb = window.DB.initializeFirestore();
+        if (!firestoreDb) throw new Error("Firestore non disponible.");
+
         const userCredential = await auth.createUserWithEmailAndPassword(email, password);
         const user = userCredential.user;
 
-        // Utiliser firestoreDb passé en paramètre via initializeAuth
-        await firestoreInstance.collection('users').doc(user.uid).set({
+        await firestoreDb.collection('users').doc(user.uid).set({
             email: user.email,
             displayName: displayName,
             validated: false,
@@ -47,18 +39,16 @@ async function signUpWithEmail(email, password, displayName) {
     }
 }
 
-// ... (le reste du fichier reste inchangé, mais remplacez toutes les occurrences de firestoreDb par firestoreInstance)
-
-
 // Connexion avec email/mot de passe
 async function signInWithEmail(email, password) {
     try {
-        console.log(`[Auth] Tentative de connexion pour ${email}`);
+        if (!auth) throw new Error("Auth non initialisé.");
+
         const userCredential = await auth.signInWithEmailAndPassword(email, password);
         const user = userCredential.user;
 
-        // Vérifier la validation
-        const userDoc = await firestoreDBAuth.collection('users').doc(user.uid).get();
+        const firestoreDb = window.DB.initializeFirestore();
+        const userDoc = await firestoreDb.collection('users').doc(user.uid).get();
         if (!userDoc.exists || !userDoc.data().validated) {
             await auth.signOut();
             return { success: false, message: "Compte non validé. Contactez un administrateur." };
@@ -74,15 +64,16 @@ async function signInWithEmail(email, password) {
 // Connexion avec Google
 async function signInWithGoogle() {
     try {
-        console.log("[Auth] Connexion via Google...");
+        if (!auth) throw new Error("Auth non initialisé.");
+
         const provider = new firebase.auth.GoogleAuthProvider();
         const userCredential = await auth.signInWithPopup(provider);
         const user = userCredential.user;
 
-        // Vérifier/Créer le document utilisateur
-        const userDoc = await firestoreDBAuth.collection('users').doc(user.uid).get();
+        const firestoreDb = window.DB.initializeFirestore();
+        const userDoc = await firestoreDb.collection('users').doc(user.uid).get();
         if (!userDoc.exists) {
-            await firestoreDBAuth.collection('users').doc(user.uid).set({
+            await firestoreDb.collection('users').doc(user.uid).set({
                 email: user.email,
                 displayName: user.displayName,
                 validated: false,
@@ -106,6 +97,7 @@ async function signInWithGoogle() {
 // Déconnexion
 async function signOut() {
     try {
+        if (!auth) throw new Error("Auth non initialisé.");
         await auth.signOut();
         return { success: true };
     } catch (error) {
@@ -117,7 +109,8 @@ async function signOut() {
 // Valider un utilisateur (réservé admin)
 async function validateUser(uid) {
     try {
-        await firestoreDBAuth.collection('users').doc(uid).update({ validated: true });
+        const firestoreDb = window.DB.initializeFirestore();
+        await firestoreDb.collection('users').doc(uid).update({ validated: true });
         console.log(`[Auth] Utilisateur ${uid} validé.`);
         return { success: true };
     } catch (error) {
@@ -129,7 +122,8 @@ async function validateUser(uid) {
 // Lister les utilisateurs non validés (réservé admin)
 async function getUnvalidatedUsers() {
     try {
-        const snapshot = await firestoreDBAuth.collection('users').where('validated', '==', false).get();
+        const firestoreDb = window.DB.initializeFirestore();
+        const snapshot = await firestoreDb.collection('users').where('validated', '==', false).get();
         const users = snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() }));
         return { success: true, users };
     } catch (error) {
@@ -140,9 +134,14 @@ async function getUnvalidatedUsers() {
 
 // Écouteur d'état d'authentification
 function onAuthStateChanged(callback) {
+    if (!auth) {
+        console.error("[Auth] Auth non initialisé.");
+        return;
+    }
     return auth.onAuthStateChanged(async (user) => {
         if (user) {
-            const userDoc = await firestoreDBAuth.collection('users').doc(user.uid).get();
+            const firestoreDb = window.DB.initializeFirestore();
+            const userDoc = await firestoreDb.collection('users').doc(user.uid).get();
             callback(userDoc.exists && userDoc.data().validated ? { loggedIn: true, user: { uid: user.uid, ...userDoc.data() } } : { loggedIn: false });
         } else {
             callback({ loggedIn: false });

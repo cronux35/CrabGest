@@ -1,8 +1,10 @@
+// db.js
 // Configuration pour IndexedDB
 let db;
 let dbReady = false;
 const dbName = 'CrabGestDB';
 const dbVersion = 2;
+let firestoreDb;
 
 // Stores disponibles pour IndexedDB
 const stores = [
@@ -13,8 +15,37 @@ const stores = [
     { name: 'ventes', keyPath: 'id', autoIncrement: true },
     { name: 'historique_stocks', keyPath: 'id', autoIncrement: true },
     { name: 'clients', keyPath: 'id', autoIncrement: true },
-    { name: 'declarations_douanes', keyPath: 'id', autoIncrement: true }
+    { name: 'declarations_douanes', keyPath: 'id', autoIncrement: true },
+    { name: 'users', keyPath: 'uid' }
 ];
+
+// Initialiser Firestore immédiatement
+function initializeFirestore() {
+    if (typeof firebase === 'undefined') {
+        console.error("[DB] Firebase non chargé. Vérifiez l'ordre des scripts.");
+        return null;
+    }
+    if (!firebase.apps.length) {
+        const firebaseConfig = {
+            apiKey: "AIzaSyC1ZP89QSoWubkcnMJJ6cinIAlFXXnTefU",
+                authDomain: "crabbrewgest.firebaseapp.com",
+                projectId: "crabbrewgest",
+                storageBucket: "crabbrewgest.firebasestorage.app",
+                messagingSenderId: "156226949050",
+                appId: "1:156226949050:web:52b3e666cc31e7963d5783",
+                measurementId: "G-MY8FH7L6K1"
+        };
+        firebase.initializeApp(firebaseConfig);
+        firestoreDb = firebase.firestore();
+        console.log("[DB] Firestore initialisé avec succès.");
+    } else {
+        firestoreDb = firebase.firestore();
+    }
+    return firestoreDb;
+}
+
+// Initialiser Firestore dès que le script est chargé
+const firestoreDbInstance = initializeFirestore();
 
 // Initialiser la base de données IndexedDB
 function openDB() {
@@ -112,94 +143,41 @@ function closeDB() {
     }
 }
 
-// Initialiser la base de données IndexedDB au chargement
-openDB().catch(error => {
-    console.error("[IndexedDB] Erreur initiale lors de l'ouverture de la base de données:", error);
-    if (error.name === 'InvalidStateError') {
-        closeDB();
-        setTimeout(openDB, 1000);
-    }
-});
-
-// Configuration pour Firestore
-let firestoreDb;
-
-function initializeFirestore() {
-    console.log("[Firestore] Initialisation de Firebase...");
-    const firebaseConfig = {
-            apiKey: "AIzaSyC1ZP89QSoWubkcnMJJ6cinIAlFXXnTefU",
-            authDomain: "crabbrewgest.firebaseapp.com",
-            projectId: "crabbrewgest",
-            storageBucket: "crabbrewgest.firebasestorage.app",
-            messagingSenderId: "156226949050",
-            appId: "1:156226949050:web:52b3e666cc31e7963d5783",
-            measurementId: "G-MY8FH7L6K1"
-    };
-
-    firebase.initializeApp(firebaseConfig);
-    firestoreDb = firebase.firestore();
-    console.log("[Firestore] Firebase initialisé avec succès.");
-}
-
-// Charger des données depuis Firestore
+// Charger des données depuis Firestore (avec fallback silencieux)
 async function loadDataFromFirestore(collectionName) {
-    if (!firestoreDb) {
-        console.log("[Firestore] Initialisation de Firestore avant chargement...");
-        initializeFirestore();
+    if (!firestoreDbInstance) {
+        console.warn(`[Firestore] Firestore non initialisé, chargement depuis IndexedDB pour '${collectionName}'.`);
+        return [];
     }
     try {
         console.log(`[Firestore] Chargement des données depuis la collection '${collectionName}'...`);
-        const querySnapshot = await firestoreDb.collection(collectionName).get();
-        const data = [];
-        querySnapshot.forEach((doc) => {
-            data.push({ id: doc.id, ...doc.data() });
-        });
-        console.log(`[Firestore] Données chargées depuis '${collectionName}':`, data);
-        return data;
+        const querySnapshot = await firestoreDbInstance.collection(collectionName).get();
+        return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     } catch (error) {
-        console.error(`[Firestore] Erreur lors du chargement des données pour '${collectionName}':`, error);
+        console.warn(`[Firestore] Accès refusé à ${collectionName}, utilisation du fallback IndexedDB.`, error);
         return [];
     }
 }
 
-// Sauvegarder des données dans Firestore
-async function saveDataToFirestore(collectionName, data) {
-    if (!firestoreDb) {
-        console.log("[Firestore] Initialisation de Firestore avant sauvegarde...");
-        initializeFirestore();
-    }
-    try {
-        console.log(`[Firestore] Sauvegarde des données dans '${collectionName}':`, data);
-        const docRef = await firestoreDb.collection(collectionName).add(data);
-        console.log(`[Firestore] Document écrit avec l'ID: ${docRef.id} dans '${collectionName}'.`);
-        return docRef.id;
-    } catch (error) {
-        console.error(`[Firestore] Erreur lors de la sauvegarde dans '${collectionName}':`, error);
-        throw error;
-    }
-}
-
-// Fonctions combinées pour charger les données
+// Charger des données (combiner Firestore et IndexedDB)
 async function loadData(storeName) {
-    console.log(`[DB] Chargement des données depuis '${storeName}' (Firestore puis IndexedDB si vide)...`);
-    let data = await loadDataFromFirestore(storeName);
-    if (data.length === 0) {
-        console.log(`[DB] Aucune donnée dans Firestore pour '${storeName}', chargement depuis IndexedDB...`);
-        data = await loadDataFromIndexedDB(storeName);
-    } else {
-        console.log(`[DB] Données chargées depuis Firestore pour '${storeName}'.`);
+    try {
+        const firestoreData = await loadDataFromFirestore(storeName);
+        if (firestoreData.length > 0) return firestoreData;
+    } catch (error) {
+        console.warn(`[DB] Erreur Firestore pour ${storeName}, fallback IndexedDB.`, error);
     }
-    return data;
+    return await loadDataFromIndexedDB(storeName);
 }
 
-// Fonctions combinées pour sauvegarder les données
+// Sauvegarder des données (Firestore + IndexedDB)
 async function saveData(storeName, data) {
     try {
+        if (!firestoreDbInstance) throw new Error("Firestore non disponible.");
         console.log(`[DB] Sauvegarde des données dans '${storeName}' (Firestore + IndexedDB)...`);
-        const firestoreId = await saveDataToFirestore(storeName, data);
-        await saveDataToIndexedDB(storeName, { ...data, id: firestoreId });
-        console.log(`[DB] Données sauvegardées avec succès dans '${storeName}' (ID Firestore: ${firestoreId}).`);
-        return firestoreId;
+        await firestoreDbInstance.collection(storeName).add(data);
+        await saveDataToIndexedDB(storeName, data);
+        console.log(`[DB] Données sauvegardées avec succès dans '${storeName}'.`);
     } catch (error) {
         console.error(`[DB] Erreur lors de la sauvegarde dans '${storeName}':`, error);
         throw error;
@@ -257,7 +235,10 @@ async function deleteItem(storeName, id) {
 }
 
 // Exporter les fonctions pour les rendre accessibles globalement
-window.loadData = loadData;
-window.saveData = saveData;
-window.updateItem = updateItem;
-window.deleteItem = deleteItem;
+window.DB = {
+    initializeFirestore: () => firestoreDbInstance,
+    loadData: loadData,
+    saveData: saveData,
+    updateItem: updateItem,
+    deleteItem: deleteItem
+};
