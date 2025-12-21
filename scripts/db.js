@@ -1,5 +1,4 @@
 // db.js
-// Configuration pour IndexedDB
 let db;
 let dbReady = false;
 const dbName = 'CrabGestDB';
@@ -27,13 +26,12 @@ function initializeFirestore() {
     }
     if (!firebase.apps.length) {
         const firebaseConfig = {
-            apiKey: "AIzaSyC1ZP89QSoWubkcnMJJ6cinIAlFXXnTefU",
-                authDomain: "crabbrewgest.firebaseapp.com",
-                projectId: "crabbrewgest",
-                storageBucket: "crabbrewgest.firebasestorage.app",
-                messagingSenderId: "156226949050",
-                appId: "1:156226949050:web:52b3e666cc31e7963d5783",
-                measurementId: "G-MY8FH7L6K1"
+            apiKey: "VOTRE_API_KEY",
+            authDomain: "VOTRE_AUTH_DOMAIN",
+            projectId: "VOTRE_PROJECT_ID",
+            storageBucket: "VOTRE_STORAGE_BUCKET",
+            messagingSenderId: "VOTRE_MESSAGING_SENDER_ID",
+            appId: "VOTRE_APP_ID"
         };
         firebase.initializeApp(firebaseConfig);
         firestoreDb = firebase.firestore();
@@ -175,9 +173,10 @@ async function saveData(storeName, data) {
     try {
         if (!firestoreDbInstance) throw new Error("Firestore non disponible.");
         console.log(`[DB] Sauvegarde des données dans '${storeName}' (Firestore + IndexedDB)...`);
-        await firestoreDbInstance.collection(storeName).add(data);
-        await saveDataToIndexedDB(storeName, data);
+        const docRef = await firestoreDbInstance.collection(storeName).add(data);
+        await saveDataToIndexedDB(storeName, { ...data, id: docRef.id });
         console.log(`[DB] Données sauvegardées avec succès dans '${storeName}'.`);
+        return docRef.id;
     } catch (error) {
         console.error(`[DB] Erreur lors de la sauvegarde dans '${storeName}':`, error);
         throw error;

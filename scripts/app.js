@@ -1,61 +1,35 @@
 document.addEventListener('DOMContentLoaded', function() {
-
-    // Gérer le résultat de la redirection Google Auth
-    async function checkRedirectResult() {
-        if (window.Auth?.handleRedirectResult) {
-            const result = await window.Auth.handleRedirectResult();
-            if (result.success) {
-                // Si la redirection a réussi, recharger la page pour déclencher onAuthStateChanged
-                window.location.reload();
-            } else if (result.message) {
-                alert(result.message);
-            }
-        }
-    }
-
-    // Appeler cette fonction au chargement
-    checkRedirectResult();
-
-    // =============================================
-    // 1. Initialisation de l'application et Auth
-    // =============================================
+    // Initialisation de l'application
     async function initializeApp() {
         try {
-            // Vérifier que DB est disponible
             if (!window.DB || !window.DB.initializeFirestore) {
                 throw new Error("DB non initialisé. Vérifiez que db.js est chargé avant app.js.");
             }
-
-            // Initialiser Auth
             if (!window.Auth || !window.Auth.initialize) {
-                throw new Error("Auth non disponible. Vérifiez que auth.js est chargé.");
+                throw new Error("Auth non disponible. Vérifiez que auth.js est chargé après db.js.");
             }
 
             window.Auth.initialize();
 
-            // Écouter les changements d'état d'authentification
             window.Auth.onAuthStateChanged(async (authState) => {
                 if (authState.loggedIn) {
                     console.log("[App] Utilisateur connecté:", authState.user);
                     await showAppUI(authState.user);
                     await initData();
                 } else {
-                    console.log("[App] Aucun utilisateur connecté. Affichage du formulaire d'authentification.");
+                    console.log("[App] Aucun utilisateur connecté.");
                     showAuthUI();
                 }
             });
 
-            // Configurer les événements UI pour l'authentification
             setupAuthEventListeners();
         } catch (error) {
-            console.error("[App] Erreur lors de l'initialisation:", error);
+            console.error("[App] Erreur d'initialisation:", error);
             alert("Erreur d'initialisation. Voir la console pour plus de détails.");
         }
     }
 
-    // =============================================
-    // 2. Initialisation des données
-    // =============================================
+    // Initialisation des données
     async function initData() {
         try {
             if (!window.DB || !window.DB.loadData || !window.DB.saveData) {
@@ -98,9 +72,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // =============================================
-    // 3. Gestion de l'UI d'authentification
-    // =============================================
+    // Gestion de l'UI d'authentification
     function showAuthUI() {
         const authContainer = document.getElementById('auth-container');
         const appContainer = document.getElementById('app-container');
@@ -139,10 +111,9 @@ document.addEventListener('DOMContentLoaded', function() {
         if (typeof chargerSelecteurBieresFermentation === 'function') chargerSelecteurBieresFermentation();
     }
 
-    // =============================================
-    // 4. Événements d'authentification
-    // =============================================
+    // Événements d'authentification
     function setupAuthEventListeners() {
+        // Basculer entre connexion et inscription
         document.getElementById('show-signup')?.addEventListener('click', (e) => {
             e.preventDefault();
             const loginForm = document.getElementById('login-form');
@@ -163,6 +134,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
+        // Connexion avec email/mot de passe
         document.getElementById('login-form')?.addEventListener('submit', async (e) => {
             e.preventDefault();
             if (!window.Auth?.signInWithEmail) {
@@ -176,9 +148,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             const result = await window.Auth.signInWithEmail(email, password);
-            if (!result.success) alert(result.message);
+            if (!result.success) {
+                const errorElement = document.getElementById('login-error');
+                if (errorElement) {
+                    errorElement.textContent = result.message;
+                    errorElement.style.display = 'block';
+                } else {
+                    alert(result.message);
+                }
+            }
         });
 
+        // Inscription avec email/mot de passe
         document.getElementById('signup-form')?.addEventListener('submit', async (e) => {
             e.preventDefault();
             if (!window.Auth?.signUpWithEmail) {
@@ -193,7 +174,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             const result = await window.Auth.signUpWithEmail(email, password, displayName);
-            alert(result.message);
+            const errorElement = document.getElementById('signup-error');
+            if (errorElement) {
+                errorElement.textContent = result.message;
+                errorElement.style.display = 'block';
+            } else {
+                alert(result.message);
+            }
             if (result.success && e.target.reset) {
                 const loginForm = document.getElementById('login-form');
                 const signupForm = document.getElementById('signup-form');
@@ -207,15 +194,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Connexion avec Google
         document.getElementById('google-login')?.addEventListener('click', async () => {
-            const errorElement = document.getElementById('google-error');
-            const messageElement = document.getElementById('google-message');
-
-            if (errorElement) errorElement.style.display = 'none';
-            if (messageElement) messageElement.style.display = 'none';
-
             try {
                 const result = await window.Auth.signInWithGoogle();
                 if (!result.success) {
+                    const errorElement = document.getElementById('google-error');
                     if (errorElement) {
                         errorElement.textContent = result.message;
                         errorElement.style.display = 'block';
@@ -224,24 +206,19 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
             } catch (error) {
-                console.error("[App] Erreur inattendue avec Google:", error);
-                if (errorElement) {
-                    errorElement.textContent = "Une erreur inattendue est survenue. Veuillez réessayer.";
-                    errorElement.style.display = 'block';
-                } else {
-                    alert("Une erreur est survenue. Veuillez réessayer.");
-                }
+                console.error("[App] Erreur Google:", error);
+                alert("Une erreur est survenue. Veuillez réessayer.");
             }
         });
 
-
-
+        // Déconnexion
         document.getElementById('logout')?.addEventListener('click', async () => {
             if (window.Auth?.signOut) {
                 await window.Auth.signOut();
             }
         });
 
+        // Validation d'un utilisateur (admin)
         window.validateUser = async function(uid) {
             if (!window.Auth?.validateUser) {
                 alert("Fonction de validation non disponible.");
@@ -257,9 +234,7 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
 
-    // =============================================
-    // 5. Charger les utilisateurs non validés
-    // =============================================
+    // Charger les utilisateurs non validés
     async function loadUnvalidatedUsers() {
         if (!window.Auth?.getUnvalidatedUsers) {
             console.error("[App] getUnvalidatedUsers non disponible.");
@@ -279,9 +254,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // =============================================
-    // 6. Logique existante (menu burger, onglets)
-    // =============================================
+    // Logique existante (menu burger, onglets)
     const menuBurger = document.getElementById('menuBurger');
     const mainNav = document.getElementById('mainNav');
     if (menuBurger && mainNav) {
@@ -306,10 +279,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // =============================================
-    // 7. Lancer l'initialisation
-    // =============================================
-    initializeApp().catch(error => {
-        console.error("[App] Erreur fatale:", error);
-    });
+    // Lancer l'initialisation
+    initializeApp();
 });
