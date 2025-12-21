@@ -74,41 +74,35 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Gestion de l'UI d'authentification
     function showAuthUI() {
-        const authContainer = document.getElementById('auth-container');
-        const appContainer = document.getElementById('app-container');
-        if (authContainer && appContainer) {
-            appContainer.style.display = 'none';
-            authContainer.style.display = 'block';
-        }
+        document.getElementById('auth-container').style.display = 'block';
+        document.getElementById('app-container').style.display = 'none';
     }
 
     async function showAppUI(user) {
-        const authContainer = document.getElementById('auth-container');
-        const appContainer = document.getElementById('app-container');
-        const adminPanel = document.getElementById('admin-panel');
-        const userDisplayName = document.getElementById('user-display-name');
-        const userEmail = document.getElementById('user-email');
+        document.getElementById('auth-container').style.display = 'none';
+        document.getElementById('app-container').style.display = 'block';
 
-        if (authContainer && appContainer) {
-            authContainer.style.display = 'none';
-            appContainer.style.display = 'block';
+        // Mettre à jour les informations utilisateur
+        document.getElementById('user-display-name').textContent = user.displayName || user.email;
+        document.getElementById('user-email').textContent = user.email;
+
+        // Gérer l'onglet Admin (visible uniquement pour les admins)
+        const adminTab = document.getElementById('admin-tab');
+        if (adminTab) {
+            adminTab.style.display = (user.role === 'admin') ? 'block' : 'none';
         }
 
-        if (userDisplayName && userEmail) {
-            userDisplayName.textContent = user.displayName || user.email;
-            userEmail.textContent = user.email;
-        }
-
-        if (adminPanel) {
-            adminPanel.style.display = (user.role === 'admin') ? 'block' : 'none';
-            if (user.role === 'admin') await loadUnvalidatedUsers();
-        }
-
+        // Charger les données par défaut (premier onglet actif)
         if (typeof chargerDonnees === 'function') chargerDonnees();
         if (typeof afficherBieres === 'function') afficherBieres();
         if (typeof chargerDonneesRetrait === 'function') chargerDonneesRetrait();
         if (typeof afficherHistoriqueRetraits === 'function') afficherHistoriqueRetraits();
         if (typeof chargerSelecteurBieresFermentation === 'function') chargerSelecteurBieresFermentation();
+
+        // Charger les utilisateurs non validés (uniquement pour les admins)
+        if (user.role === 'admin') {
+            await loadUnvalidatedUsers();
+        }
     }
 
     // Événements d'authentification
@@ -116,22 +110,14 @@ document.addEventListener('DOMContentLoaded', function() {
         // Basculer entre connexion et inscription
         document.getElementById('show-signup')?.addEventListener('click', (e) => {
             e.preventDefault();
-            const loginForm = document.getElementById('login-form');
-            const signupForm = document.getElementById('signup-form');
-            if (loginForm && signupForm) {
-                loginForm.style.display = 'none';
-                signupForm.style.display = 'block';
-            }
+            document.getElementById('login-form').style.display = 'none';
+            document.getElementById('signup-form').style.display = 'block';
         });
 
         document.getElementById('show-login')?.addEventListener('click', (e) => {
             e.preventDefault();
-            const loginForm = document.getElementById('login-form');
-            const signupForm = document.getElementById('signup-form');
-            if (loginForm && signupForm) {
-                signupForm.style.display = 'none';
-                loginForm.style.display = 'block';
-            }
+            document.getElementById('signup-form').style.display = 'none';
+            document.getElementById('login-form').style.display = 'block';
         });
 
         // Connexion avec email/mot de passe
@@ -182,13 +168,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 alert(result.message);
             }
             if (result.success && e.target.reset) {
-                const loginForm = document.getElementById('login-form');
-                const signupForm = document.getElementById('signup-form');
-                if (loginForm && signupForm) {
-                    signupForm.style.display = 'none';
-                    loginForm.style.display = 'block';
-                    e.target.reset();
-                }
+                document.getElementById('signup-form').style.display = 'none';
+                document.getElementById('login-form').style.display = 'block';
+                e.target.reset();
             }
         });
 
@@ -216,6 +198,22 @@ document.addEventListener('DOMContentLoaded', function() {
             if (window.Auth?.signOut) {
                 await window.Auth.signOut();
             }
+        });
+
+        // Gestion des onglets
+        document.querySelectorAll('.tab-button').forEach(function(button) {
+            button.addEventListener('click', function() {
+                document.querySelectorAll('.tab-button').forEach(function(b) {
+                    b.classList.remove('active');
+                });
+                document.querySelectorAll('.tab').forEach(function(t) {
+                    t.classList.remove('active');
+                });
+                button.classList.add('active');
+                const tabId = button.getAttribute('data-tab');
+                const tab = document.getElementById(tabId);
+                if (tab) tab.classList.add('active');
+            });
         });
 
         // Validation d'un utilisateur (admin)
@@ -253,31 +251,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 "<p>Aucun utilisateur en attente de validation.</p>";
         }
     }
-
-    // Logique existante (menu burger, onglets)
-    const menuBurger = document.getElementById('menuBurger');
-    const mainNav = document.getElementById('mainNav');
-    if (menuBurger && mainNav) {
-        menuBurger.addEventListener('click', function() {
-            menuBurger.classList.toggle('active');
-            mainNav.classList.toggle('active');
-        });
-    }
-
-    document.querySelectorAll('.tab-button').forEach(function(button) {
-        button.addEventListener('click', function() {
-            document.querySelectorAll('.tab-button').forEach(function(b) {
-                b.classList.remove('active');
-            });
-            document.querySelectorAll('.tab').forEach(function(t) {
-                t.classList.remove('active');
-            });
-            button.classList.add('active');
-            const tabId = button.getAttribute('data-tab');
-            const tab = document.getElementById(tabId);
-            if (tab) tab.classList.add('active');
-        });
-    });
 
     // Lancer l'initialisation
     initializeApp();
