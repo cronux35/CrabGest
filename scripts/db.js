@@ -169,6 +169,26 @@ async function loadData(storeName) {
     return await loadDataFromIndexedDB(storeName);
 }
 
+// Ajouter un élément (utilisé pour les ingrédients et les bières)
+async function addItem(storeName, item) {
+    try {
+        if (!firestoreDbInstance) throw new Error("Firestore non disponible.");
+        if (typeof item !== 'object' || Array.isArray(item)) {
+            console.error(`[DB] L'élément pour ${storeName} doit être un objet.`);
+            throw new Error("L'élément doit être un objet.");
+        }
+        console.log(`[DB] Ajout d'un élément dans '${storeName}':`, item);
+        const docRef = await firestoreDbInstance.collection(storeName).add(item);
+        await saveDataToIndexedDB(storeName, { ...item, id: docRef.id });
+        console.log(`[DB] Élément ajouté avec succès dans '${storeName}'.`);
+        return docRef.id;
+    } catch (error) {
+        console.error(`[DB] Erreur lors de l'ajout de l'élément dans '${storeName}':`, error);
+        throw error;
+    }
+}
+
+
 // Sauvegarder des données (Firestore + IndexedDB)
 async function saveData(storeName, data) {
     try {
@@ -259,5 +279,6 @@ window.DB = {
     loadData: loadData,
     saveData: saveData,
     updateItem: updateItem,
+    addIteam: addItem,
     deleteItem: deleteItem
 };
