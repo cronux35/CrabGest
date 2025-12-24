@@ -130,41 +130,44 @@ function attachEventListeners() {
         }
     };
 }
+
 async function retirerStockPourBiere() {
     const idIngredient = document.getElementById('select-ingredient-retrait')?.value;
     const idBiere = document.getElementById('select-biere-retrait')?.value;
     const quantite = parseFloat(document.getElementById('quantite-retrait')?.value);
     const errorElement = document.getElementById('retrait-error');
 
+    // Réinitialiser les messages d'erreur
     if (errorElement) errorElement.textContent = '';
 
+    // Validations
     if (!idIngredient || !idBiere || isNaN(quantite) || quantite <= 0) {
         if (errorElement) errorElement.textContent = "Veuillez sélectionner un ingrédient, une bière et une quantité valide.";
         return;
     }
 
     try {
+        // Charger les données nécessaires
         const stocks = await loadData('stocks').catch(() => []);
         const biere = await loadItemById('bieres', idBiere).catch(() => null);
         const stock = stocks.find(s => s.id == idIngredient);
 
+        // Vérifications
         if (!stock) {
             if (errorElement) errorElement.textContent = "Ingrédient non trouvé.";
             return;
         }
-
         if (!biere) {
             if (errorElement) errorElement.textContent = "Bière non trouvée.";
             return;
         }
-
         if (quantite > stock.quantite) {
             if (errorElement) errorElement.textContent = `Quantité insuffisante en stock (disponible: ${stock.quantite}g).`;
             return;
         }
 
         // Mettre à jour le stock
-        const updatedStock = {...stock};
+        const updatedStock = { ...stock };
         updatedStock.quantite -= quantite;
         await updateItem('stocks', updatedStock);
 
@@ -183,13 +186,13 @@ async function retirerStockPourBiere() {
         };
         await addItem('historique_stocks', historiqueEntry);
 
-        // Mettre à jour la bière
+        // Mettre à jour la bière (ajouter l'ingrédient utilisé)
         if (!biere.ingredients) biere.ingredients = [];
-        const ingredientExist = biere.ingredients.find(ing => ing.id === stock.id);
+        const ingredientExistIndex = biere.ingredients.findIndex(ing => ing.id === stock.id);
 
-        if (ingredientExist) {
-            ingredientExist.quantite_utilisee = (ingredientExist.quantite_utilisee || 0) + quantite;
-            ingredientExist.date_dernier_retrait = new Date().toISOString();
+        if (ingredientExistIndex !== -1) {
+            biere.ingredients[ingredientExistIndex].quantite_utilisee = (biere.ingredients[ingredientExistIndex].quantite_utilisee || 0) + quantite;
+            biere.ingredients[ingredientExistIndex].date_dernier_retrait = new Date().toISOString();
         } else {
             biere.ingredients.push({
                 id: stock.id,
@@ -204,7 +207,9 @@ async function retirerStockPourBiere() {
         // Rafraîchir les données
         afficherStocks();
         chargerDonneesRetrait();
-        afficherHistoriqueRetraits(); // <-- Ajout de cette ligne pour rafraîchir l'historique
+        afficherHistoriqueRetraits();
+
+        // Réinitialiser le formulaire
         document.getElementById('quantite-retrait').value = '';
 
         alert(`Retrait de ${quantite}g de ${stock.nom} pour la bière "${biere.nom}" enregistré avec succès.`);
@@ -213,6 +218,7 @@ async function retirerStockPourBiere() {
         if (errorElement) errorElement.textContent = "Une erreur est survenue. Veuillez réessayer.";
     }
 }
+
 
 
 // Afficher l'historique des retraits liés aux bières
