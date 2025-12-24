@@ -37,23 +37,23 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const stocks = await window.DB.loadData('stocks').catch(() => []);
-            if (stocks.length === 0) {
-                const defaultStocks = [
-                    {
-                        type: "Malt",
-                        nom: "Pilsen",
-                        lot: "2023-001",
-                        quantite: 10000,
-                        fournisseur: "Château",
-                        specification: "3.5 EBC",
-                        annee_recolte: null,
-                        pourcentage_aa: null,
-                        notes: "Malt de base pour les bières blondes et IPA.",
-                        conditionnement: "Sac de 25 kg"
-                    }
-                ];
-                await window.DB.saveData('stocks', defaultStocks);
-            }
+            // if (stocks.length === 0) {
+            //     const defaultStocks = [
+            //         {
+            //             type: "Malt",
+            //             nom: "Pilsen",
+            //             lot: "2023-001",
+            //             quantite: 10000,
+            //             fournisseur: "Château",
+            //             specification: "3.5 EBC",
+            //             annee_recolte: null,
+            //             pourcentage_aa: null,
+            //             notes: "Malt de base pour les bières blondes et IPA.",
+            //             conditionnement: "Sac de 25 kg"
+            //         }
+            //     ];
+            //     await window.DB.saveData('stocks', defaultStocks);
+            // }
 
             const storesToInit = ['bieres', 'fermentations', 'conditionnements', 'ventes', 'historique_stocks', 'clients', 'declarations_douanes'];
             for (const store of storesToInit) {
