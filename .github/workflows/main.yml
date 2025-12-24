@@ -1,0 +1,30 @@
+name: Deploy to Firebase Hosting
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+        
+      - name: Replace Firebase Config Placeholders
+        run: |
+          # Remplace les placeholders dans db.js (si vous utilisez cette méthode)
+          sed -i "s|__FIREBASE_API_KEY__|${{ secrets.FIREBASE_API_KEY }}|g" scripts/db.js
+          sed -i "s|__FIREBASE_AUTHDOMAIN__|${{ secrets.FIREBASE_AUTH_DOMAIN }}|g" scripts/db.js
+          sed -i "s|__FIREBASE_PROJECTID__|${{ secrets.FIREBASE_PROJECTID }}|g" scripts/db.js
+          sed -i "s|__FIREBASE_STORAGEBUCKET__|${{ secrets.FIREBASE_STORAGEBUCKET }}|g" scripts/db.js
+          sed -i "s|__FIREBASE_SENDERID__|${{ secrets.FIREBASE_SENDERID }}|g" scripts/db.js
+          sed -i "s|__FIREBASE_APID__|${{ secrets.FIREBASE_APID }}|g" scripts/db.js
+          sed -i "s|__FIREBASE_MEASUREID__|${{ secrets.FIREBASE_MEASUREID }}|g" scripts/db.js
+
+      - name: Deploy to Firebase Hosting
+        run: firebase deploy --only hosting --project "${{ secrets.FIREBASE_PROJECTID }}" --token "${{ secrets.FIREBASE_TOKEN }}"
+          

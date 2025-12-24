@@ -1,0 +1,12 @@
+{
+  "name": "crabbrewgest-static",
+  "version": "1.0.0",
+  "description": "Static application for Crabbrewgest",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx http-server ." 
+  },
+  "dependencies": {
+    "http-server": "^14.1.1" 
+  }
+}
