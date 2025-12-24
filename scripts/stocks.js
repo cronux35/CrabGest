@@ -58,10 +58,43 @@ async function chargerDonneesRetrait() {
     }
 }
 
+// Charger les types d'ingrédients disponibles
+async function chargerTypesIngredients() {
+    const stocks = await loadData('stocks');
+    const types = [...new Set(stocks.map(s => s.type))];
+    const selectType = document.getElementById('select-type-ingredient');
+    selectType.innerHTML = '<option value="">-- Sélectionnez un type --</option>';
+    types.forEach(type => {
+        const option = document.createElement('option');
+        option.value = type;
+        option.textContent = type;
+        selectType.appendChild(option);
+    });
+}
+
+// Charger les ingrédients en fonction du type sélectionné
+async function chargerIngredientsParType() {
+    const type = document.getElementById('select-type-ingredient').value;
+    const selectIngredient = document.getElementById('select-ingredient-retrait');
+    selectIngredient.innerHTML = '<option value="">-- Sélectionnez un ingrédient --</option>';
+
+    if (!type) return;
+
+    const stocks = await loadData('stocks');
+    const ingredientsFiltres = stocks.filter(s => s.type === type && s.quantite > 0);
+
+    ingredientsFiltres.forEach(ingredient => {
+        const option = document.createElement('option');
+        option.value = ingredient.id;
+        option.textContent = `${ingredient.nom} (${ingredient.quantite}g)`;
+        selectIngredient.appendChild(option);
+    });
+}
+
 async function afficherStocks() {
     try {
         const stocks = await loadData('stocks').catch(() => []);
-        stockTableBody = document.querySelector('#table-stocks tbody');
+        const stockTableBody = document.querySelector('#table-stocks tbody');
 
         if (stockTableBody) {
             stockTableBody.innerHTML = stocks.map(stock => `
@@ -94,6 +127,7 @@ async function afficherStocks() {
         console.error("Erreur lors de l'affichage des stocks:", error);
     }
 }
+
 
 function attachEventListeners() {
     if (!stockTableBody) return;
@@ -205,12 +239,13 @@ async function retirerStockPourBiere() {
         await updateItem('bieres', biere);
 
         // Rafraîchir les données
-        afficherStocks();
+        await afficherStocks(); // Appel unique et asynchrone pour rafraîchir le tableau
         chargerDonneesRetrait();
         afficherHistoriqueRetraits();
 
         // Réinitialiser le formulaire
         document.getElementById('quantite-retrait').value = '';
+        document.getElementById('select-ingredient-retrait').value = '';
 
         alert(`Retrait de ${quantite}g de ${stock.nom} pour la bière "${biere.nom}" enregistré avec succès.`);
     } catch (error) {
@@ -387,4 +422,11 @@ async function supprimerStock(id) {
     }
 }
 
-document.addEventListener('DOMContentLoaded', chargerDonnees);
+// Appeler cette fonction au chargement de la page
+document.addEventListener('DOMContentLoaded', () => {
+    chargerDonnees();
+    chargerTypesIngredients();
+    // Charger les bières pour le retrait
+    chargerBieresPourRetrait();
+});
+

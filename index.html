@@ -169,6 +169,12 @@
                 <div class="card">
                     <h3>Retirer du stock pour une bière</h3>
                     <div class="form-group">
+                        <label for="select-type-ingredient">Type d'ingrédient :</label>
+                        <select id="select-type-ingredient" class="form-control" onchange="chargerIngredientsParType()">
+                            <option value="">-- Sélectionnez un type --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
                         <select id="select-ingredient-retrait" class="form-control">
                             <option value="">-- Ingrédient --</option>
                         </select>
