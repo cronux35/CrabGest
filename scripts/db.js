@@ -273,6 +273,26 @@ async function deleteItem(storeName, id) {
     }
 }
 
+// Dans db.js
+async function loadItemById(storeName, id) {
+    try {
+        if (!firestoreDbInstance) throw new Error("Firestore non disponible.");
+        const doc = await firestoreDbInstance.collection(storeName).doc(id).get();
+        if (!doc.exists) {
+            console.error(`[DB] Aucun document trouvé dans '${storeName}' avec l'ID ${id}.`);
+            return null;
+        }
+        return { id: doc.id, ...doc.data() };
+    } catch (error) {
+        console.error(`[DB] Erreur lors du chargement de l'élément depuis '${storeName}':`, error);
+        throw error;
+    }
+}
+
+// Exporter loadItemById pour qu'elle soit accessible globalement
+window.loadItemById = loadItemById;
+
+
 // Exporter les fonctions pour les rendre accessibles globalement
 window.DB = {
     initializeFirestore: () => firestoreDbInstance,
@@ -280,5 +300,6 @@ window.DB = {
     saveData: saveData,
     updateItem: updateItem,
     addIteam: addItem,
+    loadItemById: loadItemById,
     deleteItem: deleteItem
 };
