@@ -173,16 +173,35 @@ async function loadData(storeName) {
 async function saveData(storeName, data) {
     try {
         if (!firestoreDbInstance) throw new Error("Firestore non disponible.");
-        console.log(`[DB] Sauvegarde des données dans '${storeName}' (Firestore + IndexedDB)...`);
-        const docRef = await firestoreDbInstance.collection(storeName).add(data);
-        await saveDataToIndexedDB(storeName, { ...data, id: docRef.id });
-        console.log(`[DB] Données sauvegardées avec succès dans '${storeName}'.`);
-        return docRef.id;
+
+        if (Array.isArray(data)) {
+            // Si data est un tableau, sauvegarder chaque élément individuellement
+            const ids = [];
+            for (const item of data) {
+                if (typeof item !== 'object' || Array.isArray(item)) {
+                    console.error(`[DB] Chaque élément des données pour ${storeName} doit être un objet.`);
+                    continue;
+                }
+                const docRef = await firestoreDbInstance.collection(storeName).add(item);
+                await saveDataToIndexedDB(storeName, { ...item, id: docRef.id });
+                ids.push(docRef.id);
+                console.log(`[DB] Élément sauvegardé avec succès dans '${storeName}' (ID: ${docRef.id}).`);
+            }
+            return ids;
+        } else {
+            // Si data est un objet, le sauvegarder directement
+            console.log(`[DB] Sauvegarde des données dans '${storeName}' (Firestore + IndexedDB)...`);
+            const docRef = await firestoreDbInstance.collection(storeName).add(data);
+            await saveDataToIndexedDB(storeName, { ...data, id: docRef.id });
+            console.log(`[DB] Données sauvegardées avec succès dans '${storeName}'.`);
+            return docRef.id;
+        }
     } catch (error) {
         console.error(`[DB] Erreur lors de la sauvegarde dans '${storeName}':`, error);
         throw error;
     }
 }
+
 
 // Mettre à jour un élément dans IndexedDB
 async function updateItem(storeName, item) {
