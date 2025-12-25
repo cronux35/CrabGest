@@ -136,19 +136,23 @@ function attachEventListeners() {
         if (!target) return;
 
         const action = target.getAttribute('data-action');
+        console.
         const id = parseInt(target.closest('tr').getAttribute('data-id'));
 
         try {
             const stocks = await DB.loadData('stocks').catch(() => []);
             const stock = stocks.find(s => s.id === id);
+            console
 
             if (!stock) return;
 
             switch (action) {
                 case 'edit':
+                    console.log
                     openEditIngredientModal('stock', id, stock);
                     break;
                 case 'delete':
+                    console.log("Suppression de l'ingrédient avec l'ID :", id);
                     openDeleteModal(
                         `Voulez-vous vraiment supprimer "${stock.nom}" ?`,
                         async () => {
@@ -163,6 +167,7 @@ function attachEventListeners() {
                     );
                     break;
                 case 'notes':
+                    console.log
                     const nom = stock.nom;
                     const notes = stock.notes || 'Aucune note';
                     alert(`Notes pour ${nom}:\n${notes}`);
