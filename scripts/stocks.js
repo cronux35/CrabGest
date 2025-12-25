@@ -141,7 +141,8 @@ function attachEventListeners() {
         const id = parseInt(target.closest('tr').getAttribute('data-id'));
 
         try {
-            const stocks = await DB.loadData('stocks').catch(() => []);
+            const stocks = await loadData('stocks').catch(() => []);
+            console.log("Stocks chargés :", stocks)
             const stock = stocks.find(s => s.id === id);
             console.log("Stock trouvé pour l'ID :", stock);
         
