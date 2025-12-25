@@ -205,7 +205,7 @@ function openEditBiereModal(id) {
                         `).join('') : '<div>Aucun ingrédient utilisé</div>'}
                 </div>
             </div>
-            <button type="button" onclick="saveEditBiere(${biere.id})" class="btn btn-primary">
+            <button type="button" onclick="saveEditBiere('${biere.id}')" class="btn btn-primary">
                 Enregistrer
             </button>
         `;
@@ -215,6 +215,7 @@ function openEditBiereModal(id) {
         console.error("Erreur lors du chargement de la bière:", error);
     });
 }
+
 
 // Initialisation
 document.addEventListener('DOMContentLoaded', afficherBieres);
