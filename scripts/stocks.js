@@ -139,10 +139,12 @@ function attachEventListeners() {
         const action = target.getAttribute('data-action');
         console.log("Action demandée :", action);
         const id = parseInt(target.closest('tr').getAttribute('data-id'));
+        console.log("ID de l'ingrédient :", id);
 
         try {
             const stocks = await loadData('stocks').catch(() => []);
-            console.log("Stocks chargés :", stocks)
+            console.log("Stocks chargés :", stocks);
+            console.log("Recherche de l'ingrédient avec l'ID :", id);
             const stock = stocks.find(s => s.id === id);
             console.log("Stock trouvé pour l'ID :", stock);
         
