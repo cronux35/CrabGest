@@ -128,6 +128,40 @@ async function afficherStocks() {
     }
 }
 
+async function saveEditIngredient() {
+    try {
+        const type = document.getElementById('edit-type').value;
+        const nom = document.getElementById('edit-nom').value;
+        const lot = document.getElementById('edit-lot').value;
+        const quantite = parseFloat(document.getElementById('edit-quantite').value);
+        const fournisseur = document.getElementById('edit-fournisseur').value;
+        const specification = document.getElementById('edit-specification').value;
+        const annee_recolte = document.getElementById('edit-annee')?.value || null;
+        const conditionnement = document.getElementById('edit-conditionnement').value;
+        const notes = document.getElementById('edit-notes').value;
+
+        const updatedStock = {
+            id: currentEditId,
+            type,
+            nom,
+            lot,
+            quantite,
+            fournisseur,
+            specification,
+            annee_recolte,
+            conditionnement,
+            notes
+        };
+
+        await DB.updateItem('stocks', updatedStock);
+        closeModal('editModal');
+        afficherStocks(); // Rafraîchir le tableau après modification
+    } catch (error) {
+        console.error("Erreur lors de la sauvegarde des modifications :", error);
+        alert("Erreur lors de la sauvegarde des modifications. Veuillez réessayer.");
+    }
+}
+
 
 function attachEventListeners() {
     const stockTableBody = document.querySelector('#table-stocks tbody');
@@ -148,9 +182,11 @@ function attachEventListeners() {
 
             switch (action) {
                 case 'edit':
+                    console.log("Ouverture de la modale d'édition pour l'ingrédient ID:", id);
                     openEditIngredientModal('stock', id, stock);
                     break;
                 case 'delete':
+                    console.log("Ouverture de la modale de suppression pour l'ingrédient ID:", id);
                     openDeleteModal(
                         `Voulez-vous vraiment supprimer "${stock.nom}" ?`,
                         async () => {
