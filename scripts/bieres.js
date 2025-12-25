@@ -29,14 +29,15 @@ async function ajouterBiere() {
         document.getElementById('volume-biere').value = '';
 
         // Recharger les données
-        afficherBieres();
-        rechargerSelecteursBieres(); // Appel de la fonction de rechargement
+        await afficherBieres();
+        await rechargerSelecteursBieres();
     } catch (error) {
         console.error("Erreur lors de l'ajout de la bière:", error);
         alert("Une erreur est survenue lors de l'ajout de la bière.");
     }
 }
 
+// Sauvegarder une bière éditée
 async function saveEditBiere(id) {
     try {
         const updatedBiere = {
@@ -50,8 +51,8 @@ async function saveEditBiere(id) {
         await updateItem('bieres', updatedBiere);
         alert("Bière mise à jour avec succès !");
         closeModal('editModal');
-        afficherBieres();
-        rechargerSelecteursBieres(); // Appel de la fonction de rechargement
+        await afficherBieres();
+        await rechargerSelecteursBieres();
         if (typeof afficherHistoriqueRetraits === 'function') afficherHistoriqueRetraits();
     } catch (error) {
         console.error("Erreur lors de la sauvegarde de la bière:", error);
@@ -59,7 +60,7 @@ async function saveEditBiere(id) {
     }
 }
 
-// Fonction pour recharger les sélecteurs de bières dans tous les onglets
+// Recharger les sélecteurs de bières dans tous les onglets
 async function rechargerSelecteursBieres() {
     try {
         const bieres = await loadData('bieres').catch(() => []);
@@ -104,8 +105,6 @@ async function rechargerSelecteursBieres() {
     }
 }
 
-
-
 // Afficher les bières
 async function afficherBieres() {
     try {
@@ -122,24 +121,24 @@ async function afficherBieres() {
                     <td>${biere.volume || '-'}</td>
                     <td>
                         ${biere.ingredients && biere.ingredients.length > 0 ?
-                            `<button class="action-btn info-btn" title="Voir les ingrédients utilisés" onclick="voirIngredientsBiere('${biere.id}')">
+                            `<button class="action-btn info-btn" data-action="info" title="Voir les ingrédients utilisés">
                                 <i class="material-icons">info</i>
                             </button>` : ''}
-                        <button class="action-btn edit-btn" onclick="openEditBiereModal('${biere.id}')" title="Éditer">
+                        <button class="action-btn edit-btn" data-action="edit" title="Éditer">
                             <i class="material-icons">edit</i>
                         </button>
-                        <button class="action-btn delete-btn" onclick="openDeleteModal('Voulez-vous vraiment supprimer cette bière ?', async () => { await deleteItem('bieres', '${biere.id}'); afficherBieres(); })" title="Supprimer">
+                        <button class="action-btn delete-btn" data-action="delete" title="Supprimer">
                             <i class="material-icons">delete</i>
                         </button>
                     </td>
                 </tr>
             `).join('');
+            attachBiereEventListeners(); // Attacher les écouteurs après génération
         }
     } catch (error) {
         console.error("Erreur lors de l'affichage des bières:", error);
     }
 }
-
 
 // Afficher les ingrédients utilisés pour une bière
 async function voirIngredientsBiere(biereId) {
@@ -162,10 +161,9 @@ async function voirIngredientsBiere(biereId) {
 }
 
 // Ouvrir modale d'édition de bière
-function openEditBiereModal(id) {
-    loadItemById('bieres', id).then(biere => {
-        currentEditType = 'biere';
-        currentEditId = id;
+async function openEditBiereModal(id) {
+    try {
+        const biere = await loadItemById('bieres', id);
         const modal = document.getElementById('editModal');
         const form = document.getElementById('editForm');
         const title = document.getElementById('editModalTitle');
@@ -205,17 +203,61 @@ function openEditBiereModal(id) {
                         `).join('') : '<div>Aucun ingrédient utilisé</div>'}
                 </div>
             </div>
-            <button type="button" onclick="saveEditBiere('${biere.id}')" class="btn btn-primary">
+            <button type="button" id="saveEditBiereBtn" class="btn btn-primary">
                 Enregistrer
             </button>
         `;
 
+        // Écouteur dynamique pour le bouton Enregistrer
+        document.getElementById('saveEditBiereBtn').addEventListener('click', () => saveEditBiere(id));
+
         openModal('editModal');
-    }).catch(error => {
+    } catch (error) {
         console.error("Erreur lors du chargement de la bière:", error);
-    });
+    }
 }
 
+// Attacher les écouteurs d'événements pour les actions sur les bières
+function attachBiereEventListeners() {
+    const tbody = document.querySelector('#table-bieres tbody');
+    if (!tbody) return;
+
+    tbody.addEventListener('click', async (e) => {
+        const target = e.target.closest('button[data-action]');
+        if (!target) return;
+
+        const action = target.dataset.action;
+        const id = target.closest('tr').dataset.id;
+
+        try {
+            const biere = await loadItemById('bieres', id);
+            if (!biere) {
+                console.error("Bière non trouvée pour l'ID:", id);
+                return;
+            }
+
+            switch (action) {
+                case 'info':
+                    voirIngredientsBiere(id);
+                    break;
+                case 'edit':
+                    openEditBiereModal(id);
+                    break;
+                case 'delete':
+                    openDeleteModal(
+                        `Voulez-vous vraiment supprimer "${biere.nom}" ?`,
+                        async () => {
+                            await deleteItem('bieres', id);
+                            await afficherBieres();
+                        }
+                    );
+                    break;
+            }
+        } catch (error) {
+            console.error("Erreur lors de l'action sur la bière:", error);
+        }
+    });
+}
 
 // Initialisation
 document.addEventListener('DOMContentLoaded', afficherBieres);
