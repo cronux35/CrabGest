@@ -190,6 +190,12 @@
                 <!-- Historique des retraits -->
                 <div class="card">
                     <h3>Historique des retraits</h3>
+                    <div class="form-group">
+                        <label for="select-biere-historique">Filtrer par bière :</label>
+                        <select id="select-biere-historique" class="form-control" onchange="afficherHistoriqueRetraits()">
+                            <option value="">-- Toutes les bières --</option>
+                        </select>
+                    </div>
                     <div class="table-responsive">
                         <table id="historique-retraits" class="table">
                             <thead>

@@ -304,7 +304,15 @@ async function annulerRetrait(entryId) {
 async function afficherHistoriqueRetraits() {
     try {
         const historique = await DB.loadData('historique_stocks').catch(() => []);
-        const historiqueFiltre = historique.filter(entry => entry.type === "retrait_biere" && !entry.annule);
+        const selectBiere = document.getElementById('select-biere-historique');
+        const biereId = selectBiere ? selectBiere.value : null;
+
+        let historiqueFiltre = historique.filter(entry => entry.type === "retrait_biere" && !entry.annule);
+
+        if (biereId) {
+            historiqueFiltre = historiqueFiltre.filter(entry => entry.biere_id == biereId);
+        }
+
         const tbody = document.querySelector('#historique-retraits tbody');
 
         if (tbody) {
@@ -357,7 +365,7 @@ async function afficherHistoriqueRetraits() {
                             }
                         }
 
-                        // Marquer l'entrée comme annulée plutôt que de la supprimer
+                        // Marquer l'entrée comme annulée
                         entry.annule = true;
                         entry.date_annulation = new Date().toISOString();
                         await DB.updateItem('historique_stocks', entry);
@@ -378,6 +386,7 @@ async function afficherHistoriqueRetraits() {
         console.error("Erreur lors de l'affichage de l'historique des retraits:", error);
     }
 }
+
 
 // Rendre la fonction accessible globalement
 window.afficherHistoriqueRetraits = afficherHistoriqueRetraits;
@@ -433,6 +442,26 @@ async function ajouterIngredient() {
     }
 }
 
+async function chargerBieresPourFiltre() {
+    try {
+        const bieres = await DB.loadData('bieres').catch(() => []);
+        const selectBiere = document.getElementById('select-biere-historique');
+
+        if (selectBiere) {
+            selectBiere.innerHTML = '<option value="">-- Toutes les bières --</option>';
+            bieres.forEach(biere => {
+                const option = document.createElement('option');
+                option.value = biere.id;
+                option.textContent = biere.nom;
+                selectBiere.appendChild(option);
+            });
+        }
+    } catch (error) {
+        console.error("Erreur lors du chargement des bières pour le filtre :", error);
+    }
+}
+
+
 async function saveEdit() {
     if (!currentEditType || currentEditId === null) {
         console.error("Type ou ID manquant pour la sauvegarde.");
@@ -487,5 +516,7 @@ async function supprimerStock(id) {
 document.addEventListener('DOMContentLoaded', () => {
     chargerDonnees();
     chargerTypesIngredients();
+    chargerBieresPourFiltre();
+    afficherHistoriqueRetraits();
 });
 
