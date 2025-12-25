@@ -131,6 +131,7 @@ function attachEventListeners() {
     if (!stockTableBody) return;
 
     stockTableBody.onclick = async function(e) {
+        console.log("Clic détecté dans le tableau des stocks")
         const target = e.target.closest('button[data-action]');
         if (!target) return;
 
