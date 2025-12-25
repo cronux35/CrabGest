@@ -142,7 +142,7 @@ function closeDB() {
     }
 }
 
-// Charger des données depuis Firestore (avec fallback silencieux)
+// Charger des données depuis Firestore
 async function loadDataFromFirestore(collectionName) {
     if (!firestoreDbInstance) {
         console.warn(`[Firestore] Firestore non initialisé, chargement depuis IndexedDB pour '${collectionName}'.`);
@@ -162,14 +162,18 @@ async function loadDataFromFirestore(collectionName) {
 async function loadData(storeName) {
     try {
         const firestoreData = await loadDataFromFirestore(storeName);
-        if (firestoreData.length > 0) return firestoreData;
+        if (firestoreData.length > 0) {
+            // Synchroniser avec IndexedDB
+            await saveDataToIndexedDB(storeName, firestoreData);
+            return firestoreData;
+        }
     } catch (error) {
         console.warn(`[DB] Erreur Firestore pour ${storeName}, fallback IndexedDB.`, error);
     }
     return await loadDataFromIndexedDB(storeName);
 }
 
-// Ajouter un élément (utilisé pour les ingrédients et les bières)
+// Ajouter un élément (Firestore + IndexedDB)
 async function addItem(storeName, item) {
     try {
         if (!firestoreDbInstance) throw new Error("Firestore non disponible.");
@@ -179,7 +183,8 @@ async function addItem(storeName, item) {
         }
         console.log(`[DB] Ajout d'un élément dans '${storeName}':`, item);
         const docRef = await firestoreDbInstance.collection(storeName).add(item);
-        await saveDataToIndexedDB(storeName, { ...item, id: docRef.id });
+        const newItem = { ...item, id: docRef.id };
+        await saveDataToIndexedDB(storeName, newItem);
         console.log(`[DB] Élément ajouté avec succès dans '${storeName}'.`);
         return docRef.id;
     } catch (error) {
@@ -187,7 +192,6 @@ async function addItem(storeName, item) {
         throw error;
     }
 }
-
 
 // Sauvegarder des données (Firestore + IndexedDB)
 async function saveData(storeName, data) {
@@ -203,7 +207,8 @@ async function saveData(storeName, data) {
                     continue;
                 }
                 const docRef = await firestoreDbInstance.collection(storeName).add(item);
-                await saveDataToIndexedDB(storeName, { ...item, id: docRef.id });
+                const newItem = { ...item, id: docRef.id };
+                await saveDataToIndexedDB(storeName, newItem);
                 ids.push(docRef.id);
                 console.log(`[DB] Élément sauvegardé avec succès dans '${storeName}' (ID: ${docRef.id}).`);
             }
@@ -212,7 +217,8 @@ async function saveData(storeName, data) {
             // Si data est un objet, le sauvegarder directement
             console.log(`[DB] Sauvegarde des données dans '${storeName}' (Firestore + IndexedDB)...`);
             const docRef = await firestoreDbInstance.collection(storeName).add(data);
-            await saveDataToIndexedDB(storeName, { ...data, id: docRef.id });
+            const newItem = { ...data, id: docRef.id };
+            await saveDataToIndexedDB(storeName, newItem);
             console.log(`[DB] Données sauvegardées avec succès dans '${storeName}'.`);
             return docRef.id;
         }
@@ -222,58 +228,42 @@ async function saveData(storeName, data) {
     }
 }
 
-
-// Mettre à jour un élément dans IndexedDB
+// Mettre à jour un élément (Firestore + IndexedDB)
 async function updateItem(storeName, item) {
     try {
-        console.log(`[IndexedDB] Mise à jour de l'élément dans '${storeName}':`, item);
-        const database = await openDB();
-        return new Promise((resolve, reject) => {
-            const transaction = database.transaction([storeName], 'readwrite');
-            const store = transaction.objectStore(storeName);
-            const request = store.put(item);
+        if (!firestoreDbInstance) throw new Error("Firestore non disponible.");
+        if (!item.id) throw new Error("L'élément doit avoir un ID pour être mis à jour.");
 
-            request.onsuccess = () => {
-                console.log(`[IndexedDB] Élément mis à jour dans '${storeName}' avec l'ID:`, request.result);
-                resolve(request.result);
-            };
-            request.onerror = (event) => {
-                console.error(`[IndexedDB] Erreur lors de la mise à jour dans '${storeName}':`, event.target.error);
-                reject(event.target.error);
-            };
-        });
+        console.log(`[DB] Mise à jour de l'élément dans '${storeName}':`, item);
+        await firestoreDbInstance.collection(storeName).doc(item.id).update(item);
+        await saveDataToIndexedDB(storeName, item);
+        console.log(`[DB] Élément mis à jour avec succès dans '${storeName}'.`);
+        return item.id;
     } catch (error) {
-        console.error(`[IndexedDB] Erreur lors de la mise à jour dans '${storeName}':`, error);
+        console.error(`[DB] Erreur lors de la mise à jour dans '${storeName}':`, error);
         throw error;
     }
 }
 
-// Supprimer un élément dans IndexedDB
+// Supprimer un élément (Firestore + IndexedDB)
 async function deleteItem(storeName, id) {
     try {
-        console.log(`[IndexedDB] Suppression de l'élément avec l'ID ${id} dans '${storeName}'...`);
-        const database = await openDB();
-        return new Promise((resolve, reject) => {
-            const transaction = database.transaction([storeName], 'readwrite');
-            const store = transaction.objectStore(storeName);
-            const request = store.delete(parseInt(id));
+        if (!firestoreDbInstance) throw new Error("Firestore non disponible.");
 
-            request.onsuccess = () => {
-                console.log(`[IndexedDB] Élément supprimé avec succès dans '${storeName}' (ID: ${id}).`);
-                resolve();
-            };
-            request.onerror = (event) => {
-                console.error(`[IndexedDB] Erreur lors de la suppression dans '${storeName}':`, event.target.error);
-                reject(event.target.error);
-            };
-        });
+        console.log(`[DB] Suppression de l'élément avec l'ID ${id} dans '${storeName}'...`);
+        await firestoreDbInstance.collection(storeName).doc(id).delete();
+        const database = await openDB();
+        const transaction = database.transaction([storeName], 'readwrite');
+        const store = transaction.objectStore(storeName);
+        await store.delete(parseInt(id));
+        console.log(`[DB] Élément supprimé avec succès dans '${storeName}' (ID: ${id}).`);
     } catch (error) {
-        console.error(`[IndexedDB] Erreur lors de la suppression dans '${storeName}':`, error);
+        console.error(`[DB] Erreur lors de la suppression dans '${storeName}':`, error);
         throw error;
     }
 }
 
-// Dans db.js
+// Charger un élément par ID (Firestore + IndexedDB)
 async function loadItemById(storeName, id) {
     try {
         if (!firestoreDbInstance) throw new Error("Firestore non disponible.");
@@ -282,16 +272,27 @@ async function loadItemById(storeName, id) {
             console.error(`[DB] Aucun document trouvé dans '${storeName}' avec l'ID ${id}.`);
             return null;
         }
-        return { id: doc.id, ...doc.data() };
+        const item = { id: doc.id, ...doc.data() };
+        await saveDataToIndexedDB(storeName, item); // Synchroniser avec IndexedDB
+        return item;
     } catch (error) {
         console.error(`[DB] Erreur lors du chargement de l'élément depuis '${storeName}':`, error);
         throw error;
     }
 }
 
-// Exporter loadItemById pour qu'elle soit accessible globalement
-window.loadItemById = loadItemById;
-
+// Synchroniser les données entre Firestore et IndexedDB
+async function syncData(storeName) {
+    try {
+        const firestoreData = await loadDataFromFirestore(storeName);
+        if (firestoreData.length > 0) {
+            await saveDataToIndexedDB(storeName, firestoreData);
+            console.log(`[DB] Synchronisation réussie pour '${storeName}'.`);
+        }
+    } catch (error) {
+        console.error(`[DB] Erreur lors de la synchronisation pour '${storeName}':`, error);
+    }
+}
 
 // Exporter les fonctions pour les rendre accessibles globalement
 window.DB = {
@@ -299,7 +300,8 @@ window.DB = {
     loadData: loadData,
     saveData: saveData,
     updateItem: updateItem,
-    addIteam: addItem,
+    addItem: addItem,
     loadItemById: loadItemById,
-    deleteItem: deleteItem
+    deleteItem: deleteItem,
+    syncData: syncData
 };
