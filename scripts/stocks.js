@@ -131,24 +131,24 @@ function attachEventListeners() {
     if (!stockTableBody) return;
 
     stockTableBody.onclick = async function(e) {
-        console.log("Clic détecté dans le tableau des stocks")
+        console.log("Clic détecté dans le tableau des stocks");
         const target = e.target.closest('button[data-action]');
         console.log("Bouton cible :", target);
         if (!target) return;
 
         const action = target.getAttribute('data-action');
         console.log("Action demandée :", action);
-        const id = parseInt(target.closest('tr').getAttribute('data-id'));
+        const id = target.closest('tr').dataset.id; // ou getAttribute('data-id')
         console.log("ID de l'ingrédient :", id);
 
         try {
             const stocks = await loadData('stocks').catch(() => []);
             console.log("Stocks chargés :", stocks);
             console.log("Recherche de l'ingrédient avec l'ID :", id);
-            const stock = stocks.find(s => s.id === id);
+            const stock = stocks.find(s => s.id == id); // ou s.id.toString() === id.toString()
             console.log("Stock trouvé pour l'ID :", stock);
-        
-            if (!stock){
+
+            if (!stock) {
                 console.log("Aucun stock trouvé pour l'ID :", id);
                 return;
             }
