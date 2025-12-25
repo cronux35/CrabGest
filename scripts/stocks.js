@@ -251,13 +251,60 @@ async function retirerStockPourBiere() {
     }
 }
 
+async function annulerRetrait(entryId) {
+    try {
+        // Charger l'entrée d'historique
+        const entry = await DB.loadItemById('historique_stocks', entryId);
+        if (!entry || entry.type !== "retrait_biere") {
+            alert("Entrée d'historique non valide ou non trouvée.");
+            return;
+        }
+
+        // Charger l'ingrédient et la bière concernés
+        const stock = await DB.loadItemById('stocks', entry.ingredient_id);
+        const biere = await DB.loadItemById('bieres', entry.biere_id);
+
+        if (!stock || !biere) {
+            alert("Ingrédient ou bière non trouvé.");
+            return;
+        }
+
+        // Mettre à jour le stock
+        const updatedStock = { ...stock };
+        updatedStock.quantite += entry.quantite;
+        await DB.updateItem('stocks', updatedStock);
+
+        // Mettre à jour la bière
+        if (!biere.ingredients) biere.ingredients = [];
+        const ingredientExistIndex = biere.ingredients.findIndex(ing => ing.id === entry.ingredient_id);
+
+        if (ingredientExistIndex !== -1) {
+            biere.ingredients[ingredientExistIndex].quantite_utilisee -= entry.quantite;
+            await DB.updateItem('bieres', biere);
+        }
+
+        // Marquer l'entrée d'historique comme annulée
+        entry.annule = true;
+        entry.date_annulation = new Date().toISOString();
+        await DB.updateItem('historique_stocks', entry);
+
+        // Rafraîchir les données
+        afficherStocks();
+        afficherHistoriqueRetraits();
+
+        alert(`Retrait de ${entry.quantite}g de ${entry.ingredient} pour la bière "${entry.biere}" a été annulé avec succès.`);
+    } catch (error) {
+        console.error("Erreur lors de l'annulation du retrait:", error);
+        alert("Erreur lors de l'annulation du retrait. Veuillez réessayer.");
+    }
+}
 
 
 // Afficher l'historique des retraits liés aux bières
 async function afficherHistoriqueRetraits() {
     try {
-        const historique = await loadData('historique_stocks').catch(() => []);
-        const historiqueFiltre = historique.filter(entry => entry.type === "retrait_biere");
+        const historique = await DB.loadData('historique_stocks').catch(() => []);
+        const historiqueFiltre = historique.filter(entry => entry.type === "retrait_biere" && !entry.annule);
         const tbody = document.querySelector('#historique-retraits tbody');
 
         if (tbody) {
@@ -279,35 +326,50 @@ async function afficherHistoriqueRetraits() {
             // Écouteur pour les boutons d'annulation de retrait
             tbody.querySelectorAll('.delete-btn').forEach(btn => {
                 btn.onclick = async () => {
-                    const id = parseInt(btn.closest('tr').getAttribute('data-id'));
+                    const id = btn.closest('tr').getAttribute('data-id');
                     try {
-                        const entry = historiqueFiltre.find(e => e.id === id);
-                        if (entry) {
-                            // Remettre en stock
-                            const stocks = await loadData('stocks').catch(() => []);
-                            const stock = stocks.find(s => s.id === entry.ingredient_id);
-                            if (stock) {
-                                stock.quantite += entry.quantite;
-                                await updateItem('stocks', stock);
+                        const entry = historiqueFiltre.find(e => e.id == id);
+                        if (!entry) {
+                            alert("Entrée d'historique introuvable.");
+                            return;
+                        }
 
-                                // Mettre à jour la bière
-                                const biere = await loadItemById('bieres', entry.biere_id).catch(() => null);
-                                if (biere && biere.ingredients) {
-                                    const ingredient = biere.ingredients.find(ing => ing.id === entry.ingredient_id);
-                                    if (ingredient) {
-                                        ingredient.quantite_utilisee -= entry.quantite;
-                                        await updateItem('bieres', biere);
-                                    }
-                                }
+                        // Charger le stock et la bière concernés
+                        const stocks = await DB.loadData('stocks').catch(() => []);
+                        const stock = stocks.find(s => s.id == entry.ingredient_id);
+                        if (!stock) {
+                            alert("Ingrédient introuvable.");
+                            return;
+                        }
+
+                        // Mettre à jour le stock
+                        const updatedStock = { ...stock };
+                        updatedStock.quantite += entry.quantite;
+                        await DB.updateItem('stocks', updatedStock);
+
+                        // Mettre à jour la bière
+                        const biere = await DB.loadItemById('bieres', entry.biere_id).catch(() => null);
+                        if (biere && biere.ingredients) {
+                            const ingredient = biere.ingredients.find(ing => ing.id == entry.ingredient_id);
+                            if (ingredient) {
+                                ingredient.quantite_utilisee -= entry.quantite;
+                                await DB.updateItem('bieres', biere);
                             }
                         }
 
-                        // Supprimer l'entrée d'historique
-                        await deleteItem('historique_stocks', id);
-                        afficherHistoriqueRetraits(); // Rafraîchir l'historique après suppression
-                        afficherStocks(); // Rafraîchir les stocks
+                        // Marquer l'entrée comme annulée plutôt que de la supprimer
+                        entry.annule = true;
+                        entry.date_annulation = new Date().toISOString();
+                        await DB.updateItem('historique_stocks', entry);
+
+                        // Rafraîchir les données
+                        afficherHistoriqueRetraits();
+                        afficherStocks();
+
+                        alert(`Retrait de ${entry.quantite}g de ${entry.ingredient} pour la bière "${entry.biere}" a été annulé avec succès.`);
                     } catch (error) {
                         console.error("Erreur lors de l'annulation du retrait:", error);
+                        alert("Erreur lors de l'annulation du retrait. Veuillez réessayer.");
                     }
                 };
             });
