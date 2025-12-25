@@ -136,19 +136,22 @@ function attachEventListeners() {
         if (!target) return;
 
         const action = target.getAttribute('data-action');
-        console.
+        console.log("Action demandée :", action);
         const id = parseInt(target.closest('tr').getAttribute('data-id'));
 
         try {
             const stocks = await DB.loadData('stocks').catch(() => []);
             const stock = stocks.find(s => s.id === id);
-            console
-
-            if (!stock) return;
+            console.log("Stock trouvé pour l'ID :", stock);
+        
+            if (!stock){
+                console.log("Aucun stock trouvé pour l'ID :", id);
+                return;
+            }
 
             switch (action) {
                 case 'edit':
-                    console.log
+                    console.log("Édition de l'ingrédient avec l'ID :", id);
                     openEditIngredientModal('stock', id, stock);
                     break;
                 case 'delete':
@@ -167,7 +170,7 @@ function attachEventListeners() {
                     );
                     break;
                 case 'notes':
-                    console.log
+                    console.log("Affichage des notes pour l'ingrédient avec l'ID :", id);
                     const nom = stock.nom;
                     const notes = stock.notes || 'Aucune note';
                     alert(`Notes pour ${nom}:\n${notes}`);
