@@ -245,23 +245,27 @@ async function updateItem(storeName, item) {
     }
 }
 
-// Supprimer un élément (Firestore + IndexedDB)
 async function deleteItem(storeName, id) {
     try {
         if (!firestoreDbInstance) throw new Error("Firestore non disponible.");
 
         console.log(`[DB] Suppression de l'élément avec l'ID ${id} dans '${storeName}'...`);
+        // Suppression dans Firestore
         await firestoreDbInstance.collection(storeName).doc(id).delete();
+
+        // Suppression dans IndexedDB (sans parseInt !)
         const database = await openDB();
         const transaction = database.transaction([storeName], 'readwrite');
         const store = transaction.objectStore(storeName);
-        await store.delete(parseInt(id));
+        await store.delete(id); // Utilise l'ID tel quel (chaîne)
+        await transaction.done; // Attendre la fin de la transaction
         console.log(`[DB] Élément supprimé avec succès dans '${storeName}' (ID: ${id}).`);
     } catch (error) {
         console.error(`[DB] Erreur lors de la suppression dans '${storeName}':`, error);
         throw error;
     }
 }
+
 
 // Charger un élément par ID (Firestore + IndexedDB)
 async function loadItemById(storeName, id) {
