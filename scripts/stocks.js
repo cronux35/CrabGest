@@ -2,8 +2,8 @@ let stockTableBody = null;
 
 async function chargerDonnees() {
     try {
-        const stocks = await loadData('stocks').catch(() => []);
-        const bieres = await loadData('bieres').catch(() => []);
+        const stocks = await DB.loadData('stocks').catch(() => []);
+        const bieres = await DB.loadData('bieres').catch(() => []);
 
         const selectIngredient = document.getElementById('select-ingredient');
         if (selectIngredient) {
@@ -27,8 +27,8 @@ async function chargerDonnees() {
 
 async function chargerDonneesRetrait() {
     try {
-        const stocks = await loadData('stocks').catch(() => []);
-        const bieres = await loadData('bieres').catch(() => []);
+        const stocks = await DB.loadData('stocks').catch(() => []);
+        const bieres = await DB.loadData('bieres').catch(() => []);
 
         const selectIngredientRetrait = document.getElementById('select-ingredient-retrait');
         if (selectIngredientRetrait) {
@@ -58,9 +58,8 @@ async function chargerDonneesRetrait() {
     }
 }
 
-// Charger les types d'ingrédients disponibles
 async function chargerTypesIngredients() {
-    const stocks = await loadData('stocks');
+    const stocks = await DB.loadData('stocks');
     const types = [...new Set(stocks.map(s => s.type))];
     const selectType = document.getElementById('select-type-ingredient');
     selectType.innerHTML = '<option value="">-- Sélectionnez un type --</option>';
@@ -72,7 +71,6 @@ async function chargerTypesIngredients() {
     });
 }
 
-// Charger les ingrédients en fonction du type sélectionné
 async function chargerIngredientsParType() {
     const type = document.getElementById('select-type-ingredient').value;
     const selectIngredient = document.getElementById('select-ingredient-retrait');
@@ -80,7 +78,7 @@ async function chargerIngredientsParType() {
 
     if (!type) return;
 
-    const stocks = await loadData('stocks');
+    const stocks = await DB.loadData('stocks');
     const ingredientsFiltres = stocks.filter(s => s.type === type && s.quantite > 0);
 
     ingredientsFiltres.forEach(ingredient => {
@@ -93,7 +91,7 @@ async function chargerIngredientsParType() {
 
 async function afficherStocks() {
     try {
-        const stocks = await loadData('stocks').catch(() => []);
+        const stocks = await DB.loadData('stocks').catch(() => []);
         const stockTableBody = document.querySelector('#table-stocks tbody');
 
         if (stockTableBody) {
@@ -128,41 +126,6 @@ async function afficherStocks() {
     }
 }
 
-async function saveEditIngredient() {
-    try {
-        const type = document.getElementById('edit-type').value;
-        const nom = document.getElementById('edit-nom').value;
-        const lot = document.getElementById('edit-lot').value;
-        const quantite = parseFloat(document.getElementById('edit-quantite').value);
-        const fournisseur = document.getElementById('edit-fournisseur').value;
-        const specification = document.getElementById('edit-specification').value;
-        const annee_recolte = document.getElementById('edit-annee')?.value || null;
-        const conditionnement = document.getElementById('edit-conditionnement').value;
-        const notes = document.getElementById('edit-notes').value;
-
-        const updatedStock = {
-            id: currentEditId,
-            type,
-            nom,
-            lot,
-            quantite,
-            fournisseur,
-            specification,
-            annee_recolte,
-            conditionnement,
-            notes
-        };
-
-        await DB.updateItem('stocks', updatedStock);
-        closeModal('editModal');
-        afficherStocks(); // Rafraîchir le tableau après modification
-    } catch (error) {
-        console.error("Erreur lors de la sauvegarde des modifications :", error);
-        alert("Erreur lors de la sauvegarde des modifications. Veuillez réessayer.");
-    }
-}
-
-
 function attachEventListeners() {
     const stockTableBody = document.querySelector('#table-stocks tbody');
     if (!stockTableBody) return;
@@ -182,11 +145,9 @@ function attachEventListeners() {
 
             switch (action) {
                 case 'edit':
-                    console.log("Ouverture de la modale d'édition pour l'ingrédient ID:", id);
                     openEditIngredientModal('stock', id, stock);
                     break;
                 case 'delete':
-                    console.log("Ouverture de la modale de suppression pour l'ingrédient ID:", id);
                     openDeleteModal(
                         `Voulez-vous vraiment supprimer "${stock.nom}" ?`,
                         async () => {
@@ -212,6 +173,108 @@ function attachEventListeners() {
     };
 }
 
+async function saveEdit() {
+    if (!currentEditType || currentEditId === null) {
+        console.error("Type ou ID manquant pour la sauvegarde.");
+        return;
+    }
+
+    try {
+        const type = document.getElementById('edit-type').value;
+        const nom = document.getElementById('edit-nom').value;
+        const lot = document.getElementById('edit-lot').value;
+        const quantite = parseFloat(document.getElementById('edit-quantite').value);
+        const fournisseur = document.getElementById('edit-fournisseur').value;
+        const specification = document.getElementById('edit-specification').value;
+        const annee = document.getElementById('edit-annee')?.value;
+        const conditionnement = document.getElementById('edit-conditionnement').value;
+        const notes = document.getElementById('edit-notes').value;
+
+        if (!nom || !fournisseur || isNaN(quantite)) {
+            alert("Veuillez remplir tous les champs obligatoires.");
+            return;
+        }
+
+        const updatedStock = {
+            id: currentEditId,
+            type: type,
+            nom: nom,
+            lot: lot,
+            quantite: quantite,
+            fournisseur: fournisseur,
+            specification: (type === 'Malt' || type === 'Houblon') ? specification : null,
+            annee_recolte: type === 'Houblon' ? parseInt(annee) || null : null,
+            pourcentage_aa: type === 'Houblon' ? parseFloat(specification) || null : null,
+            conditionnement: conditionnement || 'non spécifié',
+            notes: notes
+        };
+
+        await DB.updateItem('stocks', updatedStock);
+        closeModal('editModal');
+        afficherStocks();
+        alert("Ingrédient mis à jour avec succès !");
+    } catch (error) {
+        console.error("Erreur lors de la sauvegarde des modifications:", error);
+        alert("Une erreur est survenue lors de la sauvegarde.");
+    }
+}
+
+async function ajouterIngredient() {
+    const type = document.getElementById('edit-type').value;
+    const nom = document.getElementById('edit-nom').value;
+    const lot = document.getElementById('edit-lot').value;
+    const quantite = parseFloat(document.getElementById('edit-quantite').value);
+    const fournisseur = document.getElementById('edit-fournisseur').value;
+    const specification = document.getElementById('edit-specification').value;
+    const annee = document.getElementById('edit-annee')?.value;
+    const conditionnement = document.getElementById('edit-conditionnement').value;
+    const notes = document.getElementById('edit-notes').value;
+
+    if (!type || !nom || !fournisseur || isNaN(quantite)) {
+        alert("Veuillez remplir tous les champs obligatoires.");
+        return;
+    }
+
+    try {
+        const nouvelIngredient = {
+            type: type,
+            nom: nom,
+            lot: lot,
+            quantite: quantite,
+            fournisseur: fournisseur,
+            specification: (type === 'Malt' || type === 'Houblon') ? specification : null,
+            annee_recolte: type === 'Houblon' ? parseInt(annee) || null : null,
+            pourcentage_aa: type === 'Houblon' ? parseFloat(specification) || null : null,
+            conditionnement: conditionnement || 'non spécifié',
+            notes: notes
+        };
+
+        await DB.addItem('stocks', nouvelIngredient);
+        await afficherStocks();
+        await chargerTypesIngredients();
+        await chargerIngredientsParType();
+        closeModal('editModal');
+        alert(`L'ingrédient "${nom}" a été ajouté avec succès.`);
+    } catch (error) {
+        console.error("Erreur lors de l'ajout de l'ingrédient:", error);
+        alert("Une erreur est survenue lors de l'ajout de l'ingrédient.");
+    }
+}
+
+function ouvrirModalAjoutIngredient() {
+    openEditIngredientModal('stock', null, {
+        type: "",
+        nom: "",
+        lot: "",
+        quantite: 0,
+        fournisseur: "",
+        specification: "",
+        annee_recolte: null,
+        pourcentage_aa: null,
+        conditionnement: "",
+        notes: ""
+    });
+}
 
 async function retirerStockPourBiere() {
     const idIngredient = document.getElementById('select-ingredient-retrait')?.value;
@@ -227,9 +290,8 @@ async function retirerStockPourBiere() {
     }
 
     try {
-        // Charger les données depuis Firestore
-        const stocks = await loadData('stocks');
-        const biere = await loadItemById('bieres', idBiere);
+        const stocks = await DB.loadData('stocks');
+        const biere = await DB.loadItemById('bieres', idBiere);
         const stock = stocks.find(s => s.id == idIngredient);
 
         if (!stock) {
@@ -245,12 +307,10 @@ async function retirerStockPourBiere() {
             return;
         }
 
-        // Mettre à jour le stock dans Firestore
         const updatedStock = { ...stock };
         updatedStock.quantite -= quantite;
-        await updateItem('stocks', updatedStock);
+        await DB.updateItem('stocks', updatedStock);
 
-        // Ajouter à l'historique
         const historiqueEntry = {
             date: new Date().toISOString(),
             type: "retrait_biere",
@@ -263,9 +323,8 @@ async function retirerStockPourBiere() {
             stock_apres: updatedStock.quantite,
             notes: `Retrait pour la bière "${biere.nom}"`
         };
-        await addItem('historique_stocks', historiqueEntry);
+        await DB.addItem('historique_stocks', historiqueEntry);
 
-        // Mettre à jour la bière
         if (!biere.ingredients) biere.ingredients = [];
         const ingredientExistIndex = biere.ingredients.findIndex(ing => ing.id === stock.id);
 
@@ -281,14 +340,12 @@ async function retirerStockPourBiere() {
             });
         }
 
-        await updateItem('bieres', biere);
+        await DB.updateItem('bieres', biere);
 
-        // Rafraîchir les données depuis Firestore
         await afficherStocks();
         await chargerDonneesRetrait();
         await afficherHistoriqueRetraits();
 
-        // Réinitialiser le formulaire
         document.getElementById('quantite-retrait').value = '';
         document.getElementById('select-ingredient-retrait').value = '';
 
@@ -301,14 +358,12 @@ async function retirerStockPourBiere() {
 
 async function annulerRetrait(entryId) {
     try {
-        // Charger l'entrée d'historique
         const entry = await DB.loadItemById('historique_stocks', entryId);
         if (!entry || entry.type !== "retrait_biere") {
             alert("Entrée d'historique non valide ou non trouvée.");
             return;
         }
 
-        // Charger l'ingrédient et la bière concernés
         const stock = await DB.loadItemById('stocks', entry.ingredient_id);
         const biere = await DB.loadItemById('bieres', entry.biere_id);
 
@@ -317,12 +372,10 @@ async function annulerRetrait(entryId) {
             return;
         }
 
-        // Mettre à jour le stock
         const updatedStock = { ...stock };
         updatedStock.quantite += entry.quantite;
         await DB.updateItem('stocks', updatedStock);
 
-        // Mettre à jour la bière
         if (!biere.ingredients) biere.ingredients = [];
         const ingredientExistIndex = biere.ingredients.findIndex(ing => ing.id === entry.ingredient_id);
 
@@ -331,12 +384,10 @@ async function annulerRetrait(entryId) {
             await DB.updateItem('bieres', biere);
         }
 
-        // Marquer l'entrée d'historique comme annulée
         entry.annule = true;
         entry.date_annulation = new Date().toISOString();
         await DB.updateItem('historique_stocks', entry);
 
-        // Rafraîchir les données
         afficherStocks();
         afficherHistoriqueRetraits();
 
@@ -347,8 +398,6 @@ async function annulerRetrait(entryId) {
     }
 }
 
-
-// Afficher l'historique des retraits liés aux bières
 async function afficherHistoriqueRetraits() {
     try {
         const historique = await DB.loadData('historique_stocks').catch(() => []);
@@ -379,114 +428,15 @@ async function afficherHistoriqueRetraits() {
                 </tr>
             `).join('');
 
-            // Écouteur pour les boutons d'annulation de retrait
             tbody.querySelectorAll('.delete-btn').forEach(btn => {
                 btn.onclick = async () => {
                     const id = btn.closest('tr').getAttribute('data-id');
-                    try {
-                        const entry = historiqueFiltre.find(e => e.id == id);
-                        if (!entry) {
-                            alert("Entrée d'historique introuvable.");
-                            return;
-                        }
-
-                        // Charger le stock et la bière concernés
-                        const stocks = await DB.loadData('stocks').catch(() => []);
-                        const stock = stocks.find(s => s.id == entry.ingredient_id);
-                        if (!stock) {
-                            alert("Ingrédient introuvable.");
-                            return;
-                        }
-
-                        // Mettre à jour le stock
-                        const updatedStock = { ...stock };
-                        updatedStock.quantite += entry.quantite;
-                        await DB.updateItem('stocks', updatedStock);
-
-                        // Mettre à jour la bière
-                        const biere = await DB.loadItemById('bieres', entry.biere_id).catch(() => null);
-                        if (biere && biere.ingredients) {
-                            const ingredient = biere.ingredients.find(ing => ing.id == entry.ingredient_id);
-                            if (ingredient) {
-                                ingredient.quantite_utilisee -= entry.quantite;
-                                await DB.updateItem('bieres', biere);
-                            }
-                        }
-
-                        // Marquer l'entrée comme annulée
-                        entry.annule = true;
-                        entry.date_annulation = new Date().toISOString();
-                        await DB.updateItem('historique_stocks', entry);
-
-                        // Rafraîchir les données
-                        afficherHistoriqueRetraits();
-                        afficherStocks();
-
-                        alert(`Retrait de ${entry.quantite}g de ${entry.ingredient} pour la bière "${entry.biere}" a été annulé avec succès.`);
-                    } catch (error) {
-                        console.error("Erreur lors de l'annulation du retrait:", error);
-                        alert("Erreur lors de l'annulation du retrait. Veuillez réessayer.");
-                    }
+                    annulerRetrait(id);
                 };
             });
         }
     } catch (error) {
         console.error("Erreur lors de l'affichage de l'historique des retraits:", error);
-    }
-}
-
-
-// Rendre la fonction accessible globalement
-window.afficherHistoriqueRetraits = afficherHistoriqueRetraits;
-
-
-function ouvrirModalAjoutIngredient() {
-    openEditModal('stock', null, {
-        type: "", nom: "", lot: "", quantite: 0, fournisseur: "",
-        specification: "", annee_recolte: null, pourcentage_aa: null,
-        conditionnement: "", notes: ""
-    });
-}
-
-async function ajouterIngredient() {
-    const type = document.getElementById('edit-type').value;
-    const nom = document.getElementById('edit-nom').value;
-    const lot = document.getElementById('edit-lot').value;
-    const quantite = parseFloat(document.getElementById('edit-quantite').value);
-    const fournisseur = document.getElementById('edit-fournisseur').value;
-    const specification = document.getElementById('edit-specification').value;
-    const annee = document.getElementById('edit-annee').value;
-    const conditionnement = document.getElementById('edit-conditionnement').value;
-    const notes = document.getElementById('edit-notes').value;
-
-    if (!type || !nom || !fournisseur || isNaN(quantite)) {
-        alert("Veuillez remplir tous les champs obligatoires.");
-        return;
-    }
-
-    try {
-        const nouvelIngredient = {
-            type: type,
-            nom: nom,
-            lot: lot,
-            quantite: quantite,
-            fournisseur: fournisseur,
-            specification: (type === 'Malt' || type === 'Houblon') ? specification : null,
-            annee_recolte: type === 'Houblon' ? parseInt(annee) || null : null,
-            pourcentage_aa: type === 'Houblon' ? parseFloat(specification) || null : null,
-            conditionnement: conditionnement || 'non spécifié',
-            notes: notes
-        };
-
-        await addItem('stocks', nouvelIngredient);
-        await afficherStocks();
-        await chargerTypesIngredients(); // Mettre à jour les types d'ingrédients
-        await chargerIngredientsParType(); // Mettre à jour les ingrédients disponibles pour le retrait
-        closeModal('editModal');
-        alert(`L'ingrédient "${nom}" a été ajouté avec succès.`);
-    } catch (error) {
-        console.error("Erreur lors de l'ajout de l'ingrédient:", error);
-        alert("Une erreur est survenue lors de l'ajout de l'ingrédient.");
     }
 }
 
@@ -509,62 +459,9 @@ async function chargerBieresPourFiltre() {
     }
 }
 
-
-async function saveEdit() {
-    if (!currentEditType || currentEditId === null) {
-        console.error("Type ou ID manquant pour la sauvegarde.");
-        return;
-    }
-
-    try {
-        const type = document.getElementById('edit-type').value;
-        const specification = document.getElementById('edit-specification').value;
-        const annee = document.getElementById('edit-annee').value;
-
-        const updatedStock = {
-            id: currentEditId,
-            type: type,
-            nom: document.getElementById('edit-nom').value,
-            lot: document.getElementById('edit-lot').value,
-            quantite: parseFloat(document.getElementById('edit-quantite').value),
-            fournisseur: document.getElementById('edit-fournisseur').value,
-            specification: (type === 'Malt' || type === 'Houblon') ? specification : null,
-            annee_recolte: type === 'Houblon' ? parseInt(annee) || null : null,
-            pourcentage_aa: type === 'Houblon' ? parseFloat(specification) || null : null,
-            conditionnement: document.getElementById('edit-conditionnement').value,
-            notes: document.getElementById('edit-notes').value
-        };
-
-        await updateItem('stocks', updatedStock);
-        afficherStocks();
-        alert("Ingrédient mis à jour avec succès !");
-        closeModal('editModal');
-    } catch (error) {
-        console.error("Erreur lors de la sauvegarde des modifications:", error);
-        alert("Une erreur est survenue lors de la sauvegarde.");
-    }
-}
-
-async function supprimerStock(id) {
-    try {
-        const stocks = await loadData('stocks').catch(() => []);
-        const stockToDelete = stocks.find(s => s.id === id);
-        if (!stockToDelete) return;
-
-        await deleteItem('stocks', id);
-        afficherStocks();
-        alert(`"${stockToDelete.nom}" a été supprimé avec succès.`);
-    } catch (error) {
-        console.error("Erreur lors de la suppression du stock:", error);
-        alert("Une erreur est survenue lors de la suppression.");
-    }
-}
-
-// Appeler cette fonction au chargement de la page
 document.addEventListener('DOMContentLoaded', () => {
     chargerDonnees();
     chargerTypesIngredients();
     chargerBieresPourFiltre();
     afficherHistoriqueRetraits();
 });
-
