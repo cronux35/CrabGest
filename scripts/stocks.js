@@ -130,6 +130,7 @@ async function afficherStocks() {
 
 
 function attachEventListeners() {
+    const stockTableBody = document.querySelector('#table-stocks tbody');
     if (!stockTableBody) return;
 
     stockTableBody.onclick = async function(e) {
@@ -140,23 +141,33 @@ function attachEventListeners() {
         const id = parseInt(target.closest('tr').getAttribute('data-id'));
 
         try {
-            const stocks = await loadData('stocks').catch(() => []);
+            const stocks = await DB.loadData('stocks').catch(() => []);
             const stock = stocks.find(s => s.id === id);
 
             if (!stock) return;
 
             switch (action) {
                 case 'edit':
-                    openEditModal('stock', id, stock);
+                    openEditIngredientModal('stock', id, stock);
                     break;
                 case 'delete':
                     openDeleteModal(
                         `Voulez-vous vraiment supprimer "${stock.nom}" ?`,
-                        async () => await supprimerStock(id)
+                        async () => {
+                            try {
+                                await DB.deleteItem('stocks', id);
+                                afficherStocks();
+                            } catch (error) {
+                                console.error("Erreur lors de la suppression du stock:", error);
+                                alert("Erreur lors de la suppression du stock. Veuillez réessayer.");
+                            }
+                        }
                     );
                     break;
                 case 'notes':
-                    alert(`Notes pour ${stock.nom}:\n${stock.notes}`);
+                    const nom = stock.nom;
+                    const notes = stock.notes || 'Aucune note';
+                    alert(`Notes pour ${nom}:\n${notes}`);
                     break;
             }
         } catch (error) {
@@ -164,6 +175,7 @@ function attachEventListeners() {
         }
     };
 }
+
 
 async function retirerStockPourBiere() {
     const idIngredient = document.getElementById('select-ingredient-retrait')?.value;

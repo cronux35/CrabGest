@@ -30,80 +30,105 @@ function openEditModal(type, id, data) {
         return;
     }
 
-    title.textContent = id ? 'Éditer un ingrédient' : 'Ajouter un ingrédient';
-    form.innerHTML = `
-        <div class="form-group">
-            <label for="edit-type">Type</label>
-            <select id="edit-type" class="form-control" ${id ? 'disabled' : ''} required>
-                <option value="">-- Sélectionner un type --</option>
-                <option value="Malt" ${data.type === 'Malt' ? 'selected' : ''}>Malt</option>
-                <option value="Houblon" ${data.type === 'Houblon' ? 'selected' : ''}>Houblon</option>
-                <option value="Levure" ${data.type === 'Levure' ? 'selected' : ''}>Levure</option>
-                <option value="Autre" ${data.type === 'Autre' ? 'selected' : ''}>Autre</option>
-            </select>
-        </div>
+    title.textContent = id ? `Éditer un${type === 'stock' ? ' ingrédient' : type === 'biere' ? 'e bière' : ' ' + type}` : `Ajouter un${type === 'stock' ? ' ingrédient' : type === 'biere' ? 'e bière' : ' ' + type}`;
+
+    // Générer dynamiquement le formulaire en fonction du type
+    form.innerHTML = generateFormFields(type, data);
+
+    openModal('editModal');
+}
+
+function generateFormFields(type, data) {
+    const fields = [];
+
+    // Champs communs à tous les types
+    fields.push(`
         <div class="form-group">
             <label for="edit-nom">Nom</label>
             <input type="text" id="edit-nom" class="form-control" value="${data.nom || ''}" required>
         </div>
-        <div class="form-group">
-            <label for="edit-lot">Lot</label>
-            <input type="text" id="edit-lot" class="form-control" value="${data.lot || ''}">
-        </div>
-        <div class="form-group">
-            <label for="edit-quantite">Quantité (g)</label>
-            <input type="number" id="edit-quantite" class="form-control" value="${data.quantite || 0}" min="0" required>
-        </div>
-        <div class="form-group">
-            <label for="edit-fournisseur">Fournisseur</label>
-            <input type="text" id="edit-fournisseur" class="form-control" value="${data.fournisseur || ''}" required>
-        </div>
-        <div class="form-group" id="specification-group" style="${(data.type === 'Malt' || data.type === 'Houblon') ? 'block' : 'none'}">
-            <label for="edit-specification">Spécification</label>
-            <input type="text" id="edit-specification" class="form-control" value="${data.specification || ''}"
-                   placeholder="${data.type === 'Malt' ? 'EBC (ex: 3.5)' : data.type === 'Houblon' ? '%AA (ex: 8.9)' : ''}">
-        </div>
-        <div class="form-group" id="annee-group" style="${data.type === 'Houblon' ? 'block' : 'none'}">
-            <label for="edit-annee">Année de récolte</label>
-            <input type="number" id="edit-annee" class="form-control" value="${data.annee_recolte || ''}" placeholder="Année (ex: 2023)">
-        </div>
-        <div class="form-group">
-            <label for="edit-conditionnement">Conditionnement</label>
-            <input type="text" id="edit-conditionnement" class="form-control" value="${data.conditionnement || ''}" placeholder="ex: Sac de 25 kg">
-        </div>
+    `);
+
+    // Champs spécifiques au type
+    switch (type) {
+        case 'stock':
+            fields.push(`
+                <div class="form-group">
+                    <label for="edit-type">Type</label>
+                    <select id="edit-type" class="form-control" ${data.id ? 'disabled' : ''} required>
+                        <option value="">-- Sélectionner un type --</option>
+                        <option value="Malt" ${data.type === 'Malt' ? 'selected' : ''}>Malt</option>
+                        <option value="Houblon" ${data.type === 'Houblon' ? 'selected' : ''}>Houblon</option>
+                        <option value="Levure" ${data.type === 'Levure' ? 'selected' : ''}>Levure</option>
+                        <option value="Autre" ${data.type === 'Autre' ? 'selected' : ''}>Autre</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="edit-lot">Lot</label>
+                    <input type="text" id="edit-lot" class="form-control" value="${data.lot || ''}">
+                </div>
+                <div class="form-group">
+                    <label for="edit-quantite">Quantité (g)</label>
+                    <input type="number" id="edit-quantite" class="form-control" value="${data.quantite || 0}" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-fournisseur">Fournisseur</label>
+                    <input type="text" id="edit-fournisseur" class="form-control" value="${data.fournisseur || ''}" required>
+                </div>
+                <div class="form-group" id="specification-group" style="${(data.type === 'Malt' || data.type === 'Houblon') ? 'block' : 'none'}">
+                    <label for="edit-specification">Spécification</label>
+                    <input type="text" id="edit-specification" class="form-control" value="${data.specification || ''}"
+                           placeholder="${data.type === 'Malt' ? 'EBC (ex: 3.5)' : data.type === 'Houblon' ? '%AA (ex: 8.9)' : ''}">
+                </div>
+                <div class="form-group" id="annee-group" style="${data.type === 'Houblon' ? 'block' : 'none'}">
+                    <label for="edit-annee">Année de récolte</label>
+                    <input type="number" id="edit-annee" class="form-control" value="${data.annee_recolte || ''}" placeholder="Année (ex: 2023)">
+                </div>
+                <div class="form-group">
+                    <label for="edit-conditionnement">Conditionnement</label>
+                    <input type="text" id="edit-conditionnement" class="form-control" value="${data.conditionnement || ''}" placeholder="ex: Sac de 25 kg">
+                </div>
+            `);
+            break;
+
+        case 'biere':
+            fields.push(`
+                <div class="form-group">
+                    <label for="edit-abv">ABV (%)</label>
+                    <input type="number" id="edit-abv" class="form-control" step="0.1" value="${data.abv || ''}" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-style">Style</label>
+                    <input type="text" id="edit-style" class="form-control" value="${data.style || ''}" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-description">Description</label>
+                    <textarea id="edit-description" class="form-control" rows="3" placeholder="Description de la bière">${data.description || ''}</textarea>
+                </div>
+            `);
+            break;
+
+        // Ajoutez d'autres cas pour d'autres types de données
+    }
+
+    // Champ de notes commun à tous les types
+    fields.push(`
         <div class="form-group">
             <label for="edit-notes">Notes</label>
             <textarea id="edit-notes" class="form-control" rows="2" placeholder="Informations supplémentaires">${data.notes || ''}</textarea>
         </div>
-        <button type="button" onclick="${id ? 'saveEdit()' : 'ajouterIngredient()'}" class="btn btn-primary">
+    `);
+
+    // Bouton de soumission
+    fields.push(`
+        <button type="button" onclick="${id ? 'saveEdit()' : 'ajouterElement()'}" class="btn btn-primary">
             ${id ? 'Enregistrer' : 'Ajouter'}
         </button>
-    `;
+    `);
 
-    document.getElementById('edit-type').addEventListener('change', function() {
-        const type = this.value;
-        const specGroup = document.getElementById('specification-group');
-        const anneeGroup = document.getElementById('annee-group');
-        const specInput = document.getElementById('edit-specification');
-
-        if (type === 'Malt') {
-            specGroup.style.display = 'block';
-            anneeGroup.style.display = 'none';
-            specInput.placeholder = 'EBC (ex: 3.5)';
-        }
-        else if (type === 'Houblon') {
-            specGroup.style.display = 'block';
-            anneeGroup.style.display = 'block';
-            specInput.placeholder = '%AA (ex: 8.9)';
-        }
-        else {
-            specGroup.style.display = 'none';
-            anneeGroup.style.display = 'none';
-        }
-    });
-
-    openModal('editModal');
+    return fields.join('');
 }
+
 
 // Fonction pour recharger les sélecteurs après la fermeture de la modale
 function setupModalCloseHandlers() {
