@@ -171,22 +171,19 @@ async function retirerStockPourBiere() {
     const quantite = parseFloat(document.getElementById('quantite-retrait')?.value);
     const errorElement = document.getElementById('retrait-error');
 
-    // Réinitialiser les messages d'erreur
     if (errorElement) errorElement.textContent = '';
 
-    // Validations
     if (!idIngredient || !idBiere || isNaN(quantite) || quantite <= 0) {
         if (errorElement) errorElement.textContent = "Veuillez sélectionner un ingrédient, une bière et une quantité valide.";
         return;
     }
 
     try {
-        // Charger les données nécessaires
-        const stocks = await loadData('stocks').catch(() => []);
-        const biere = await loadItemById('bieres', idBiere).catch(() => null);
+        // Charger les données depuis Firestore
+        const stocks = await loadData('stocks');
+        const biere = await loadItemById('bieres', idBiere);
         const stock = stocks.find(s => s.id == idIngredient);
 
-        // Vérifications
         if (!stock) {
             if (errorElement) errorElement.textContent = "Ingrédient non trouvé.";
             return;
@@ -200,7 +197,7 @@ async function retirerStockPourBiere() {
             return;
         }
 
-        // Mettre à jour le stock
+        // Mettre à jour le stock dans Firestore
         const updatedStock = { ...stock };
         updatedStock.quantite -= quantite;
         await updateItem('stocks', updatedStock);
@@ -220,7 +217,7 @@ async function retirerStockPourBiere() {
         };
         await addItem('historique_stocks', historiqueEntry);
 
-        // Mettre à jour la bière (ajouter l'ingrédient utilisé)
+        // Mettre à jour la bière
         if (!biere.ingredients) biere.ingredients = [];
         const ingredientExistIndex = biere.ingredients.findIndex(ing => ing.id === stock.id);
 
@@ -238,10 +235,10 @@ async function retirerStockPourBiere() {
 
         await updateItem('bieres', biere);
 
-        // Rafraîchir les données
-        await afficherStocks(); // Appel unique et asynchrone pour rafraîchir le tableau
-        chargerDonneesRetrait();
-        afficherHistoriqueRetraits();
+        // Rafraîchir les données depuis Firestore
+        await afficherStocks();
+        await chargerDonneesRetrait();
+        await afficherHistoriqueRetraits();
 
         // Réinitialiser le formulaire
         document.getElementById('quantite-retrait').value = '';
@@ -363,7 +360,9 @@ async function ajouterIngredient() {
         };
 
         await addItem('stocks', nouvelIngredient);
-        afficherStocks();
+        await afficherStocks();
+        await chargerTypesIngredients(); // Mettre à jour les types d'ingrédients
+        await chargerIngredientsParType(); // Mettre à jour les ingrédients disponibles pour le retrait
         closeModal('editModal');
         alert(`L'ingrédient "${nom}" a été ajouté avec succès.`);
     } catch (error) {
@@ -426,7 +425,5 @@ async function supprimerStock(id) {
 document.addEventListener('DOMContentLoaded', () => {
     chargerDonnees();
     chargerTypesIngredients();
-    // Charger les bières pour le retrait
-    chargerBieresPourRetrait();
 });
 
