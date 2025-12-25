@@ -133,6 +133,7 @@ function attachEventListeners() {
     stockTableBody.onclick = async function(e) {
         console.log("Clic détecté dans le tableau des stocks")
         const target = e.target.closest('button[data-action]');
+        console.log("Bouton cible :", target);
         if (!target) return;
 
         const action = target.getAttribute('data-action');
