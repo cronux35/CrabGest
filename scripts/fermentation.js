@@ -1,4 +1,4 @@
-// fermentation.js - Gestion complète du suivi de fermentation avec courbes continues et actions visibles
+// fermentation.js - Gestion complète du suivi de fermentation avec courbes continues et points visibles
 let fermentationChart = null;
 
 // Couleurs par type d'action pour les points sur le graphique
@@ -70,7 +70,7 @@ function calculerLimitesEchelles(densites, temperatures) {
     };
 }
 
-// Préparer les données pour le graphique avec courbes continues et actions visibles
+// Préparer les données pour le graphique avec courbes continues et points visibles
 function preparerDonneesGraphique(data) {
     const types = [...new Set(data.map(a => a.type))];
     const datasets = [];
@@ -116,49 +116,31 @@ function preparerDonneesGraphique(data) {
         actionsByDate[date] = otherActions.filter(a => a.date === date);
     });
 
-    // Créer un dataset pour les autres actions
-    const otherDatasets = [];
-    dates.forEach(date => {
-        const actions = actionsByDate[date];
+    // Créer un dataset pour chaque type d'action autre que densité et température
+    const otherTypes = [...new Set(otherActions.map(a => a.type))];
+    otherTypes.forEach(type => {
+        const actions = otherActions.filter(a => a.type === type);
         if (actions.length > 0) {
-            actions.forEach((action, index) => {
-                otherDatasets.push({
-                    x: date,
-                    y: 0, // Toujours en bas de l'axe des abscisses
-                    id: action.id,
-                    type: action.type,
-                    date: action.date,
-                    valeur: action.valeur,
-                    offset: ACTION_OFFSETS[action.type] ? ACTION_OFFSETS[action.type] * (index + 1) : -0.05 * (index + 1)
-                });
+            const points = dates.map(date => {
+                const action = actions.find(a => a.date === date);
+                return action ? { x: date, y: 0, id: action.id, type: action.type, valeur: action.valeur } : null;
+            }).filter(point => point !== null);
+
+            datasets.push({
+                label: type.charAt(0).toUpperCase() + type.slice(1),
+                data: points,
+                borderColor: ACTION_COLORS[type],
+                backgroundColor: ACTION_COLORS[type],
+                pointRadius: 8,
+                pointHoverRadius: 10,
+                pointBackgroundColor: ACTION_COLORS[type],
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                showLine: false,
+                yAxisID: 'y' // Utiliser l'axe de la densité pour positionner les points en bas
             });
         }
     });
-
-    // Ajouter un dataset pour les autres actions
-    if (otherDatasets.length > 0) {
-        datasets.push({
-            label: 'Autres actions',
-            data: otherDatasets,
-            borderColor: 'rgba(0, 0, 0, 0)',
-            backgroundColor: 'rgba(0, 0, 0, 0)',
-            pointRadius: context => {
-                const value = context.raw;
-                return value ? 8 : 0;
-            },
-            pointHoverRadius: context => {
-                const value = context.raw;
-                return value ? 10 : 0;
-            },
-            pointBackgroundColor: context => {
-                const value = context.raw;
-                return value ? ACTION_COLORS[value.type] || ACTION_COLORS.autre : 'rgba(0, 0, 0, 0)';
-            },
-            pointBorderColor: '#fff',
-            pointBorderWidth: 2,
-            showLine: false
-        });
-    }
 
     return { datasets, labels: dates.map(date => new Date(date).toLocaleString()) };
 }
@@ -214,7 +196,7 @@ function attachDeleteEventListeners() {
     });
 }
 
-// Afficher le graphique de fermentation avec courbes continues et actions visibles
+// Afficher le graphique de fermentation avec courbes continues et points visibles
 function afficherGraphiqueFermentation(data, nomBiere) {
     if (data.length === 0) {
         const ctx = document.getElementById('fermentationChart');
@@ -225,7 +207,7 @@ function afficherGraphiqueFermentation(data, nomBiere) {
         return;
     }
 
-    // Préparer les données avec courbes continues et actions visibles
+    // Préparer les données avec courbes continues et points visibles
     const { datasets, labels } = preparerDonneesGraphique(data);
 
     // Calculer les limites dynamiques
@@ -241,7 +223,7 @@ function afficherGraphiqueFermentation(data, nomBiere) {
             fermentationChart = null;
         }
 
-        // Créer un nouveau graphique avec courbes continues et actions visibles
+        // Créer un nouveau graphique avec courbes continues et points visibles
         fermentationChart = new Chart(ctx, {
             type: 'line',
             data: {
@@ -272,18 +254,18 @@ function afficherGraphiqueFermentation(data, nomBiere) {
                             label: function(context) {
                                 const label = context.dataset.label || '';
                                 const value = context.parsed.y;
-                                if (value !== null && label !== 'Autres actions') {
-                                    return `${label}: ${label === 'Gravité (SG)' ? value.toFixed(3) : value.toFixed(1)}`;
+                                if (value !== null) {
+                                    return `${label}: ${label === 'Gravité (SG)' ? value.toFixed(3) : value}`;
                                 }
                                 return null;
                             },
                             afterBody: function(contexts) {
                                 const dateIndex = contexts[0].dataIndex;
                                 const date = contexts[0].label;
-                                const actionsAtDate = data.filter(a => new Date(a.date).toLocaleString() === date && a.type !== 'densite' && a.type !== 'temperature');
+                                const actionsAtDate = data.filter(a => new Date(a.date).toLocaleString() === date);
 
                                 if (actionsAtDate.length > 0) {
-                                    return ['Autres actions à cette date:', ...actionsAtDate.map(a =>
+                                    return ['Actions à cette date:', ...actionsAtDate.map(a =>
                                         `- ${a.type === 'densite' ? 'Gravité' :
                                           a.type === 'temperature' ? 'Température' :
                                           a.type.charAt(0).toUpperCase() + a.type.slice(1)}: ${a.valeur}`
@@ -365,28 +347,7 @@ function afficherGraphiqueFermentation(data, nomBiere) {
                         }
                     }
                 }
-            },
-            plugins: [{
-                afterDraw: function(chart) {
-                    const ctx = chart.ctx;
-                    chart.data.datasets.forEach((dataset, i) => {
-                        if (dataset.label === 'Autres actions') {
-                            const meta = chart.getDatasetMeta(i);
-                            meta.data.forEach((point, index) => {
-                                const value = dataset.data[index];
-                                if (value) {
-                                    ctx.save();
-                                    ctx.fillStyle = ACTION_COLORS[value.type] || ACTION_COLORS.autre;
-                                    ctx.beginPath();
-                                    ctx.arc(point.x, point.y, 6, 0, Math.PI * 2);
-                                    ctx.fill();
-                                    ctx.restore();
-                                }
-                            });
-                        }
-                    });
-                }
-            }]
+            }
         });
     }
 }
