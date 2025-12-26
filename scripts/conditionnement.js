@@ -1,190 +1,194 @@
-// Types de contenants disponibles
-const TYPES_CONTENANTS = [
-    { id: 'canette_44cl', nom: 'Canette 44cl', volume: 0.44, code: 'C44' },
-    { id: 'canette_33cl', nom: 'Canette 33cl', volume: 0.33, code: 'C33' },
-    { id: 'bouteille_33cl', nom: 'Bouteille 33cl', volume: 0.33, code: 'B33' },
-    { id: 'bouteille_50cl', nom: 'Bouteille 50cl', volume: 0.50, code: 'B50' },
-    { id: 'bouteille_75cl', nom: 'Bouteille 75cl', volume: 0.75, code: 'B75' },
-    { id: 'fut_sodakeg_19l', nom: 'Fût SodaKeg 19L', volume: 19, code: 'FS19' },
-    { id: 'fut_20l', nom: 'Fût 20L', volume: 20, code: 'F20' }
-];
+// conditionnement.js - Gestion des déclarations de conditionnement
+let conditionnementChart = null;
 
-// Générer un numéro de lot unique
-function genererNumeroLot(biereNom, typeContenant, date) {
-    const biereCode = biereNom.substring(0, 2).toUpperCase();
-    const contenant = TYPES_CONTENANTS.find(c => c.id === typeContenant);
-    const contenantCode = contenant ? contenant.code : 'XX';
-    const dateCode = new Date(date).toISOString().substring(2, 10).replace(/-/g, '');
-    const randomCode = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-    return `${biereCode}-${contenantCode}-${dateCode}-${randomCode}`;
-}
-
-// Charger les bières dans le sélecteur
+// Charger les bières dans le sélecteur de conditionnement
 async function chargerSelecteurBieresConditionnement() {
-    const select = document.getElementById('select-biere-conditionnement');
-    const listbox = document.getElementById('listbox-bieres');
-    const bieres = await loadData('bieres').catch(() => []);
-    select.innerHTML = '';
-    listbox.innerHTML = '';
+    try {
+        const bieres = await window.DB.loadData('bieres').catch(() => []);
 
-    // Ajouter une option vide pour "Toutes les bières"
-    const optionToutes = document.createElement('option');
-    optionToutes.value = "";
-    optionToutes.textContent = "-- Toutes les bières --";
-    listbox.appendChild(optionToutes);
-
-    bieres.forEach(biere => {
-        const option = document.createElement('option');
-        option.value = biere.nom;
-        option.textContent = biere.nom;
-        select.appendChild(option);
-        const optionListbox = document.createElement('option');
-        optionListbox.value = biere.nom;
-        optionListbox.textContent = biere.nom;
-        listbox.appendChild(optionListbox);
-    });
+        const selectBiereConditionnement = document.getElementById('select-biere-conditionnement');
+        if (selectBiereConditionnement) {
+            selectBiereConditionnement.innerHTML = '<option value="">-- Sélectionner une bière --</option>';
+            bieres.forEach(biere => {
+                const option = document.createElement('option');
+                option.value = biere.id;
+                option.textContent = biere.nom;
+                selectBiereConditionnement.appendChild(option);
+            });
+        }
+    } catch (error) {
+        console.error("Erreur lors du chargement des bières pour le conditionnement:", error);
+    }
 }
 
-// Charger les types de contenants dans le sélecteur
-function chargerSelecteurContenants() {
-    const select = document.getElementById('type-contenant');
-    select.innerHTML = '';
-    TYPES_CONTENANTS.forEach(contenant => {
-        const option = document.createElement('option');
-        option.value = contenant.id;
-        option.textContent = contenant.nom;
-        select.appendChild(option);
-    });
-}
+// Charger les conditionnements pour une bière sélectionnée
+async function chargerConditionnements(idBiere) {
+    try {
+        const conditionnements = await window.DB.loadData('conditionnements').catch(() => []);
+        const conditionnementsBiere = conditionnements.filter(c => c.id_biere == idBiere);
 
-// Ouvrir la modale d'ajout
-function ouvrirModaleAjoutConditionnement() {
-    document.getElementById('modale-conditionnement').style.display = 'block';
-    // Réattacher les écouteurs si nécessaire
-    document.querySelector('#modale-conditionnement .close').onclick = closeConditionnementModal;
-}
+        const conditionnementsTable = document.getElementById('conditionnements-table');
+        if (conditionnementsTable) {
+            const tbody = conditionnementsTable.querySelector('tbody');
+            if (tbody) {
+                tbody.innerHTML = conditionnementsBiere.map(conditionnement => `
+                    <tr data-id="${conditionnement.id}">
+                        <td>${new Date(conditionnement.date).toLocaleDateString()}</td>
+                        <td>${conditionnement.numero_lot}</td>
+                        <td>${conditionnement.contenants.map(c => `${c.type} (${c.quantite})`).join(', ')}</td>
+                        <td>${conditionnement.volume_total} L</td>
+                        <td>
+                            <button class="action-btn delete-btn" data-action="delete" data-id="${conditionnement.id}" title="Supprimer">
+                                <i class="material-icons">delete</i>
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+        }
 
-// Fermer la modale
-function fermerModaleConditionnement() {
-    closeConditionnementModal();
+        attachConditionnementEventListeners();
+    } catch (error) {
+        console.error("Erreur lors du chargement des conditionnements:", error);
+    }
 }
 
 // Ajouter un conditionnement
 async function ajouterConditionnement() {
-    const biereNom = document.getElementById('select-biere-conditionnement').value;
-    const abv = parseFloat(document.getElementById('abv-final').value);
-    const typeContenant = document.getElementById('type-contenant').value;
-    const quantite = parseInt(document.getElementById('quantite-contenant').value);
+    const idBiere = document.getElementById('select-biere-conditionnement').value;
     const date = document.getElementById('date-conditionnement').value;
+    const numeroLot = document.getElementById('numero-lot').value;
 
-    // Vérifie que tous les champs sont remplis
-    if (!biereNom || isNaN(abv) || !typeContenant || isNaN(quantite) || !date) {
-        alert("Tous les champs sont obligatoires.");
+    if (!idBiere || !date || !numeroLot) {
+        alert("Veuillez sélectionner une bière, une date et un numéro de lot valide.");
         return;
     }
 
-    const contenant = TYPES_CONTENANTS.find(c => c.id === typeContenant);
-    if (!contenant) {
-        alert("Type de contenant invalide.");
+    // Récupérer les quantités des contenants
+    const contenants = [];
+    const typesContenants = ['canette_44cl', 'canette_33cl', 'bouteille_33cl', 'bouteille_50cl', 'bouteille_75cl', 'fut_19l', 'fut_20l'];
+
+    let volumeTotal = 0;
+    typesContenants.forEach(type => {
+        const quantite = parseInt(document.getElementById(type).value) || 0;
+        if (quantite > 0) {
+            let volumeUnitaire;
+            if (type === 'canette_44cl') volumeUnitaire = 0.44;
+            else if (type === 'canette_33cl') volumeUnitaire = 0.33;
+            else if (type === 'bouteille_33cl') volumeUnitaire = 0.33;
+            else if (type === 'bouteille_50cl') volumeUnitaire = 0.50;
+            else if (type === 'bouteille_75cl') volumeUnitaire = 0.75;
+            else if (type === 'fut_19l') volumeUnitaire = 19;
+            else if (type === 'fut_20l') volumeUnitaire = 20;
+
+            contenants.push({
+                type: type,
+                quantite: quantite,
+                volume_unitaire: volumeUnitaire
+            });
+
+            volumeTotal += quantite * volumeUnitaire;
+        }
+    });
+
+    if (contenants.length === 0) {
+        alert("Veuillez indiquer au moins un type de contenant avec une quantité.");
         return;
     }
-
-    const volumeTotal = contenant.volume * quantite;
-    const numeroLot = genererNumeroLot(biereNom, typeContenant, date);
-
-    const conditionnement = {
-        biere: biereNom,
-        abv,
-        typeContenant,
-        quantite,
-        volume: volumeTotal,
-        date,
-        numeroLot
-    };
 
     try {
-        await addItem('conditionnements', conditionnement);
-        afficherConditionnements();
-        closeConditionnementModal();
+        const nouveauConditionnement = {
+            id_biere: idBiere,
+            date: date,
+            numero_lot: numeroLot,
+            contenants: contenants,
+            volume_total: volumeTotal
+        };
+
+        await window.DB.addItem('conditionnements', nouveauConditionnement);
+
+        // Réinitialiser les champs
+        document.getElementById('date-conditionnement').value = '';
+        document.getElementById('numero-lot').value = '';
+        typesContenants.forEach(type => {
+            document.getElementById(type).value = '';
+        });
+
+        // Rafraîchir l'affichage
+        chargerConditionnements(idBiere);
+
+        alert(`Conditionnement enregistré avec succès.`);
     } catch (error) {
-        console.error("Erreur lors de l'ajout du conditionnement :", error);
-        alert("Erreur lors de l'ajout");
+        console.error("Erreur lors de l'ajout du conditionnement:", error);
+        alert("Une erreur est survenue lors de l'enregistrement.");
     }
-}
-
-// Afficher les conditionnements (avec filtre par bière)
-async function afficherConditionnements(biereNom = null) {
-    const tbody = document.querySelector('#table-conditionnements tbody');
-    tbody.innerHTML = '';
-    const conditionnements = await loadData('conditionnements').catch(() => []);
-
-    // Filtrer par bière si un nom est fourni
-    const conditionnementsFiltres = biereNom
-        ? conditionnements.filter(cond => cond.biere === biereNom)
-        : conditionnements;
-
-    if (conditionnementsFiltres.length === 0) {
-        const message = biereNom
-            ? `Aucun conditionnement pour la bière "${biereNom}"`
-            : "Aucun conditionnement enregistré";
-        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center;">${message}</td></tr>`;
-        return;
-    }
-
-    conditionnementsFiltres.forEach(cond => {
-        if (!cond.biere || !cond.typeContenant) {
-            console.error("Conditionnement invalide :", cond);
-            return;
-        }
-
-        const contenant = TYPES_CONTENANTS.find(c => c.id === cond.typeContenant);
-        if (!contenant) {
-            console.error(`Type de contenant inconnu : ${cond.typeContenant}`);
-            return;
-        }
-
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${cond.numeroLot || 'N/A'}</td>
-            <td>${cond.biere || 'N/A'}</td>
-            <td>${cond.abv || 'N/A'}</td>
-            <td>${contenant.nom || 'N/A'}</td>
-            <td>${cond.quantite || 'N/A'}</td>
-            <td>${cond.volume ? cond.volume.toFixed(2) : 'N/A'}</td>
-            <td>${cond.date ? new Date(cond.date).toLocaleDateString() : 'N/A'}</td>
-            <td>
-                <button onclick="supprimerConditionnement('${cond.id}')" class="btn btn-danger">
-                    <i class="material-icons">delete</i>
-                </button>
-            </td>
-        `;
-        tbody.appendChild(row);
-    });
 }
 
 // Supprimer un conditionnement
 async function supprimerConditionnement(id) {
     try {
-        await deleteData('conditionnements', id);
-        const listbox = document.getElementById('listbox-bieres');
-        const biereNom = listbox.value;
-        afficherConditionnements(biereNom === "" ? null : biereNom);
+        const conditionnement = await window.DB.loadItemById('conditionnements', id);
+        if (!conditionnement) return;
+
+        if (confirm(`Voulez-vous vraiment supprimer ce conditionnement (Lot: ${conditionnement.numero_lot}) ?`)) {
+            await window.DB.deleteItem('conditionnements', id);
+            const idBiere = document.getElementById('select-biere-conditionnement').value;
+            chargerConditionnements(idBiere);
+        }
     } catch (error) {
-        console.error("Erreur suppression conditionnement:", error);
-        alert("Erreur lors de la suppression");
+        console.error("Erreur lors de la suppression du conditionnement:", error);
+        alert("Une erreur est survenue lors de la suppression.");
     }
+}
+
+// Attacher les écouteurs pour les actions de conditionnement
+function attachConditionnementEventListeners() {
+    const conditionnementsTable = document.getElementById('conditionnements-table');
+    if (!conditionnementsTable) return;
+
+    const tbody = conditionnementsTable.querySelector('tbody');
+    if (!tbody) return;
+
+    tbody.onclick = async (e) => {
+        const target = e.target.closest('button[data-action]');
+        if (!target) return;
+
+        const action = target.dataset.action;
+        const id = target.closest('tr').dataset.id;
+
+        if (action === 'delete') {
+            await supprimerConditionnement(id);
+        }
+    };
 }
 
 // Initialisation
 document.addEventListener('DOMContentLoaded', function() {
+    // Charger les bières dans le sélecteur
     chargerSelecteurBieresConditionnement();
-    chargerSelecteurContenants();
-    afficherConditionnements();
-    document.getElementById('date-conditionnement').valueAsDate = new Date();
 
-    // Écouteur pour le filtre dynamique
-    document.getElementById('listbox-bieres').addEventListener('change', function() {
-        const biereNom = this.value;
-        afficherConditionnements(biereNom === "" ? null : biereNom);
-    });
+    // Écouteur pour le changement de bière sélectionnée
+    const selectBiereConditionnement = document.getElementById('select-biere-conditionnement');
+    if (selectBiereConditionnement) {
+        selectBiereConditionnement.addEventListener('change', function() {
+            const idBiere = this.value;
+            if (idBiere) {
+                chargerConditionnements(idBiere);
+            } else {
+                const conditionnementsTable = document.getElementById('conditionnements-table');
+                if (conditionnementsTable) {
+                    const tbody = conditionnementsTable.querySelector('tbody');
+                    if (tbody) {
+                        tbody.innerHTML = '';
+                    }
+                }
+            }
+        });
+    }
+
+    // Écouteur pour le bouton "Ajouter Conditionnement"
+    const btnAjouterConditionnement = document.getElementById('btn-ajouter-conditionnement');
+    if (btnAjouterConditionnement) {
+        btnAjouterConditionnement.addEventListener('click', ajouterConditionnement);
+    }
 });
