@@ -149,6 +149,62 @@ function afficherGraphiqueFermentation(data, nomBiere) {
         return;
     }
 
+    // Enregistrer Luxon comme adaptateur de dates pour Chart.js
+    Chart.register({
+        _adapters: {
+            _date: {
+                _id: 'luxon',
+                tests: {
+                    ISO_8601: /^\d{4}-\d{2}-\d{2}/,
+                },
+                _create: function(config) {
+                    return luxon.DateTime;
+                },
+                formats: function() {
+                    return {
+                        datetime: 'yyyy-MM-dd HH:mm',
+                        millisecond: 'HH:mm:ss.SSS',
+                        second: 'HH:mm:ss',
+                        minute: 'HH:mm',
+                        hour: 'HH:mm',
+                        day: 'MMM dd',
+                        week: 'LLL dd',
+                        month: 'MMM yyyy',
+                        quarter: 'MMM yyyy',
+                        year: 'yyyy',
+                    };
+                },
+                parse: function(value, format) {
+                    if (typeof value === 'string') {
+                        return luxon.DateTime.fromISO(value);
+                    } else if (typeof value === 'number') {
+                        return luxon.DateTime.fromMillis(value);
+                    } else if (value instanceof Date) {
+                        return luxon.DateTime.fromJSDate(value);
+                    }
+                    return null;
+                },
+                format: function(time, format) {
+                    return time.toFormat(format);
+                },
+                add: function(time, amount, unit) {
+                    const duration = {};
+                    duration[unit] = amount;
+                    return time.plus(duration);
+                },
+                diff: function(max, min, unit) {
+                    return max.diff(min, unit).as(unit);
+                },
+                startOf: function(time, unit) {
+                    return time.startOf(unit);
+                },
+                endOf: function(time, unit) {
+                    return time.endOf(unit);
+                },
+            }
+        }
+    });
+
     // Préparer les données avec points colorés
     const datasets = preparerDonneesGraphique(data);
 
@@ -192,7 +248,7 @@ function afficherGraphiqueFermentation(data, nomBiere) {
                                           point.type === 'temperature' ? 'Température' :
                                           point.type.charAt(0).toUpperCase() + point.type.slice(1)}`,
                                     `Valeur: ${point.type === 'densite' ? point.y.toFixed(3) : point.y.toFixed(1)}`,
-                                    `Date: ${new Date(point.x).toLocaleString()}`
+                                    `Date: ${luxon.DateTime.fromMillis(point.x).toFormat('dd/MM/yyyy HH:mm')}`
                                 ];
                             },
                             title: function() {
@@ -244,9 +300,9 @@ function afficherGraphiqueFermentation(data, nomBiere) {
                         type: 'time',
                         time: {
                             unit: 'day',
-                            tooltipFormat: 'll HH:mm',
+                            tooltipFormat: 'dd/MM/yyyy HH:mm',
                             displayFormats: {
-                                day: 'DD MMM HH:mm'
+                                day: 'dd/MM HH:mm'
                             }
                         },
                         title: {
@@ -256,7 +312,8 @@ function afficherGraphiqueFermentation(data, nomBiere) {
                         ticks: {
                             source: 'data',
                             autoSkip: true
-                        }
+                        },
+                        adaptative: true
                     }
                 },
                 onClick: function(evt) {
@@ -275,7 +332,7 @@ function afficherGraphiqueFermentation(data, nomBiere) {
                                     point.type === 'temperature' ? 'Température' :
                                     point.type.charAt(0).toUpperCase() + point.type.slice(1)}\n` +
                               `Valeur: ${point.type === 'densite' ? point.y.toFixed(3) : point.y.toFixed(1)}\n` +
-                              `Date: ${new Date(point.x).toLocaleString()}`);
+                              `Date: ${luxon.DateTime.fromMillis(point.x).toFormat('dd/MM/yyyy HH:mm')}`);
                     }
                 }
             }
@@ -341,7 +398,7 @@ async function supprimerActionFermentation(id) {
 
         if (confirm(`Voulez-vous vraiment supprimer cette action de ${action.type === 'densite' ? 'gravité' :
                     action.type === 'temperature' ? 'température' :
-                    action.type.charAt(0).toUpperCase() + action.type.slice(1)} ?`)) {
+                    action.type.charAt(0).toUpperCase() + type.slice(1)} ?`)) {
             await window.DB.deleteItem('fermentations', id);
             afficherSuiviFermentation(action.id_biere);
         }
