@@ -77,7 +77,7 @@ function preparerDonneesGraphique(data) {
                        type === 'temperature' ? 'Température (°C)' :
                        type.charAt(0).toUpperCase() + type.slice(1),
                 data: actions.map(a => ({
-                    x: a.date,
+                    x: new Date(a.date).getTime(), // Utilisation du timestamp
                     y: a.valeur,
                     id: a.id,
                     type: a.type,
@@ -165,101 +165,7 @@ function afficherGraphiqueFermentation(data, nomBiere) {
             fermentationChart = null;
         }
 
-        // Configuration de l'adaptateur de dates pour Chart.js
-        // Utilisation de Luxon (recommandé par Chart.js)
-        // Note: Luxon doit être chargé avant Chart.js dans le HTML
-        Chart.register({
-            _adapters: {
-                _date: {
-                    // Fonctions minimales requises par Chart.js
-                    override: function(t) {
-                        return {
-                            // Parse une date depuis une chaîne ou un timestamp
-                            parse: function(input, fmt) {
-                                if (typeof input === 'string') {
-                                    return new Date(input);
-                                } else if (typeof input === 'number') {
-                                    return new Date(input);
-                                } else if (input instanceof Date) {
-                                    return input;
-                                }
-                                return null;
-                            },
-                            // Formate une date en chaîne
-                            format: function(date, fmt) {
-                                return date.toLocaleString();
-                            },
-                            // Ajoute des jours/mois/années à une date
-                            add: function(date, amount, unit) {
-                                const newDate = new Date(date);
-                                switch (unit) {
-                                    case 'day': newDate.setDate(newDate.getDate() + amount); break;
-                                    case 'month': newDate.setMonth(newDate.getMonth() + amount); break;
-                                    case 'year': newDate.setFullYear(newDate.getFullYear() + amount); break;
-                                    case 'hour': newDate.setHours(newDate.getHours() + amount); break;
-                                    case 'minute': newDate.setMinutes(newDate.getMinutes() + amount); break;
-                                    case 'second': newDate.setSeconds(newDate.getSeconds() + amount); break;
-                                }
-                                return newDate;
-                            },
-                            // Soustrait des jours/mois/années à une date
-                            diff: function(max, min, unit) {
-                                const diff = max - min;
-                                switch (unit) {
-                                    case 'day': return diff / (1000 * 60 * 60 * 24);
-                                    case 'month': return (max.getFullYear() - min.getFullYear()) * 12 + (max.getMonth() - min.getMonth());
-                                    case 'year': return max.getFullYear() - min.getFullYear();
-                                    case 'hour': return diff / (1000 * 60 * 60);
-                                    case 'minute': return diff / (1000 * 60);
-                                    case 'second': return diff / 1000;
-                                    default: return diff;
-                                }
-                            },
-                            // Début et fin d'une unité de temps
-                            startOf: function(date, unit) {
-                                const newDate = new Date(date);
-                                switch (unit) {
-                                    case 'day': newDate.setHours(0, 0, 0, 0); break;
-                                    case 'month': newDate.setDate(1); newDate.setHours(0, 0, 0, 0); break;
-                                    case 'year': newDate.setMonth(0, 1); newDate.setHours(0, 0, 0, 0); break;
-                                    case 'hour': newDate.setMinutes(0, 0, 0); break;
-                                    case 'minute': newDate.setSeconds(0, 0); break;
-                                    case 'second': newDate.setMilliseconds(0); break;
-                                }
-                                return newDate;
-                            },
-                            endOf: function(date, unit) {
-                                const newDate = new Date(date);
-                                switch (unit) {
-                                    case 'day': newDate.setHours(23, 59, 59, 999); break;
-                                    case 'month':
-                                        newDate.setMonth(newDate.getMonth() + 1);
-                                        newDate.setDate(0);
-                                        newDate.setHours(23, 59, 59, 999);
-                                        break;
-                                    case 'year':
-                                        newDate.setMonth(11, 31);
-                                        newDate.setHours(23, 59, 59, 999);
-                                        break;
-                                    case 'hour':
-                                        newDate.setMinutes(59, 59, 999);
-                                        break;
-                                    case 'minute':
-                                        newDate.setSeconds(59, 999);
-                                        break;
-                                    case 'second':
-                                        newDate.setMilliseconds(999);
-                                        break;
-                                }
-                                return newDate;
-                            }
-                        };
-                    }
-                }
-            }
-        });
-
-        // Créer un nouveau graphique avec points colorés et adaptateur de dates
+        // Créer un nouveau graphique avec points colorés
         fermentationChart = new Chart(ctx, {
             type: 'line',
             data: {
@@ -346,6 +252,10 @@ function afficherGraphiqueFermentation(data, nomBiere) {
                         title: {
                             display: true,
                             text: 'Date et heure'
+                        },
+                        ticks: {
+                            source: 'data',
+                            autoSkip: true
                         }
                     }
                 },
