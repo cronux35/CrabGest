@@ -1,14 +1,47 @@
-let stockTableBody = null;
+// Cache local pour les stocks et les bières
+let stocksCache = [];
+let bieresCache = [];
+let historiqueStocksCache = [];
 
+// Charger les stocks (avec cache)
+async function loadStocks(forceReload = false) {
+    if (!forceReload && stocksCache.length > 0) {
+        return stocksCache;
+    }
+    stocksCache = await DB.loadData('stocks');
+    return stocksCache;
+}
+
+// Charger les bières (avec cache)
+async function loadBieres(forceReload = false) {
+    if (!forceReload && bieresCache.length > 0) {
+        return bieresCache;
+    }
+    bieresCache = await DB.loadData('bieres');
+    return bieresCache;
+}
+
+// Charger l'historique des stocks (avec cache)
+async function loadHistoriqueStocks(forceReload = false) {
+    if (!forceReload && historiqueStocksCache.length > 0) {
+        return historiqueStocksCache;
+    }
+    historiqueStocksCache = await DB.loadData('historique_stocks');
+    return historiqueStocksCache;
+}
+
+// Charger les données initiales
 async function chargerDonnees() {
     try {
-        const stocks = await DB.loadData('stocks').catch(() => []);
-        const bieres = await DB.loadData('bieres').catch(() => []);
+        await Promise.all([
+            loadStocks(true),
+            loadBieres(true)
+        ]);
 
         const selectIngredient = document.getElementById('select-ingredient');
         if (selectIngredient) {
             selectIngredient.innerHTML = '<option value="">-- Ingrédient --</option>';
-            stocks.forEach(stock => {
+            stocksCache.forEach(stock => {
                 const option = document.createElement('option');
                 option.value = stock.id;
                 option.textContent = `${stock.type} - ${stock.nom} (${stock.quantite}g)`;
@@ -25,28 +58,24 @@ async function chargerDonnees() {
     }
 }
 
+// Charger les données pour le retrait de stock
 async function chargerDonneesRetrait() {
     try {
-        const stocks = await DB.loadData('stocks').catch(() => []);
-        const bieres = await DB.loadData('bieres').catch(() => []);
-
         const selectIngredientRetrait = document.getElementById('select-ingredient-retrait');
         if (selectIngredientRetrait) {
             selectIngredientRetrait.innerHTML = '<option value="">-- Ingrédient --</option>';
-            stocks.forEach(stock => {
-                if (stock.quantite > 0) {
-                    const option = document.createElement('option');
-                    option.value = stock.id;
-                    option.textContent = `${stock.type} - ${stock.nom} (${stock.quantite}g)`;
-                    selectIngredientRetrait.appendChild(option);
-                }
+            stocksCache.filter(stock => stock.quantite > 0).forEach(stock => {
+                const option = document.createElement('option');
+                option.value = stock.id;
+                option.textContent = `${stock.type} - ${stock.nom} (${stock.quantite}g)`;
+                selectIngredientRetrait.appendChild(option);
             });
         }
 
         const selectBiereRetrait = document.getElementById('select-biere-retrait');
         if (selectBiereRetrait) {
             selectBiereRetrait.innerHTML = '<option value="">-- Bière --</option>';
-            bieres.forEach(biere => {
+            bieresCache.forEach(biere => {
                 const option = document.createElement('option');
                 option.value = biere.id;
                 option.textContent = biere.nom;
@@ -58,30 +87,31 @@ async function chargerDonneesRetrait() {
     }
 }
 
+// Charger les types d'ingrédients
 async function chargerTypesIngredients() {
-    const stocks = await DB.loadData('stocks');
-    const types = [...new Set(stocks.map(s => s.type))];
+    const types = [...new Set(stocksCache.map(s => s.type))];
     const selectType = document.getElementById('select-type-ingredient');
-    selectType.innerHTML = '<option value="">-- Sélectionnez un type --</option>';
-    types.forEach(type => {
-        const option = document.createElement('option');
-        option.value = type;
-        option.textContent = type;
-        selectType.appendChild(option);
-    });
+    if (selectType) {
+        selectType.innerHTML = '<option value="">-- Sélectionnez un type --</option>';
+        types.forEach(type => {
+            const option = document.createElement('option');
+            option.value = type;
+            option.textContent = type;
+            selectType.appendChild(option);
+        });
+    }
 }
 
+// Charger les ingrédients par type
 async function chargerIngredientsParType() {
     const type = document.getElementById('select-type-ingredient').value;
     const selectIngredient = document.getElementById('select-ingredient-retrait');
-    selectIngredient.innerHTML = '<option value="">-- Sélectionnez un ingrédient --</option>';
+    if (!selectIngredient) return;
 
+    selectIngredient.innerHTML = '<option value="">-- Sélectionnez un ingrédient --</option>';
     if (!type) return;
 
-    const stocks = await DB.loadData('stocks');
-    const ingredientsFiltres = stocks.filter(s => s.type === type && s.quantite > 0);
-
-    ingredientsFiltres.forEach(ingredient => {
+    stocksCache.filter(s => s.type === type && s.quantite > 0).forEach(ingredient => {
         const option = document.createElement('option');
         option.value = ingredient.id;
         option.textContent = `${ingredient.nom} (${ingredient.quantite}g)`;
@@ -89,82 +119,78 @@ async function chargerIngredientsParType() {
     });
 }
 
+// Afficher les stocks
 async function afficherStocks() {
     try {
-        const stocks = await DB.loadData('stocks').catch(() => []);
         const stockTableBody = document.querySelector('#table-stocks tbody');
+        if (!stockTableBody) return;
 
-        if (stockTableBody) {
-            stockTableBody.innerHTML = stocks.map(stock => `
-                <tr data-id="${stock.id}">
-                    <td>${stock.type || ''}</td>
-                    <td>${stock.nom || ''}</td>
-                    <td>${stock.lot || '-'}</td>
-                    <td class="${stock.quantite < 0 ? 'stock-negatif' : ''}">${stock.quantite || 0}g</td>
-                    <td>${stock.fournisseur || ''}</td>
-                    <td>${stock.specification || '-'}</td>
-                    <td>${stock.annee_recolte || '-'}</td>
-                    <td>${stock.conditionnement || 'non spécifié'}</td>
-                    <td>
-                        <button class="action-btn edit-btn" data-action="edit" data-id="${stock.id}" title="Éditer">
-                            <i class="material-icons">edit</i>
-                        </button>
-                        <button class="action-btn delete-btn" data-action="delete" data-id="${stock.id}" title="Supprimer">
-                            <i class="material-icons">delete</i>
-                        </button>
-                        ${stock.notes ? `<button class="action-btn notes-btn" data-action="notes" data-id="${stock.id}" title="Voir les notes">
-                            <i class="material-icons">info</i>
-                        </button>` : ''}
-                    </td>
-                </tr>
-            `).join('');
+        stockTableBody.innerHTML = stocksCache.map(stock => `
+            <tr data-id="${stock.id}">
+                <td>${stock.type || ''}</td>
+                <td>${stock.nom || ''}</td>
+                <td>${stock.lot || '-'}</td>
+                <td class="${stock.quantite < 0 ? 'stock-negatif' : ''}">${stock.quantite || 0}g</td>
+                <td>${stock.fournisseur || ''}</td>
+                <td>${stock.specification || '-'}</td>
+                <td>${stock.annee_recolte || '-'}</td>
+                <td>${stock.conditionnement || 'non spécifié'}</td>
+                <td>
+                    <button class="action-btn edit-btn" data-action="edit" title="Éditer">
+                        <i class="material-icons">edit</i>
+                    </button>
+                    <button class="action-btn delete-btn" data-action="delete" title="Supprimer">
+                        <i class="material-icons">delete</i>
+                    </button>
+                    ${stock.notes ? `<button class="action-btn notes-btn" data-action="notes" title="Voir les notes">
+                        <i class="material-icons">info</i>
+                    </button>` : ''}
+                </td>
+            </tr>
+        `).join('');
 
-            attachEventListeners();
-        }
+        attachEventListeners();
     } catch (error) {
         console.error("Erreur lors de l'affichage des stocks:", error);
     }
 }
 
+// Écouteurs dynamiques pour les actions sur les stocks
 function attachEventListeners() {
     const stockTableBody = document.querySelector('#table-stocks tbody');
     if (!stockTableBody) return;
 
-    stockTableBody.onclick = async function(e) {
-        console.log("Clic détecté dans le tableau des stocks");
+    // Détacher l'ancien écouteur s'il existe
+    const oldHandler = stockTableBody.onclick;
+    if (oldHandler) {
+        stockTableBody.onclick = null;
+    }
+
+    stockTableBody.onclick = async (e) => {
         const target = e.target.closest('button[data-action]');
-        console.log("Bouton cible :", target);
         if (!target) return;
 
-        const action = target.getAttribute('data-action');
-        console.log("Action demandée :", action);
-        const id = target.closest('tr').dataset.id; // ou getAttribute('data-id')
-        console.log("ID de l'ingrédient :", id);
+        const action = target.dataset.action;
+        const id = target.closest('tr').dataset.id;
 
         try {
-            const stocks = await loadData('stocks').catch(() => []);
-            console.log("Stocks chargés :", stocks);
-            console.log("Recherche de l'ingrédient avec l'ID :", id);
-            const stock = stocks.find(s => s.id == id); // ou s.id.toString() === id.toString()
-            console.log("Stock trouvé pour l'ID :", stock);
-
+            const stock = stocksCache.find(s => s.id == id);
             if (!stock) {
-                console.log("Aucun stock trouvé pour l'ID :", id);
+                console.error("Stock non trouvé pour l'ID:", id);
                 return;
             }
 
             switch (action) {
                 case 'edit':
-                    console.log("Édition de l'ingrédient avec l'ID :", id);
                     openEditIngredientModal('stock', id, stock);
                     break;
                 case 'delete':
-                    console.log("Suppression de l'ingrédient avec l'ID :", id);
                     openDeleteModal(
                         `Voulez-vous vraiment supprimer "${stock.nom}" ?`,
                         async () => {
                             try {
                                 await DB.deleteItem('stocks', id);
+                                stocksCache = stocksCache.filter(s => s.id !== id);
                                 afficherStocks();
                             } catch (error) {
                                 console.error("Erreur lors de la suppression du stock:", error);
@@ -174,7 +200,6 @@ function attachEventListeners() {
                     );
                     break;
                 case 'notes':
-                    console.log("Affichage des notes pour l'ingrédient avec l'ID :", id);
                     const nom = stock.nom;
                     const notes = stock.notes || 'Aucune note';
                     alert(`Notes pour ${nom}:\n${notes}`);
@@ -186,6 +211,7 @@ function attachEventListeners() {
     };
 }
 
+// Sauvegarder un ingrédient modifié
 async function saveEdit() {
     if (!currentEditType || currentEditId === null) {
         console.error("Type ou ID manquant pour la sauvegarde.");
@@ -223,6 +249,13 @@ async function saveEdit() {
         };
 
         await DB.updateItem('stocks', updatedStock);
+
+        // Mettre à jour le cache local
+        const index = stocksCache.findIndex(s => s.id === currentEditId);
+        if (index !== -1) {
+            stocksCache[index] = updatedStock;
+        }
+
         closeModal('editModal');
         afficherStocks();
         alert("Ingrédient mis à jour avec succès !");
@@ -232,6 +265,7 @@ async function saveEdit() {
     }
 }
 
+// Ajouter un ingrédient
 async function ajouterIngredient() {
     const type = document.getElementById('edit-type').value;
     const nom = document.getElementById('edit-nom').value;
@@ -262,7 +296,10 @@ async function ajouterIngredient() {
             notes: notes
         };
 
-        await DB.addItem('stocks', nouvelIngredient);
+        const newId = await DB.addItem('stocks', nouvelIngredient);
+        nouvelIngredient.id = newId;
+        stocksCache.push(nouvelIngredient);
+
         await afficherStocks();
         await chargerTypesIngredients();
         await chargerIngredientsParType();
@@ -274,21 +311,7 @@ async function ajouterIngredient() {
     }
 }
 
-function ouvrirModalAjoutIngredient() {
-    openEditIngredientModal('stock', null, {
-        type: "",
-        nom: "",
-        lot: "",
-        quantite: 0,
-        fournisseur: "",
-        specification: "",
-        annee_recolte: null,
-        pourcentage_aa: null,
-        conditionnement: "",
-        notes: ""
-    });
-}
-
+// Retirer du stock pour une bière
 async function retirerStockPourBiere() {
     const idIngredient = document.getElementById('select-ingredient-retrait')?.value;
     const idBiere = document.getElementById('select-biere-retrait')?.value;
@@ -303,9 +326,8 @@ async function retirerStockPourBiere() {
     }
 
     try {
-        const stocks = await DB.loadData('stocks');
-        const biere = await DB.loadItemById('bieres', idBiere);
-        const stock = stocks.find(s => s.id == idIngredient);
+        const stock = stocksCache.find(s => s.id == idIngredient);
+        const biere = bieresCache.find(b => b.id == idBiere);
 
         if (!stock) {
             if (errorElement) errorElement.textContent = "Ingrédient non trouvé.";
@@ -322,7 +344,14 @@ async function retirerStockPourBiere() {
 
         const updatedStock = { ...stock };
         updatedStock.quantite -= quantite;
+
         await DB.updateItem('stocks', updatedStock);
+
+        // Mettre à jour le cache local
+        const stockIndex = stocksCache.findIndex(s => s.id === idIngredient);
+        if (stockIndex !== -1) {
+            stocksCache[stockIndex] = updatedStock;
+        }
 
         const historiqueEntry = {
             date: new Date().toISOString(),
@@ -336,7 +365,9 @@ async function retirerStockPourBiere() {
             stock_apres: updatedStock.quantite,
             notes: `Retrait pour la bière "${biere.nom}"`
         };
+
         await DB.addItem('historique_stocks', historiqueEntry);
+        historiqueStocksCache.push(historiqueEntry);
 
         if (!biere.ingredients) biere.ingredients = [];
         const ingredientExistIndex = biere.ingredients.findIndex(ing => ing.id === stock.id);
@@ -355,6 +386,12 @@ async function retirerStockPourBiere() {
 
         await DB.updateItem('bieres', biere);
 
+        // Mettre à jour le cache local des bières
+        const biereIndex = bieresCache.findIndex(b => b.id === idBiere);
+        if (biereIndex !== -1) {
+            bieresCache[biereIndex] = biere;
+        }
+
         await afficherStocks();
         await chargerDonneesRetrait();
         await afficherHistoriqueRetraits();
@@ -369,16 +406,17 @@ async function retirerStockPourBiere() {
     }
 }
 
+// Annuler un retrait
 async function annulerRetrait(entryId) {
     try {
-        const entry = await DB.loadItemById('historique_stocks', entryId);
+        const entry = historiqueStocksCache.find(e => e.id == entryId);
         if (!entry || entry.type !== "retrait_biere") {
             alert("Entrée d'historique non valide ou non trouvée.");
             return;
         }
 
-        const stock = await DB.loadItemById('stocks', entry.ingredient_id);
-        const biere = await DB.loadItemById('bieres', entry.biere_id);
+        const stock = stocksCache.find(s => s.id == entry.ingredient_id);
+        const biere = bieresCache.find(b => b.id == entry.biere_id);
 
         if (!stock || !biere) {
             alert("Ingrédient ou bière non trouvé.");
@@ -387,19 +425,35 @@ async function annulerRetrait(entryId) {
 
         const updatedStock = { ...stock };
         updatedStock.quantite += entry.quantite;
+
         await DB.updateItem('stocks', updatedStock);
 
-        if (!biere.ingredients) biere.ingredients = [];
-        const ingredientExistIndex = biere.ingredients.findIndex(ing => ing.id === entry.ingredient_id);
-
-        if (ingredientExistIndex !== -1) {
-            biere.ingredients[ingredientExistIndex].quantite_utilisee -= entry.quantite;
-            await DB.updateItem('bieres', biere);
+        // Mettre à jour le cache local
+        const stockIndex = stocksCache.findIndex(s => s.id === entry.ingredient_id);
+        if (stockIndex !== -1) {
+            stocksCache[stockIndex] = updatedStock;
         }
 
-        entry.annule = true;
-        entry.date_annulation = new Date().toISOString();
-        await DB.updateItem('historique_stocks', entry);
+        if (biere.ingredients) {
+            const ingredientExistIndex = biere.ingredients.findIndex(ing => ing.id === entry.ingredient_id);
+            if (ingredientExistIndex !== -1) {
+                biere.ingredients[ingredientExistIndex].quantite_utilisee -= entry.quantite;
+                await DB.updateItem('bieres', biere);
+
+                // Mettre à jour le cache local des bières
+                const biereIndex = bieresCache.findIndex(b => b.id === entry.biere_id);
+                if (biereIndex !== -1) {
+                    bieresCache[biereIndex] = biere;
+                }
+            }
+        }
+
+        const entryIndex = historiqueStocksCache.findIndex(e => e.id === entryId);
+        if (entryIndex !== -1) {
+            historiqueStocksCache[entryIndex].annule = true;
+            historiqueStocksCache[entryIndex].date_annulation = new Date().toISOString();
+            await DB.updateItem('historique_stocks', historiqueStocksCache[entryIndex]);
+        }
 
         afficherStocks();
         afficherHistoriqueRetraits();
@@ -411,70 +465,67 @@ async function annulerRetrait(entryId) {
     }
 }
 
+// Afficher l'historique des retraits
 async function afficherHistoriqueRetraits() {
     try {
-        const historique = await DB.loadData('historique_stocks').catch(() => []);
         const selectBiere = document.getElementById('select-biere-historique');
         const biereId = selectBiere ? selectBiere.value : null;
 
-        let historiqueFiltre = historique.filter(entry => entry.type === "retrait_biere" && !entry.annule);
+        let historiqueFiltre = historiqueStocksCache.filter(entry => entry.type === "retrait_biere" && !entry.annule);
 
         if (biereId) {
             historiqueFiltre = historiqueFiltre.filter(entry => entry.biere_id == biereId);
         }
 
         const tbody = document.querySelector('#historique-retraits tbody');
+        if (!tbody) return;
 
-        if (tbody) {
-            tbody.innerHTML = historiqueFiltre.map(entry => `
-                <tr data-id="${entry.id}">
-                    <td>${new Date(entry.date).toLocaleString()}</td>
-                    <td>${entry.ingredient || ''}</td>
-                    <td>${entry.quantite || 0}g</td>
-                    <td>${entry.biere || ''}</td>
-                    <td>${entry.notes || ''}</td>
-                    <td>
-                        <button class="action-btn delete-btn" data-action="delete" data-id="${entry.id}" title="Annuler le retrait">
-                            <i class="material-icons">undo</i>
-                        </button>
-                    </td>
-                </tr>
-            `).join('');
+        tbody.innerHTML = historiqueFiltre.map(entry => `
+            <tr data-id="${entry.id}">
+                <td>${new Date(entry.date).toLocaleString()}</td>
+                <td>${entry.ingredient || ''}</td>
+                <td>${entry.quantite || 0}g</td>
+                <td>${entry.biere || ''}</td>
+                <td>${entry.notes || ''}</td>
+                <td>
+                    <button class="action-btn delete-btn" data-action="annuler" data-id="${entry.id}" title="Annuler le retrait">
+                        <i class="material-icons">undo</i>
+                    </button>
+                </td>
+            </tr>
+        `).join('');
 
-            tbody.querySelectorAll('.delete-btn').forEach(btn => {
-                btn.onclick = async () => {
-                    const id = btn.closest('tr').getAttribute('data-id');
-                    annulerRetrait(id);
-                };
-            });
-        }
+        // Écouteurs pour les boutons d'annulation
+        tbody.querySelectorAll('.delete-btn').forEach(btn => {
+            btn.onclick = () => annulerRetrait(btn.closest('tr').getAttribute('data-id'));
+        });
     } catch (error) {
         console.error("Erreur lors de l'affichage de l'historique des retraits:", error);
     }
 }
 
+// Charger les bières pour le filtre
 async function chargerBieresPourFiltre() {
     try {
-        const bieres = await DB.loadData('bieres').catch(() => []);
         const selectBiere = document.getElementById('select-biere-historique');
+        if (!selectBiere) return;
 
-        if (selectBiere) {
-            selectBiere.innerHTML = '<option value="">-- Toutes les bières --</option>';
-            bieres.forEach(biere => {
-                const option = document.createElement('option');
-                option.value = biere.id;
-                option.textContent = biere.nom;
-                selectBiere.appendChild(option);
-            });
-        }
+        selectBiere.innerHTML = '<option value="">-- Toutes les bières --</option>';
+        bieresCache.forEach(biere => {
+            const option = document.createElement('option');
+            option.value = biere.id;
+            option.textContent = biere.nom;
+            selectBiere.appendChild(option);
+        });
     } catch (error) {
-        console.error("Erreur lors du chargement des bières pour le filtre :", error);
+        console.error("Erreur lors du chargement des bières pour le filtre:", error);
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    chargerDonnees();
-    chargerTypesIngredients();
-    chargerBieresPourFiltre();
-    afficherHistoriqueRetraits();
+// Initialisation
+document.addEventListener('DOMContentLoaded', async () => {
+    await chargerDonnees();
+    await chargerTypesIngredients();
+    await chargerBieresPourFiltre();
+    await afficherHistoriqueRetraits();
 });

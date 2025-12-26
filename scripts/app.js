@@ -29,43 +29,18 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Initialisation des données
+    // Initialisation des données (une seule fois)
     async function initData() {
         try {
-            if (!window.DB || !window.DB.loadData || !window.DB.saveData) {
+            if (!window.DB) {
                 throw new Error("Les méthodes DB ne sont pas disponibles.");
             }
 
-            const stocks = await window.DB.loadData('stocks').catch(() => []);
-            // if (stocks.length === 0) {
-            //     const defaultStocks = [
-            //         {
-            //             type: "Malt",
-            //             nom: "Pilsen",
-            //             lot: "2023-001",
-            //             quantite: 10000,
-            //             fournisseur: "Château",
-            //             specification: "3.5 EBC",
-            //             annee_recolte: null,
-            //             pourcentage_aa: null,
-            //             notes: "Malt de base pour les bières blondes et IPA.",
-            //             conditionnement: "Sac de 25 kg"
-            //         }
-            //     ];
-            //     await window.DB.saveData('stocks', defaultStocks);
-            // }
+            // Charger toutes les données nécessaires une seule fois
+            const collections = ['stocks', 'bieres', 'fermentations', 'conditionnements', 'ventes', 'historique_stocks', 'clients', 'declarations_douanes'];
+            await Promise.all(collections.map(collection => window.DB.loadData(collection)));
 
-            const storesToInit = ['bieres', 'fermentations', 'conditionnements', 'ventes', 'historique_stocks', 'clients', 'declarations_douanes'];
-            for (const store of storesToInit) {
-                try {
-                    const data = await window.DB.loadData(store).catch(() => []);
-                    if (data.length === 0) {
-                        await window.DB.saveData(store, []);
-                    }
-                } catch (error) {
-                    console.error(`[App] Erreur lors de l'initialisation du store ${store}:`, error);
-                }
-            }
+            console.log("[App] Données initialisées avec succès.");
         } catch (error) {
             console.error("[App] Erreur lors de l'initialisation des données:", error);
             throw error;
@@ -93,7 +68,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // Charger les données par défaut (premier onglet actif)
-        if (typeof chargerDonnees === 'function') chargerDonnees();
         if (typeof afficherBieres === 'function') afficherBieres();
         if (typeof chargerDonneesRetrait === 'function') chargerDonneesRetrait();
         if (typeof afficherHistoriqueRetraits === 'function') afficherHistoriqueRetraits();
@@ -215,21 +189,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (tab) tab.classList.add('active');
             });
         });
-
-        // Validation d'un utilisateur (admin)
-        window.validateUser = async function(uid) {
-            if (!window.Auth?.validateUser) {
-                alert("Fonction de validation non disponible.");
-                return;
-            }
-            const result = await window.Auth.validateUser(uid);
-            if (result.success) {
-                alert("Utilisateur validé avec succès.");
-                await loadUnvalidatedUsers();
-            } else {
-                alert("Erreur lors de la validation: " + result.message);
-            }
-        };
     }
 
     // Charger les utilisateurs non validés
@@ -251,6 +210,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 "<p>Aucun utilisateur en attente de validation.</p>";
         }
     }
+
+    // Validation d'un utilisateur (admin)
+    window.validateUser = async function(uid) {
+        if (!window.Auth?.validateUser) {
+            alert("Fonction de validation non disponible.");
+            return;
+        }
+        const result = await window.Auth.validateUser(uid);
+        if (result.success) {
+            alert("Utilisateur validé avec succès.");
+            await loadUnvalidatedUsers();
+        } else {
+            alert("Erreur lors de la validation: " + result.message);
+        }
+    };
 
     // Lancer l'initialisation
     initializeApp();
