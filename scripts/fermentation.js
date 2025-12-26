@@ -68,19 +68,17 @@ function preparerDonneesGraphique(data) {
     const types = [...new Set(data.map(a => a.type))];
     const datasets = [];
 
-    // Extraire les labels de dates uniques
+    // Extraire les dates uniques et les trier
     const dates = [...new Set(data.map(a => a.date))].sort((a, b) => new Date(a) - new Date(b));
-    const labels = dates.map(date => new Date(date).toLocaleString());
 
     types.forEach(type => {
         const actions = data.filter(a => a.type === type).sort((a, b) => new Date(a.date) - new Date(b.date));
 
         if (actions.length > 0) {
-            // Créer un tableau de valeurs aligné avec les labels
-            const values = [];
-            dates.forEach(date => {
+            // Créer un tableau de valeurs aligné avec les dates
+            const values = dates.map(date => {
                 const action = actions.find(a => a.date === date);
-                values.push(action ? action.valeur : null);
+                return action ? action.valeur : null;
             });
 
             datasets.push({
@@ -102,7 +100,7 @@ function preparerDonneesGraphique(data) {
         }
     });
 
-    return { datasets, labels };
+    return { datasets, labels: dates.map(date => new Date(date).toLocaleString()) };
 }
 
 // Afficher le suivi de fermentation pour une bière sélectionnée
@@ -112,6 +110,9 @@ async function afficherSuiviFermentation(idBiere) {
         const biere = await window.DB.loadItemById('bieres', idBiere).catch(() => null);
 
         const data = fermentations.filter(f => f.id_biere == idBiere);
+
+        // Afficher le graphique
+        afficherGraphiqueFermentation(data, biere ? biere.nom : 'Bière inconnue');
 
         // Afficher les actions de fermentation dans un tableau
         const actionsTable = document.getElementById('fermentation-actions-table');
@@ -126,20 +127,31 @@ async function afficherSuiviFermentation(idBiere) {
                             action.type.charAt(0).toUpperCase() + action.type.slice(1)}</td>
                         <td>${action.valeur}</td>
                         <td>
-                            <button class="action-btn delete-btn" data-action="delete" title="Supprimer">
+                            <button class="action-btn delete-btn" data-action="delete" data-id="${action.id}" title="Supprimer">
                                 <i class="material-icons">delete</i>
                             </button>
                         </td>
                     </tr>
                 `).join('');
+
+                // Attacher les écouteurs pour les boutons "Supprimer"
+                attachDeleteEventListeners();
             }
         }
-
-        // Mettre à jour le graphique
-        afficherGraphiqueFermentation(data, biere ? biere.nom : 'Bière inconnue');
     } catch (error) {
         console.error("Erreur lors de l'affichage du suivi de fermentation:", error);
     }
+}
+
+// Attacher les écouteurs pour les boutons "Supprimer"
+function attachDeleteEventListeners() {
+    const deleteButtons = document.querySelectorAll('.action-btn.delete-btn');
+    deleteButtons.forEach(button => {
+        button.onclick = async function() {
+            const id = this.getAttribute('data-id');
+            await supprimerActionFermentation(id);
+        };
+    });
 }
 
 // Afficher le graphique de fermentation avec points colorés et infobulles détaillées
@@ -194,7 +206,7 @@ function afficherGraphiqueFermentation(data, nomBiere) {
                                 const label = context.dataset.label || '';
                                 const value = context.parsed.y;
                                 if (value !== null) {
-                                    return `${label}: ${context.dataset.label === 'Gravité (SG)' ? value.toFixed(3) : value.toFixed(1)}`;
+                                    return `${label}: ${label === 'Gravité (SG)' ? value.toFixed(3) : value.toFixed(1)}`;
                                 }
                                 return null;
                             },
@@ -348,31 +360,6 @@ async function supprimerActionFermentation(id) {
         console.error("Erreur lors de la suppression de l'action de fermentation:", error);
         alert("Une erreur est survenue lors de la suppression.");
     }
-}
-
-// Écouteurs dynamiques pour les actions de fermentation
-function attachFermentationEventListeners() {
-    const actionsTable = document.getElementById('fermentation-actions-table');
-    if (!actionsTable) return;
-
-    const tbody = actionsTable.querySelector('tbody');
-    if (!tbody) return;
-
-    // Détache les anciens écouteurs
-    tbody.onclick = null;
-
-    // Attache le nouvel écouteur
-    tbody.onclick = async (e) => {
-        const target = e.target.closest('button[data-action]');
-        if (!target) return;
-
-        const action = target.dataset.action;
-        const id = target.closest('tr').dataset.id;
-
-        if (action === 'delete') {
-            await supprimerActionFermentation(id);
-        }
-    };
 }
 
 // Initialisation
