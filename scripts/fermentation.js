@@ -1,10 +1,20 @@
-// fermentation.js - Gestion complète du suivi de fermentation avec échelles dynamiques
+// fermentation.js - Gestion complète du suivi de fermentation avec échelles dynamiques et points colorés
 let fermentationChart = null;
+
+// Couleurs par type d'action pour les points sur le graphique
+const ACTION_COLORS = {
+    densite: 'rgb(75, 192, 192)',       // Turquoise pour la gravité
+    temperature: 'rgb(255, 99, 132)',   // Rose pour la température
+    purge: 'rgb(54, 162, 235)',         // Bleu pour la purge
+    pression: 'rgb(255, 206, 86)',      // Jaune pour la pression
+    dry_hopping: 'rgb(153, 102, 255)',    // Violet pour le dry hopping
+    autre: 'rgb(201, 203, 207)'          // Gris pour les autres types
+};
 
 // Charger les bières dans le sélecteur de fermentation
 async function chargerSelecteurBieresFermentation() {
     try {
-        const bieres = await loadData('bieres').catch(() => []);
+        const bieres = await window.DB.loadData('bieres').catch(() => []);
 
         const selectBiereFermentation = document.getElementById('select-biere-fermentation');
         if (selectBiereFermentation) {
@@ -23,7 +33,6 @@ async function chargerSelecteurBieresFermentation() {
 
 // Calculer les limites dynamiques pour les échelles
 function calculerLimitesEchelles(densites, temperatures) {
-    // Calcul des limites pour la gravité
     let minGravite = 0.800;
     let maxGravite = 1.150;
 
@@ -31,15 +40,11 @@ function calculerLimitesEchelles(densites, temperatures) {
         const graviteValues = densites.map(d => d.valeur);
         const minGraviteData = Math.min(...graviteValues);
         const maxGraviteData = Math.max(...graviteValues);
-
-        // Ajouter une marge de 5% ou 0.010 (le plus grand des deux)
         const margeGravite = Math.max(0.010, 0.05 * (maxGraviteData - minGraviteData));
-
         minGravite = Math.max(0.800, minGraviteData - margeGravite);
         maxGravite = Math.min(1.150, maxGraviteData + margeGravite);
     }
 
-    // Calcul des limites pour la température
     let minTemperature = 0;
     let maxTemperature = 40;
 
@@ -47,10 +52,7 @@ function calculerLimitesEchelles(densites, temperatures) {
         const tempValues = temperatures.map(t => t.valeur);
         const minTempData = Math.min(...tempValues);
         const maxTempData = Math.max(...tempValues);
-
-        // Ajouter une marge de 10% ou 2°C (le plus grand des deux)
         const margeTemp = Math.max(2, 0.1 * (maxTempData - minTempData));
-
         minTemperature = Math.max(0, minTempData - margeTemp);
         maxTemperature = Math.min(40, maxTempData + margeTemp);
     }
@@ -61,11 +63,49 @@ function calculerLimitesEchelles(densites, temperatures) {
     };
 }
 
+// Préparer les données pour le graphique avec points colorés
+function preparerDonneesGraphique(data) {
+    const types = [...new Set(data.map(a => a.type))];
+    const datasets = [];
+
+    types.forEach(type => {
+        const actions = data.filter(a => a.type === type).sort((a, b) => new Date(a.date) - new Date(b.date));
+
+        if (actions.length > 0) {
+            datasets.push({
+                label: type === 'densite' ? 'Gravité (SG)' :
+                       type === 'temperature' ? 'Température (°C)' :
+                       type.charAt(0).toUpperCase() + type.slice(1),
+                data: actions.map(a => ({
+                    x: new Date(a.date),
+                    y: a.valeur,
+                    id: a.id,
+                    type: a.type,
+                    date: new Date(a.date).toLocaleString(),
+                    valeur: a.valeur
+                })),
+                borderColor: ACTION_COLORS[type] || ACTION_COLORS.autre,
+                backgroundColor: `${ACTION_COLORS[type] || ACTION_COLORS.autre}33`, // 33 = 20% d'opacité
+                tension: 0.1,
+                fill: false,
+                yAxisID: type === 'densite' ? 'y' : 'y1',
+                pointRadius: 5,
+                pointHoverRadius: 7,
+                pointBackgroundColor: ACTION_COLORS[type] || ACTION_COLORS.autre,
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2
+            });
+        }
+    });
+
+    return datasets;
+}
+
 // Afficher le suivi de fermentation pour une bière sélectionnée
 async function afficherSuiviFermentation(idBiere) {
     try {
-        const fermentations = await loadData('fermentations').catch(() => []);
-        const biere = await loadItemById('bieres', idBiere).catch(() => null);
+        const fermentations = await window.DB.loadData('fermentations').catch(() => []);
+        const biere = await window.DB.loadItemById('bieres', idBiere).catch(() => null);
 
         const data = fermentations.filter(f => f.id_biere == idBiere);
 
@@ -75,12 +115,14 @@ async function afficherSuiviFermentation(idBiere) {
             const tbody = actionsTable.querySelector('tbody');
             if (tbody) {
                 tbody.innerHTML = data.map(action => `
-                    <tr>
+                    <tr data-id="${action.id}">
                         <td>${new Date(action.date).toLocaleString()}</td>
-                        <td>${action.type === 'densite' ? 'Gravité' : action.type}</td>
+                        <td>${action.type === 'densite' ? 'Gravité' :
+                            action.type === 'temperature' ? 'Température' :
+                            action.type.charAt(0).toUpperCase() + action.type.slice(1)}</td>
                         <td>${action.valeur}</td>
                         <td>
-                            <button class="action-btn delete-btn" onclick="supprimerActionFermentation(${action.id})" title="Supprimer">
+                            <button class="action-btn delete-btn" data-action="delete" title="Supprimer">
                                 <i class="material-icons">delete</i>
                             </button>
                         </td>
@@ -96,13 +138,23 @@ async function afficherSuiviFermentation(idBiere) {
     }
 }
 
-// Afficher le graphique de fermentation avec échelles dynamiques
+// Afficher le graphique de fermentation avec points colorés et infobulles détaillées
 function afficherGraphiqueFermentation(data, nomBiere) {
-    // Filtrer et trier les données
-    const densites = data.filter(a => a.type === 'densite').sort((a, b) => new Date(a.date) - new Date(b.date));
-    const temperatures = data.filter(a => a.type === 'temperature').sort((a, b) => new Date(a.date) - new Date(b.date));
+    if (data.length === 0) {
+        const ctx = document.getElementById('fermentationChart');
+        if (ctx && fermentationChart) {
+            fermentationChart.destroy();
+            fermentationChart = null;
+        }
+        return;
+    }
+
+    // Préparer les données avec points colorés
+    const datasets = preparerDonneesGraphique(data);
 
     // Calculer les limites dynamiques
+    const densites = data.filter(a => a.type === 'densite');
+    const temperatures = data.filter(a => a.type === 'temperature');
     const limites = calculerLimitesEchelles(densites, temperatures);
 
     const ctx = document.getElementById('fermentationChart');
@@ -113,35 +165,11 @@ function afficherGraphiqueFermentation(data, nomBiere) {
             fermentationChart = null;
         }
 
-        // Créer un nouveau graphique avec échelles dynamiques
+        // Créer un nouveau graphique avec points colorés
         fermentationChart = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: [...new Set([...densites, ...temperatures].map(a => new Date(a.date).toLocaleString()))].sort(),
-                datasets: [
-                    {
-                        label: 'Gravité (SG)',
-                        data: densites.map(d => d.valeur),
-                        borderColor: 'rgb(75, 192, 192)',
-                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                        tension: 0.1,
-                        fill: true,
-                        yAxisID: 'y',
-                        pointRadius: 4,
-                        pointHoverRadius: 6
-                    },
-                    {
-                        label: 'Température (°C)',
-                        data: temperatures.map(t => t.valeur),
-                        borderColor: 'rgb(255, 99, 132)',
-                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                        tension: 0.1,
-                        fill: true,
-                        yAxisID: 'y1',
-                        pointRadius: 4,
-                        pointHoverRadius: 6
-                    }
-                ]
+                datasets: datasets
             },
             options: {
                 responsive: true,
@@ -150,28 +178,25 @@ function afficherGraphiqueFermentation(data, nomBiere) {
                     title: {
                         display: true,
                         text: `Suivi de fermentation - ${nomBiere}`,
-                        font: {
-                            size: 16
-                        }
+                        font: { size: 16 }
                     },
-                    legend: {
-                        position: 'top',
-                    },
+                    legend: { position: 'top' },
                     tooltip: {
-                        mode: 'index',
+                        mode: 'nearest',
                         intersect: false,
                         callbacks: {
                             label: function(context) {
-                                let label = context.dataset.label || '';
-                                if (label) {
-                                    label += ': ';
-                                }
-                                if (context.parsed.y !== null) {
-                                    label += context.dataset.label === 'Gravité (SG)' ?
-                                        context.parsed.y.toFixed(3) :
-                                        context.parsed.y.toFixed(1);
-                                }
-                                return label;
+                                const point = context.raw;
+                                return [
+                                    `Type: ${point.type === 'densite' ? 'Gravité' :
+                                          point.type === 'temperature' ? 'Température' :
+                                          point.type.charAt(0).toUpperCase() + point.type.slice(1)}`,
+                                    `Valeur: ${point.type === 'densite' ? point.valeur.toFixed(3) : point.valeur.toFixed(1)}`,
+                                    `Date: ${point.date}`
+                                ];
+                            },
+                            title: function() {
+                                return ''; // On utilise le callback label pour tout afficher
                             }
                         }
                     }
@@ -184,7 +209,7 @@ function afficherGraphiqueFermentation(data, nomBiere) {
                         title: {
                             display: true,
                             text: 'Gravité (SG)',
-                            color: 'rgb(75, 192, 192)'
+                            color: ACTION_COLORS.densite
                         },
                         min: limites.gravite.min,
                         max: limites.gravite.max,
@@ -194,9 +219,7 @@ function afficherGraphiqueFermentation(data, nomBiere) {
                                 return value.toFixed(3);
                             }
                         },
-                        grid: {
-                            drawOnChartArea: true
-                        }
+                        grid: { drawOnChartArea: true }
                     },
                     y1: {
                         type: 'linear',
@@ -205,7 +228,7 @@ function afficherGraphiqueFermentation(data, nomBiere) {
                         title: {
                             display: true,
                             text: 'Température (°C)',
-                            color: 'rgb(255, 99, 132)'
+                            color: ACTION_COLORS.temperature
                         },
                         min: limites.temperature.min,
                         max: limites.temperature.max,
@@ -215,15 +238,41 @@ function afficherGraphiqueFermentation(data, nomBiere) {
                                 return value.toFixed(1) + '°C';
                             }
                         },
-                        grid: {
-                            drawOnChartArea: false
-                        }
+                        grid: { drawOnChartArea: false }
                     },
                     x: {
+                        type: 'time',
+                        time: {
+                            unit: 'day',
+                            tooltipFormat: 'll HH:mm',
+                            displayFormats: {
+                                day: 'DD MMM HH:mm'
+                            }
+                        },
                         title: {
                             display: true,
                             text: 'Date et heure'
                         }
+                    }
+                },
+                onClick: function(evt) {
+                    const points = fermentationChart.getElementsAtEventForMode(
+                        evt, 'nearest', { intersect: true }, true
+                    );
+
+                    if (points.length > 0) {
+                        const pointIndex = points[0].index;
+                        const datasetIndex = points[0].datasetIndex;
+                        const dataset = fermentationChart.data.datasets[datasetIndex];
+                        const point = dataset.data[pointIndex];
+
+                        // Afficher une infobulle détaillée ou une alerte
+                        alert(`Détails de l'action:\n\n` +
+                              `Type: ${point.type === 'densite' ? 'Gravité' :
+                                    point.type === 'temperature' ? 'Température' :
+                                    point.type.charAt(0).toUpperCase() + point.type.slice(1)}\n` +
+                              `Valeur: ${point.type === 'densite' ? point.valeur.toFixed(3) : point.valeur.toFixed(1)}\n` +
+                              `Date: ${point.date}`);
                     }
                 }
             }
@@ -258,13 +307,13 @@ async function ajouterActionFermentation() {
 
     try {
         const nouvelleAction = {
-            id_biere: parseInt(idBiere),
+            id_biere: idBiere,
             date: date || new Date().toISOString(),
             type: type,
             valeur: valeur
         };
 
-        await addItem('fermentations', nouvelleAction);
+        await window.DB.addItem('fermentations', nouvelleAction);
 
         // Réinitialiser le champ de valeur
         document.getElementById('valeur-action').value = '';
@@ -272,7 +321,9 @@ async function ajouterActionFermentation() {
         // Rafraîchir l'affichage
         afficherSuiviFermentation(idBiere);
 
-        alert(`Action de ${type === 'densite' ? 'gravité' : type} enregistrée avec succès.`);
+        alert(`Action de ${type === 'densite' ? 'gravité' :
+              type === 'temperature' ? 'température' :
+              type.charAt(0).toUpperCase() + type.slice(1)} enregistrée avec succès.`);
     } catch (error) {
         console.error("Erreur lors de l'ajout de l'action de fermentation:", error);
         alert("Une erreur est survenue lors de l'enregistrement.");
@@ -282,11 +333,13 @@ async function ajouterActionFermentation() {
 // Supprimer une action de fermentation
 async function supprimerActionFermentation(id) {
     try {
-        const action = await loadItemById('fermentations', id);
+        const action = await window.DB.loadItemById('fermentations', id);
         if (!action) return;
 
-        if (confirm(`Voulez-vous vraiment supprimer cette action de ${action.type === 'densite' ? 'gravité' : action.type} ?`)) {
-            await deleteItem('fermentations', id);
+        if (confirm(`Voulez-vous vraiment supprimer cette action de ${action.type === 'densite' ? 'gravité' :
+                    action.type === 'temperature' ? 'température' :
+                    action.type.charAt(0).toUpperCase() + action.type.slice(1)} ?`)) {
+            await window.DB.deleteItem('fermentations', id);
             afficherSuiviFermentation(action.id_biere);
         }
     } catch (error) {
@@ -295,8 +348,34 @@ async function supprimerActionFermentation(id) {
     }
 }
 
+// Écouteurs dynamiques pour les actions de fermentation
+function attachFermentationEventListeners() {
+    const actionsTable = document.getElementById('fermentation-actions-table');
+    if (!actionsTable) return;
+
+    const tbody = actionsTable.querySelector('tbody');
+    if (!tbody) return;
+
+    // Détache les anciens écouteurs
+    tbody.onclick = null;
+
+    // Attache le nouvel écouteur
+    tbody.onclick = async (e) => {
+        const target = e.target.closest('button[data-action]');
+        if (!target) return;
+
+        const action = target.dataset.action;
+        const id = target.closest('tr').dataset.id;
+
+        if (action === 'delete') {
+            await supprimerActionFermentation(id);
+        }
+    };
+}
+
 // Initialisation
 document.addEventListener('DOMContentLoaded', function() {
+    // Charger les bières dans le sélecteur
     chargerSelecteurBieresFermentation();
 
     // Écouteur pour le changement de bière sélectionnée
@@ -315,6 +394,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
         });
+    }
+
+    // Écouteur pour le bouton "Ajouter Action"
+    const btnAjouterAction = document.getElementById('btn-ajouter-action-fermentation');
+    if (btnAjouterAction) {
+        btnAjouterAction.addEventListener('click', ajouterActionFermentation);
     }
 
     // Configuration des inputs pour les valeurs décimales
