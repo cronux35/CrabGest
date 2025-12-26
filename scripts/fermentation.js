@@ -1,4 +1,4 @@
-// fermentation.js - Gestion complète du suivi de fermentation avec affichage garanti des points
+// fermentation.js - Gestion complète du suivi de fermentation avec logs de débogage
 let fermentationChart = null;
 
 // Couleurs par type d'action pour les points sur le graphique
@@ -60,6 +60,8 @@ function calculerLimitesEchelles(densites, temperatures) {
     // Calculer la valeur centrale de l'axe Y
     const midY = (minGravite + maxTemperature) / 2;
 
+    console.log("Limites calculées :", { minGravite, maxGravite, minTemperature, maxTemperature, midY });
+
     return {
         gravite: { min: minGravite, max: maxGravite },
         temperature: { min: minTemperature, max: maxTemperature },
@@ -69,11 +71,14 @@ function calculerLimitesEchelles(densites, temperatures) {
 
 // Préparer les données pour le graphique
 function preparerDonneesGraphique(data) {
+    console.log("Données brutes reçues :", data);
+
     const types = [...new Set(data.map(a => a.type))];
     const datasets = [];
 
     // Extraire les dates uniques et les trier
     const dates = [...new Set(data.map(a => a.date))].sort((a, b) => new Date(a) - new Date(b));
+    console.log("Dates uniques triées :", dates);
 
     // Calculer les limites dynamiques
     const densites = data.filter(a => a.type === 'densite');
@@ -83,6 +88,7 @@ function preparerDonneesGraphique(data) {
     // Préparer les données pour la densité et la température
     ['densite', 'temperature'].forEach(type => {
         const actions = data.filter(a => a.type === type).sort((a, b) => new Date(a.date) - new Date(b.date));
+        console.log(`Actions de type ${type} :`, actions);
 
         if (actions.length > 0) {
             // Créer un tableau de valeurs aligné avec les dates
@@ -90,6 +96,7 @@ function preparerDonneesGraphique(data) {
                 const action = actions.find(a => a.date === date);
                 return action ? action.valeur : null;
             });
+            console.log(`Valeurs pour ${type} :`, values);
 
             datasets.push({
                 label: type === 'densite' ? 'Gravité (SG)' : 'Température (°C)',
@@ -111,22 +118,33 @@ function preparerDonneesGraphique(data) {
 
     // Préparer les données pour les autres actions (purge, dry hopping, etc.)
     const otherActions = data.filter(a => a.type !== 'densite' && a.type !== 'temperature');
+    console.log("Autres actions :", otherActions);
 
     // Grouper les autres actions par date
     const actionsByDate = {};
     dates.forEach(date => {
         actionsByDate[date] = otherActions.filter(a => a.date === date);
     });
+    console.log("Actions par date :", actionsByDate);
 
     // Créer un dataset pour chaque type d'action autre que densité et température
     const otherTypes = [...new Set(otherActions.map(a => a.type))];
+    console.log("Types d'autres actions :", otherTypes);
+
     otherTypes.forEach(type => {
         const actions = otherActions.filter(a => a.type === type);
+        console.log(`Actions de type ${type} :`, actions);
+
         if (actions.length > 0) {
             const points = dates.map(date => {
                 const action = actions.find(a => a.date === date);
-                return action ? { x: date, y: limites.midY, id: action.id, type: action.type, valeur: action.valeur } : null;
+                if (action) {
+                    console.log(`Point pour ${type} à ${date} :`, { x: date, y: limites.midY, id: action.id, type: action.type, valeur: action.valeur });
+                    return { x: date, y: limites.midY, id: action.id, type: action.type, valeur: action.valeur };
+                }
+                return null;
             }).filter(point => point !== null);
+            console.log(`Points pour ${type} :`, points);
 
             datasets.push({
                 label: type.charAt(0).toUpperCase() + type.slice(1),
@@ -144,6 +162,7 @@ function preparerDonneesGraphique(data) {
         }
     });
 
+    console.log("Datasets préparés :", datasets);
     return { datasets, labels: dates.map(date => new Date(date).toLocaleString()) };
 }
 
@@ -151,9 +170,12 @@ function preparerDonneesGraphique(data) {
 async function afficherSuiviFermentation(idBiere) {
     try {
         const fermentations = await window.DB.loadData('fermentations').catch(() => []);
+        console.log("Données de fermentation chargées :", fermentations);
+
         const biere = await window.DB.loadItemById('bieres', idBiere).catch(() => null);
 
         const data = fermentations.filter(f => f.id_biere == idBiere);
+        console.log("Données filtrées pour la bière :", data);
 
         // Préparer les données avec courbes continues et points visibles
         const { datasets, labels } = preparerDonneesGraphique(data);
@@ -197,6 +219,10 @@ async function afficherSuiviFermentation(idBiere) {
 
 // Afficher le graphique de fermentation avec courbes continues et points visibles
 function afficherGraphiqueFermentation(datasets, labels, nomBiere, limites) {
+    console.log("Affichage du graphique avec datasets :", datasets);
+    console.log("Labels :", labels);
+    console.log("Limites :", limites);
+
     const ctx = document.getElementById('fermentationChart');
     if (ctx) {
         // Détruire le graphique existant s'il y en a un
@@ -244,11 +270,17 @@ function afficherGraphiqueFermentation(datasets, labels, nomBiere, limites) {
                             afterBody: function(contexts) {
                                 const dateIndex = contexts[0].dataIndex;
                                 const date = contexts[0].label;
-                                const actionsAtDate = contexts[0].raw;
-                                if (actionsAtDate && actionsAtDate.length > 0) {
+                                const actionsAtDate = contexts[0].chart.data.datasets
+                                    .flatMap(dataset => dataset.data[dateIndex] ? [{
+                                        type: dataset.label.toLowerCase(),
+                                        valeur: dataset.data[dateIndex].valeur || dataset.data[dateIndex].y
+                                    }] : [])
+                                    .filter(action => action);
+
+                                if (actionsAtDate.length > 0) {
                                     return ['Actions à cette date:', ...actionsAtDate.map(a =>
-                                        `- ${a.type === 'densite' ? 'Gravité' :
-                                          a.type === 'temperature' ? 'Température' :
+                                        `- ${a.type === 'gravité (sg)' ? 'Gravité' :
+                                          a.type === 'température (°c)' ? 'Température' :
                                           a.type.charAt(0).toUpperCase() + a.type.slice(1)}: ${a.valeur}`
                                     )];
                                 }
@@ -316,13 +348,18 @@ function afficherGraphiqueFermentation(datasets, labels, nomBiere, limites) {
                     if (points.length > 0) {
                         const pointIndex = points[0].dataIndex;
                         const label = fermentationChart.data.labels[pointIndex];
-                        const actionsAtDate = data.filter(a => new Date(a.date).toLocaleString() === label);
+                        const actionsAtDate = fermentationChart.data.datasets
+                            .flatMap(dataset => dataset.data[pointIndex] ? [{
+                                type: dataset.label.toLowerCase(),
+                                valeur: dataset.data[pointIndex].valeur || dataset.data[pointIndex].y
+                            }] : [])
+                            .filter(action => action);
 
                         if (actionsAtDate.length > 0) {
                             alert(`Actions à ${label}:\n\n` +
                                   actionsAtDate.map(a =>
-                                    `${a.type === 'densite' ? 'Gravité' :
-                                      a.type === 'temperature' ? 'Température' :
+                                    `${a.type === 'gravité (sg)' ? 'Gravité' :
+                                      a.type === 'température (°c)' ? 'Température' :
                                       a.type.charAt(0).toUpperCase() + a.type.slice(1)}: ${a.valeur}`
                                   ).join('\n'));
                         }
