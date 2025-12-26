@@ -88,14 +88,15 @@ function preparerDonneesGraphique(data) {
                 data: values,
                 borderColor: ACTION_COLORS[type] || ACTION_COLORS.autre,
                 backgroundColor: `${ACTION_COLORS[type] || ACTION_COLORS.autre}33`,
-                tension: 0.1,
+                tension: type === 'densite' || type === 'temperature' ? 0.3 : 0, // Lisser uniquement les courbes de densité et température
                 fill: false,
                 yAxisID: type === 'densite' ? 'y' : 'y1',
-                pointRadius: 5,
-                pointHoverRadius: 7,
+                pointRadius: type === 'densite' || type === 'temperature' ? 4 : 6, // Points plus gros pour les autres actions
+                pointHoverRadius: type === 'densite' || type === 'temperature' ? 6 : 8,
                 pointBackgroundColor: ACTION_COLORS[type] || ACTION_COLORS.autre,
                 pointBorderColor: '#fff',
-                pointBorderWidth: 2
+                pointBorderWidth: 2,
+                showLine: type === 'densite' || type === 'temperature' // Montrer une ligne uniquement pour densité et température
             });
         }
     });
@@ -197,7 +198,14 @@ function afficherGraphiqueFermentation(data, nomBiere) {
                         text: `Suivi de fermentation - ${nomBiere}`,
                         font: { size: 16 }
                     },
-                    legend: { position: 'top' },
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            usePointStyle: true,
+                            pointStyle: 'circle',
+                            padding: 20
+                        }
+                    },
                     tooltip: {
                         mode: 'index',
                         intersect: false,
