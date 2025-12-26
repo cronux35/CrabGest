@@ -154,7 +154,7 @@ function voirIngredientsBiere(biereId) {
     }
 
     const ingredientsInfo = biere.ingredients.map(ing => {
-        return `${ing.nom}: ${ing.quantite_utilisee}g (dernier retrait: ${new Date(ing.date_dernier_retrait).toLocaleDateString()})`;
+        return `${ing.nom}: ${Math.abs(ing.quantite_utilisee)}g (dernier retrait: ${new Date(ing.date_dernier_retrait).toLocaleDateString()})`;
     }).join('\n');
 
     alert(`Ingrédients utilisés pour "${biere.nom}":\n\n${ingredientsInfo}`);
@@ -194,15 +194,16 @@ function openEditBiereModal(id) {
         </div>
         <div class="form-group">
             <label>Ingrédients utilisés</label>
-            <div class="ingredients-list">
-                ${biere.ingredients && biere.ingredients.length > 0 ?
-                    biere.ingredients.map(ing => `
-                        <div class="ingredient-item">
-                            <span>${ing.nom}: ${ing.quantite_utilisee}g</span>
-                            <span>${ing.date_dernier_retrait ? new Date(ing.date_dernier_retrait).toLocaleDateString() : ''}</span>
-                        </div>
-                    `).join('') : '<div>Aucun ingrédient utilisé</div>'}
-            </div>
+          <div class="ingredients-list">
+            ${biere.ingredients && biere.ingredients.length > 0 ?
+                biere.ingredients.map(ing => `
+                    <div class="ingredient-item">
+                        <span>${ing.nom}: ${Math.abs(ing.quantite_utilisee)}g</span>
+                        <span>${ing.date_dernier_retrait ? new Date(ing.date_dernier_retrait).toLocaleDateString() : ''}</span>
+                    </div>
+                `).join('') : '<div>Aucun ingrédient utilisé</div>'}
+        </div>
+
         </div>
         <button type="button" id="saveEditBiereBtn" class="btn btn-primary">
             Enregistrer
