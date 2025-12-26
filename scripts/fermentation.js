@@ -1,4 +1,4 @@
-// fermentation.js - Gestion complète du suivi de fermentation avec gestion des superpositions
+// fermentation.js - Gestion complète du suivi de fermentation avec points empilés
 let fermentationChart = null;
 
 // Couleurs par type d'action pour les points sur le graphique
@@ -13,17 +13,16 @@ const ACTION_COLORS = {
 
 // Déplacement vertical pour les points superposés
 const OFFSETS = {
-    densite: -0.015,  // Décalage vers le bas pour la densité
-    temperature: 0.015, // Décalage vers le haut pour la température
-    purge: -0.03,      // Décalage vers le bas pour la purge
-    pression: 0.03,    // Décalage vers le haut pour la pression
-    dry_hopping: 0.045 // Décalage vers le haut pour le dry hopping
+    purge: -0.05,
+    pression: -0.10,
+    dry_hopping: -0.15,
 };
 
 // Charger les bières dans le sélecteur de fermentation
 async function chargerSelecteurBieresFermentation() {
     try {
         const bieres = await window.DB.loadData('bieres').catch(() => []);
+
         const selectBiereFermentation = document.getElementById('select-biere-fermentation');
         if (selectBiereFermentation) {
             selectBiereFermentation.innerHTML = '<option value="">-- Sélectionner une bière --</option>';
@@ -71,7 +70,7 @@ function calculerLimitesEchelles(densites, temperatures) {
     };
 }
 
-// Préparer les données pour le graphique avec gestion des superpositions
+// Préparer les données pour le graphique avec points empilés
 function preparerDonneesGraphique(data) {
     const types = [...new Set(data.map(a => a.type))];
     const datasets = [];
@@ -79,64 +78,83 @@ function preparerDonneesGraphique(data) {
     // Extraire les dates uniques et les trier
     const dates = [...new Set(data.map(a => a.date))].sort((a, b) => new Date(a) - new Date(b));
 
-    types.forEach(type => {
+    // Préparer les données pour la densité et la température
+    types.filter(type => type === 'densite' || type === 'temperature').forEach(type => {
         const actions = data.filter(a => a.type === type).sort((a, b) => new Date(a.date) - new Date(b.date));
 
         if (actions.length > 0) {
-            // Créer un tableau de valeurs aligné avec les dates
             const values = dates.map(date => {
                 const action = actions.find(a => a.date === date);
                 return action ? action.valeur : null;
             });
 
             datasets.push({
-                label: type === 'densite' ? 'Gravité (SG)' :
-                       type === 'temperature' ? 'Température (°C)' :
-                       type.charAt(0).toUpperCase() + type.slice(1),
+                label: type === 'densite' ? 'Gravité (SG)' : 'Température (°C)',
                 data: values,
-                borderColor: ACTION_COLORS[type] || ACTION_COLORS.autre,
-                backgroundColor: `${ACTION_COLORS[type] || ACTION_COLORS.autre}33`,
-                tension: type === 'densite' || type === 'temperature' ? 0.3 : 0, // Lisser uniquement les courbes de densité et température
+                borderColor: ACTION_COLORS[type],
+                backgroundColor: `${ACTION_COLORS[type]}33`,
+                tension: 0.3,
                 fill: false,
                 yAxisID: type === 'densite' ? 'y' : 'y1',
                 pointRadius: 5,
                 pointHoverRadius: 7,
-                pointBackgroundColor: ACTION_COLORS[type] || ACTION_COLORS.autre,
+                pointBackgroundColor: ACTION_COLORS[type],
                 pointBorderColor: '#fff',
                 pointBorderWidth: 2,
-                showLine: type === 'densite' || type === 'temperature' // Montrer une ligne uniquement pour densité et température
+                showLine: true
             });
         }
     });
 
-    // Ajouter un dataset spécial pour les points superposés
-    const superposedPoints = [];
+    // Préparer les données pour les autres actions (purge, dry hopping, etc.)
+    const otherActions = data.filter(a => a.type !== 'densite' && a.type !== 'temperature');
+
+    // Grouper les autres actions par date
+    const actionsByDate = {};
     dates.forEach(date => {
-        const actionsAtDate = data.filter(a => a.date === date);
-        if (actionsAtDate.length > 1) {
-            actionsAtDate.forEach((action, index) => {
-                superposedPoints.push({
+        actionsByDate[date] = otherActions.filter(a => a.date === date);
+    });
+
+    // Créer un dataset pour les autres actions
+    const otherDatasets = [];
+    Object.keys(actionsByDate).forEach(date => {
+        const actions = actionsByDate[date];
+        if (actions.length > 0) {
+            actions.forEach((action, index) => {
+                otherDatasets.push({
                     x: date,
-                    y: action.valeur + (OFFSETS[action.type] || 0),
+                    y: 0, // Toujours en bas de l'axe des abscisses
                     id: action.id,
                     type: action.type,
                     date: action.date,
                     valeur: action.valeur,
-                    offset: OFFSETS[action.type] || 0
+                    offset: OFFSETS[action.type] ? OFFSETS[action.type] * (index + 1) : -0.05 * (index + 1)
                 });
             });
         }
     });
 
-    // Ajouter un dataset invisible pour les points superposés (utilisé pour les tooltips)
-    if (superposedPoints.length > 0) {
+    // Ajouter un dataset pour les autres actions
+    if (otherDatasets.length > 0) {
         datasets.push({
-            label: 'Actions groupées',
-            data: superposedPoints,
+            label: 'Autres actions',
+            data: otherDatasets,
             borderColor: 'rgba(0, 0, 0, 0)',
             backgroundColor: 'rgba(0, 0, 0, 0)',
-            pointRadius: 0, // Invisible
-            pointHoverRadius: 0,
+            pointRadius: context => {
+                const value = context.raw;
+                return value ? 8 : 0;
+            },
+            pointHoverRadius: context => {
+                const value = context.raw;
+                return value ? 10 : 0;
+            },
+            pointBackgroundColor: context => {
+                const value = context.raw;
+                return value ? ACTION_COLORS[value.type] || ACTION_COLORS.autre : 'rgba(0, 0, 0, 0)';
+            },
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
             showLine: false
         });
     }
@@ -195,7 +213,7 @@ function attachDeleteEventListeners() {
     });
 }
 
-// Afficher le graphique de fermentation avec gestion des superpositions
+// Afficher le graphique de fermentation avec points empilés
 function afficherGraphiqueFermentation(data, nomBiere) {
     if (data.length === 0) {
         const ctx = document.getElementById('fermentationChart');
@@ -206,7 +224,7 @@ function afficherGraphiqueFermentation(data, nomBiere) {
         return;
     }
 
-    // Préparer les données avec gestion des superpositions
+    // Préparer les données avec points empilés
     const { datasets, labels } = preparerDonneesGraphique(data);
 
     // Calculer les limites dynamiques
@@ -222,7 +240,7 @@ function afficherGraphiqueFermentation(data, nomBiere) {
             fermentationChart = null;
         }
 
-        // Créer un nouveau graphique avec gestion des superpositions
+        // Créer un nouveau graphique avec points empilés
         fermentationChart = new Chart(ctx, {
             type: 'line',
             data: {
@@ -253,7 +271,7 @@ function afficherGraphiqueFermentation(data, nomBiere) {
                             label: function(context) {
                                 const label = context.dataset.label || '';
                                 const value = context.parsed.y;
-                                if (value !== null && label !== 'Actions groupées') {
+                                if (value !== null && label !== 'Autres actions') {
                                     return `${label}: ${label === 'Gravité (SG)' ? value.toFixed(3) : value.toFixed(1)}`;
                                 }
                                 return null;
@@ -261,10 +279,10 @@ function afficherGraphiqueFermentation(data, nomBiere) {
                             afterBody: function(contexts) {
                                 const dateIndex = contexts[0].dataIndex;
                                 const date = contexts[0].label;
-                                const actionsAtDate = data.filter(a => new Date(a.date).toLocaleString() === date);
+                                const actionsAtDate = data.filter(a => new Date(a.date).toLocaleString() === date && a.type !== 'densite' && a.type !== 'temperature');
 
-                                if (actionsAtDate.length > 1) {
-                                    return ['Actions à cette date:', ...actionsAtDate.map(a =>
+                                if (actionsAtDate.length > 0) {
+                                    return ['Autres actions à cette date:', ...actionsAtDate.map(a =>
                                         `- ${a.type === 'densite' ? 'Gravité' :
                                           a.type === 'temperature' ? 'Température' :
                                           a.type.charAt(0).toUpperCase() + a.type.slice(1)}: ${a.valeur}`
@@ -351,19 +369,16 @@ function afficherGraphiqueFermentation(data, nomBiere) {
                 afterDraw: function(chart) {
                     const ctx = chart.ctx;
                     chart.data.datasets.forEach((dataset, i) => {
-                        const meta = chart.getDatasetMeta(i);
-                        if (dataset.label === 'Actions groupées') {
+                        if (dataset.label === 'Autres actions') {
+                            const meta = chart.getDatasetMeta(i);
                             meta.data.forEach((point, index) => {
-                                const actionsAtDate = data.filter(a => new Date(a.date).toLocaleString() === chart.data.labels[index]);
-                                if (actionsAtDate.length > 1) {
+                                const value = dataset.data[index];
+                                if (value) {
                                     ctx.save();
-                                    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-                                    ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)';
-                                    ctx.lineWidth = 1;
+                                    ctx.fillStyle = ACTION_COLORS[value.type] || ACTION_COLORS.autre;
                                     ctx.beginPath();
-                                    ctx.arc(point.x, point.y, 8, 0, Math.PI * 2);
+                                    ctx.arc(point.x, point.y, 6, 0, Math.PI * 2);
                                     ctx.fill();
-                                    ctx.stroke();
                                     ctx.restore();
                                 }
                             });
