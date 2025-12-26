@@ -1,4 +1,4 @@
-// fermentation.js - Gestion complète du suivi de fermentation avec Luxon et points colorés
+// fermentation.js - Gestion complète du suivi de fermentation avec points colorés
 let fermentationChart = null;
 
 // Couleurs par type d'action pour les points sur le graphique
@@ -68,22 +68,26 @@ function preparerDonneesGraphique(data) {
     const types = [...new Set(data.map(a => a.type))];
     const datasets = [];
 
+    // Extraire les labels de dates uniques
+    const dates = [...new Set(data.map(a => a.date))].sort((a, b) => new Date(a) - new Date(b));
+    const labels = dates.map(date => new Date(date).toLocaleString());
+
     types.forEach(type => {
         const actions = data.filter(a => a.type === type).sort((a, b) => new Date(a.date) - new Date(b.date));
 
         if (actions.length > 0) {
+            // Créer un tableau de valeurs aligné avec les labels
+            const values = [];
+            dates.forEach(date => {
+                const action = actions.find(a => a.date === date);
+                values.push(action ? action.valeur : null);
+            });
+
             datasets.push({
                 label: type === 'densite' ? 'Gravité (SG)' :
                        type === 'temperature' ? 'Température (°C)' :
                        type.charAt(0).toUpperCase() + type.slice(1),
-                data: actions.map(a => ({
-                    x: a.date,
-                    y: a.valeur,
-                    id: a.id,
-                    type: a.type,
-                    date: a.date,
-                    valeur: a.valeur
-                })),
+                data: values,
                 borderColor: ACTION_COLORS[type] || ACTION_COLORS.autre,
                 backgroundColor: `${ACTION_COLORS[type] || ACTION_COLORS.autre}33`,
                 tension: 0.1,
@@ -98,7 +102,7 @@ function preparerDonneesGraphique(data) {
         }
     });
 
-    return datasets;
+    return { datasets, labels };
 }
 
 // Afficher le suivi de fermentation pour une bière sélectionnée
@@ -150,7 +154,7 @@ function afficherGraphiqueFermentation(data, nomBiere) {
     }
 
     // Préparer les données avec points colorés
-    const datasets = preparerDonneesGraphique(data);
+    const { datasets, labels } = preparerDonneesGraphique(data);
 
     // Calculer les limites dynamiques
     const densites = data.filter(a => a.type === 'densite');
@@ -165,10 +169,11 @@ function afficherGraphiqueFermentation(data, nomBiere) {
             fermentationChart = null;
         }
 
-        // Utiliser les dates ISO directement
+        // Créer un nouveau graphique avec points colorés
         fermentationChart = new Chart(ctx, {
             type: 'line',
             data: {
+                labels: labels,
                 datasets: datasets
             },
             options: {
@@ -182,22 +187,21 @@ function afficherGraphiqueFermentation(data, nomBiere) {
                     },
                     legend: { position: 'top' },
                     tooltip: {
-                        mode: 'nearest',
+                        mode: 'index',
                         intersect: false,
                         callbacks: {
                             label: function(context) {
-                                const point = context.raw;
-                                const date = new Date(point.x);
-                                return [
-                                    `Type: ${point.type === 'densite' ? 'Gravité' :
-                                          point.type === 'temperature' ? 'Température' :
-                                          point.type.charAt(0).toUpperCase() + point.type.slice(1)}`,
-                                    `Valeur: ${point.type === 'densite' ? point.y.toFixed(3) : point.y.toFixed(1)}`,
-                                    `Date: ${date.toLocaleString()}`
-                                ];
+                                const label = context.dataset.label || '';
+                                const value = context.parsed.y;
+                                if (value !== null) {
+                                    return `${label}: ${context.dataset.label === 'Gravité (SG)' ? value.toFixed(3) : value.toFixed(1)}`;
+                                }
+                                return null;
                             },
-                            title: function() {
-                                return '';
+                            afterLabel: function(context) {
+                                const index = context.dataIndex;
+                                const date = context.chart.data.labels[index];
+                                return `Date: ${date}`;
                             }
                         }
                     }
@@ -242,24 +246,14 @@ function afficherGraphiqueFermentation(data, nomBiere) {
                         grid: { drawOnChartArea: false }
                     },
                     x: {
-                        type: 'time',
-                        time: {
-                            parser: function(date) {
-                                return new Date(date);
-                            },
-                            unit: 'day',
-                            tooltipFormat: 'dd/MM/yyyy HH:mm',
-                            displayFormats: {
-                                day: 'dd/MM HH:mm'
-                            }
-                        },
                         title: {
                             display: true,
                             text: 'Date et heure'
                         },
                         ticks: {
-                            source: 'data',
-                            autoSkip: true
+                            autoSkip: true,
+                            maxRotation: 45,
+                            minRotation: 45
                         }
                     }
                 },
@@ -272,15 +266,15 @@ function afficherGraphiqueFermentation(data, nomBiere) {
                         const pointIndex = points[0].index;
                         const datasetIndex = points[0].datasetIndex;
                         const dataset = fermentationChart.data.datasets[datasetIndex];
-                        const point = dataset.data[pointIndex];
-                        const date = new Date(point.x);
+                        const label = fermentationChart.data.labels[pointIndex];
+                        const value = dataset.data[pointIndex];
 
-                        alert(`Détails de l'action:\n\n` +
-                              `Type: ${point.type === 'densite' ? 'Gravité' :
-                                    point.type === 'temperature' ? 'Température' :
-                                    point.type.charAt(0).toUpperCase() + point.type.slice(1)}\n` +
-                              `Valeur: ${point.type === 'densite' ? point.y.toFixed(3) : point.y.toFixed(1)}\n` +
-                              `Date: ${date.toLocaleString()}`);
+                        if (value !== null) {
+                            alert(`Détails de l'action:\n\n` +
+                                  `Type: ${dataset.label}\n` +
+                                  `Valeur: ${dataset.label === 'Gravité (SG)' ? value.toFixed(3) : value.toFixed(1)}\n` +
+                                  `Date: ${label}`);
+                        }
                     }
                 }
             }
