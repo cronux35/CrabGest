@@ -1,47 +1,41 @@
-// Cache local pour les stocks et les bières
-let stocksCache = [];
-let bieresCache = [];
-let historiqueStocksCache = [];
-
-// Charger les stocks (avec cache)
+// Utilise le cache global
 async function loadStocks(forceReload = false) {
-    if (!forceReload && stocksCache.length > 0) {
-        return stocksCache;
+    if (!forceReload && window.appDataCache.stocks.length > 0) {
+        return window.appDataCache.stocks;
     }
-    stocksCache = await DB.loadData('stocks');
-    return stocksCache;
+    window.appDataCache.stocks = await window.DB.loadData('stocks');
+    return window.appDataCache.stocks;
 }
 
-// Charger les bières (avec cache)
 async function loadBieres(forceReload = false) {
-    if (!forceReload && bieresCache.length > 0) {
-        return bieresCache;
+    if (!forceReload && window.appDataCache.bieres.length > 0) {
+        return window.appDataCache.bieres;
     }
-    bieresCache = await DB.loadData('bieres');
-    return bieresCache;
+    window.appDataCache.bieres = await window.DB.loadData('bieres');
+    return window.appDataCache.bieres;
 }
 
-// Charger l'historique des stocks (avec cache)
 async function loadHistoriqueStocks(forceReload = false) {
-    if (!forceReload && historiqueStocksCache.length > 0) {
-        return historiqueStocksCache;
+    if (!forceReload && window.appDataCache.historique_stocks.length > 0) {
+        return window.appDataCache.historique_stocks;
     }
-    historiqueStocksCache = await DB.loadData('historique_stocks');
-    return historiqueStocksCache;
+    window.appDataCache.historique_stocks = await window.DB.loadData('historique_stocks');
+    return window.appDataCache.historique_stocks;
 }
 
-// Charger les données initiales
+// Charger les données initiales (optimisé)
 async function chargerDonnees() {
     try {
         await Promise.all([
             loadStocks(true),
-            loadBieres(true)
+            loadBieres(true),
+            loadHistoriqueStocks(true)
         ]);
 
         const selectIngredient = document.getElementById('select-ingredient');
         if (selectIngredient) {
             selectIngredient.innerHTML = '<option value="">-- Ingrédient --</option>';
-            stocksCache.forEach(stock => {
+            window.appDataCache.stocks.forEach(stock => {
                 const option = document.createElement('option');
                 option.value = stock.id;
                 option.textContent = `${stock.type} - ${stock.nom} (${stock.quantite}g)`;
@@ -58,13 +52,13 @@ async function chargerDonnees() {
     }
 }
 
-// Charger les données pour le retrait de stock
+// Charger les données pour le retrait de stock (optimisé)
 async function chargerDonneesRetrait() {
     try {
         const selectIngredientRetrait = document.getElementById('select-ingredient-retrait');
         if (selectIngredientRetrait) {
             selectIngredientRetrait.innerHTML = '<option value="">-- Ingrédient --</option>';
-            stocksCache.filter(stock => stock.quantite > 0).forEach(stock => {
+            window.appDataCache.stocks.filter(stock => stock.quantite > 0).forEach(stock => {
                 const option = document.createElement('option');
                 option.value = stock.id;
                 option.textContent = `${stock.type} - ${stock.nom} (${stock.quantite}g)`;
@@ -75,7 +69,7 @@ async function chargerDonneesRetrait() {
         const selectBiereRetrait = document.getElementById('select-biere-retrait');
         if (selectBiereRetrait) {
             selectBiereRetrait.innerHTML = '<option value="">-- Bière --</option>';
-            bieresCache.forEach(biere => {
+            window.appDataCache.bieres.forEach(biere => {
                 const option = document.createElement('option');
                 option.value = biere.id;
                 option.textContent = biere.nom;
@@ -87,9 +81,9 @@ async function chargerDonneesRetrait() {
     }
 }
 
-// Charger les types d'ingrédients
+// Charger les types d'ingrédients (optimisé)
 async function chargerTypesIngredients() {
-    const types = [...new Set(stocksCache.map(s => s.type))];
+    const types = [...new Set(window.appDataCache.stocks.map(s => s.type))];
     const selectType = document.getElementById('select-type-ingredient');
     if (selectType) {
         selectType.innerHTML = '<option value="">-- Sélectionnez un type --</option>';
@@ -102,7 +96,7 @@ async function chargerTypesIngredients() {
     }
 }
 
-// Charger les ingrédients par type
+// Charger les ingrédients par type (optimisé)
 async function chargerIngredientsParType() {
     const type = document.getElementById('select-type-ingredient').value;
     const selectIngredient = document.getElementById('select-ingredient-retrait');
@@ -111,7 +105,7 @@ async function chargerIngredientsParType() {
     selectIngredient.innerHTML = '<option value="">-- Sélectionnez un ingrédient --</option>';
     if (!type) return;
 
-    stocksCache.filter(s => s.type === type && s.quantite > 0).forEach(ingredient => {
+    window.appDataCache.stocks.filter(s => s.type === type && s.quantite > 0).forEach(ingredient => {
         const option = document.createElement('option');
         option.value = ingredient.id;
         option.textContent = `${ingredient.nom} (${ingredient.quantite}g)`;
@@ -119,13 +113,13 @@ async function chargerIngredientsParType() {
     });
 }
 
-// Afficher les stocks
+// Afficher les stocks (optimisé)
 async function afficherStocks() {
     try {
         const stockTableBody = document.querySelector('#table-stocks tbody');
         if (!stockTableBody) return;
 
-        stockTableBody.innerHTML = stocksCache.map(stock => `
+        stockTableBody.innerHTML = window.appDataCache.stocks.map(stock => `
             <tr data-id="${stock.id}">
                 <td>${stock.type || ''}</td>
                 <td>${stock.nom || ''}</td>
@@ -155,16 +149,10 @@ async function afficherStocks() {
     }
 }
 
-// Écouteurs dynamiques pour les actions sur les stocks
+// Écouteurs dynamiques pour les actions sur les stocks (optimisé)
 function attachEventListeners() {
     const stockTableBody = document.querySelector('#table-stocks tbody');
     if (!stockTableBody) return;
-
-    // Détacher l'ancien écouteur s'il existe
-    const oldHandler = stockTableBody.onclick;
-    if (oldHandler) {
-        stockTableBody.onclick = null;
-    }
 
     stockTableBody.onclick = async (e) => {
         const target = e.target.closest('button[data-action]');
@@ -174,7 +162,7 @@ function attachEventListeners() {
         const id = target.closest('tr').dataset.id;
 
         try {
-            const stock = stocksCache.find(s => s.id == id);
+            const stock = window.appDataCache.stocks.find(s => s.id == id);
             if (!stock) {
                 console.error("Stock non trouvé pour l'ID:", id);
                 return;
@@ -190,7 +178,7 @@ function attachEventListeners() {
                         async () => {
                             try {
                                 await DB.deleteItem('stocks', id);
-                                stocksCache = stocksCache.filter(s => s.id !== id);
+                                window.appDataCache.stocks = window.appDataCache.stocks.filter(s => s.id !== id);
                                 afficherStocks();
                             } catch (error) {
                                 console.error("Erreur lors de la suppression du stock:", error);
@@ -200,9 +188,7 @@ function attachEventListeners() {
                     );
                     break;
                 case 'notes':
-                    const nom = stock.nom;
-                    const notes = stock.notes || 'Aucune note';
-                    alert(`Notes pour ${nom}:\n${notes}`);
+                    alert(`Notes pour ${stock.nom}:\n${stock.notes || 'Aucune note'}`);
                     break;
             }
         } catch (error) {
@@ -211,7 +197,7 @@ function attachEventListeners() {
     };
 }
 
-// Sauvegarder un ingrédient modifié
+// Sauvegarder un ingrédient modifié (optimisé)
 async function saveEdit() {
     if (!currentEditType || currentEditId === null) {
         console.error("Type ou ID manquant pour la sauvegarde.");
@@ -250,10 +236,10 @@ async function saveEdit() {
 
         await DB.updateItem('stocks', updatedStock);
 
-        // Mettre à jour le cache local
-        const index = stocksCache.findIndex(s => s.id === currentEditId);
+        // Mettre à jour le cache global
+        const index = window.appDataCache.stocks.findIndex(s => s.id === currentEditId);
         if (index !== -1) {
-            stocksCache[index] = updatedStock;
+            window.appDataCache.stocks[index] = updatedStock;
         }
 
         closeModal('editModal');
@@ -265,7 +251,7 @@ async function saveEdit() {
     }
 }
 
-// Ajouter un ingrédient
+// Ajouter un ingrédient (optimisé)
 async function ajouterIngredient() {
     const type = document.getElementById('edit-type').value;
     const nom = document.getElementById('edit-nom').value;
@@ -298,7 +284,7 @@ async function ajouterIngredient() {
 
         const newId = await DB.addItem('stocks', nouvelIngredient);
         nouvelIngredient.id = newId;
-        stocksCache.push(nouvelIngredient);
+        window.appDataCache.stocks.push(nouvelIngredient);
 
         await afficherStocks();
         await chargerTypesIngredients();
@@ -311,7 +297,7 @@ async function ajouterIngredient() {
     }
 }
 
-// Retirer du stock pour une bière
+// Retirer du stock pour une bière (optimisé)
 async function retirerStockPourBiere() {
     const idIngredient = document.getElementById('select-ingredient-retrait')?.value;
     const idBiere = document.getElementById('select-biere-retrait')?.value;
@@ -326,8 +312,8 @@ async function retirerStockPourBiere() {
     }
 
     try {
-        const stock = stocksCache.find(s => s.id == idIngredient);
-        const biere = bieresCache.find(b => b.id == idBiere);
+        const stock = window.appDataCache.stocks.find(s => s.id == idIngredient);
+        const biere = window.appDataCache.bieres.find(b => b.id == idBiere);
 
         if (!stock) {
             if (errorElement) errorElement.textContent = "Ingrédient non trouvé.";
@@ -347,10 +333,10 @@ async function retirerStockPourBiere() {
 
         await DB.updateItem('stocks', updatedStock);
 
-        // Mettre à jour le cache local
-        const stockIndex = stocksCache.findIndex(s => s.id === idIngredient);
+        // Mettre à jour le cache global
+        const stockIndex = window.appDataCache.stocks.findIndex(s => s.id === idIngredient);
         if (stockIndex !== -1) {
-            stocksCache[stockIndex] = updatedStock;
+            window.appDataCache.stocks[stockIndex] = updatedStock;
         }
 
         const historiqueEntry = {
@@ -367,7 +353,7 @@ async function retirerStockPourBiere() {
         };
 
         await DB.addItem('historique_stocks', historiqueEntry);
-        historiqueStocksCache.push(historiqueEntry);
+        window.appDataCache.historique_stocks.push(historiqueEntry);
 
         if (!biere.ingredients) biere.ingredients = [];
         const ingredientExistIndex = biere.ingredients.findIndex(ing => ing.id === stock.id);
@@ -386,10 +372,10 @@ async function retirerStockPourBiere() {
 
         await DB.updateItem('bieres', biere);
 
-        // Mettre à jour le cache local des bières
-        const biereIndex = bieresCache.findIndex(b => b.id === idBiere);
+        // Mettre à jour le cache global des bières
+        const biereIndex = window.appDataCache.bieres.findIndex(b => b.id === idBiere);
         if (biereIndex !== -1) {
-            bieresCache[biereIndex] = biere;
+            window.appDataCache.bieres[biereIndex] = biere;
         }
 
         await afficherStocks();
@@ -406,17 +392,17 @@ async function retirerStockPourBiere() {
     }
 }
 
-// Annuler un retrait
+// Annuler un retrait (optimisé)
 async function annulerRetrait(entryId) {
     try {
-        const entry = historiqueStocksCache.find(e => e.id == entryId);
+        const entry = window.appDataCache.historique_stocks.find(e => e.id == entryId);
         if (!entry || entry.type !== "retrait_biere") {
             alert("Entrée d'historique non valide ou non trouvée.");
             return;
         }
 
-        const stock = stocksCache.find(s => s.id == entry.ingredient_id);
-        const biere = bieresCache.find(b => b.id == entry.biere_id);
+        const stock = window.appDataCache.stocks.find(s => s.id == entry.ingredient_id);
+        const biere = window.appDataCache.bieres.find(b => b.id == entry.biere_id);
 
         if (!stock || !biere) {
             alert("Ingrédient ou bière non trouvé.");
@@ -428,10 +414,10 @@ async function annulerRetrait(entryId) {
 
         await DB.updateItem('stocks', updatedStock);
 
-        // Mettre à jour le cache local
-        const stockIndex = stocksCache.findIndex(s => s.id === entry.ingredient_id);
+        // Mettre à jour le cache global
+        const stockIndex = window.appDataCache.stocks.findIndex(s => s.id === entry.ingredient_id);
         if (stockIndex !== -1) {
-            stocksCache[stockIndex] = updatedStock;
+            window.appDataCache.stocks[stockIndex] = updatedStock;
         }
 
         if (biere.ingredients) {
@@ -440,19 +426,19 @@ async function annulerRetrait(entryId) {
                 biere.ingredients[ingredientExistIndex].quantite_utilisee -= entry.quantite;
                 await DB.updateItem('bieres', biere);
 
-                // Mettre à jour le cache local des bières
-                const biereIndex = bieresCache.findIndex(b => b.id === entry.biere_id);
+                // Mettre à jour le cache global des bières
+                const biereIndex = window.appDataCache.bieres.findIndex(b => b.id === entry.biere_id);
                 if (biereIndex !== -1) {
-                    bieresCache[biereIndex] = biere;
+                    window.appDataCache.bieres[biereIndex] = biere;
                 }
             }
         }
 
-        const entryIndex = historiqueStocksCache.findIndex(e => e.id === entryId);
+        const entryIndex = window.appDataCache.historique_stocks.findIndex(e => e.id === entryId);
         if (entryIndex !== -1) {
-            historiqueStocksCache[entryIndex].annule = true;
-            historiqueStocksCache[entryIndex].date_annulation = new Date().toISOString();
-            await DB.updateItem('historique_stocks', historiqueStocksCache[entryIndex]);
+            window.appDataCache.historique_stocks[entryIndex].annule = true;
+            window.appDataCache.historique_stocks[entryIndex].date_annulation = new Date().toISOString();
+            await DB.updateItem('historique_stocks', window.appDataCache.historique_stocks[entryIndex]);
         }
 
         afficherStocks();
@@ -465,13 +451,13 @@ async function annulerRetrait(entryId) {
     }
 }
 
-// Afficher l'historique des retraits
+// Afficher l'historique des retraits (optimisé)
 async function afficherHistoriqueRetraits() {
     try {
         const selectBiere = document.getElementById('select-biere-historique');
         const biereId = selectBiere ? selectBiere.value : null;
 
-        let historiqueFiltre = historiqueStocksCache.filter(entry => entry.type === "retrait_biere" && !entry.annule);
+        let historiqueFiltre = window.appDataCache.historique_stocks.filter(entry => entry.type === "retrait_biere" && !entry.annule);
 
         if (biereId) {
             historiqueFiltre = historiqueFiltre.filter(entry => entry.biere_id == biereId);
@@ -495,7 +481,6 @@ async function afficherHistoriqueRetraits() {
             </tr>
         `).join('');
 
-        // Écouteurs pour les boutons d'annulation
         tbody.querySelectorAll('.delete-btn').forEach(btn => {
             btn.onclick = () => annulerRetrait(btn.closest('tr').getAttribute('data-id'));
         });
@@ -504,14 +489,14 @@ async function afficherHistoriqueRetraits() {
     }
 }
 
-// Charger les bières pour le filtre
+// Charger les bières pour le filtre (optimisé)
 async function chargerBieresPourFiltre() {
     try {
         const selectBiere = document.getElementById('select-biere-historique');
         if (!selectBiere) return;
 
         selectBiere.innerHTML = '<option value="">-- Toutes les bières --</option>';
-        bieresCache.forEach(biere => {
+        window.appDataCache.bieres.forEach(biere => {
             const option = document.createElement('option');
             option.value = biere.id;
             option.textContent = biere.nom;

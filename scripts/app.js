@@ -1,3 +1,16 @@
+// Cache global pour toute l'application
+window.appDataCache = {
+    stocks: [],
+    bieres: [],
+    historique_stocks: [],
+    conditionnements: [],
+    clients: [],
+    ventes: [],
+    fermentations: [],
+    declarations_douanes: []
+};
+
+
 document.addEventListener('DOMContentLoaded', function() {
     // Initialisation de l'application
     async function initializeApp() {

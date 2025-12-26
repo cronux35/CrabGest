@@ -1,13 +1,10 @@
-// Cache local pour les bières
-let bieresCache = [];
-
-// Charger les bières (avec cache)
+// Utilise le cache global
 async function loadBieres(forceReload = false) {
-    if (!forceReload && bieresCache.length > 0) {
-        return bieresCache; // Retourne le cache si disponible
+    if (!forceReload && window.appDataCache.bieres.length > 0) {
+        return window.appDataCache.bieres;
     }
-    bieresCache = await window.DB.loadData('bieres');
-    return bieresCache;
+    window.appDataCache.bieres = await window.DB.loadData('bieres');
+    return window.appDataCache.bieres;
 }
 
 // Afficher les bières (optimisé)
@@ -45,50 +42,31 @@ async function afficherBieres() {
 async function rechargerSelecteursBieres() {
     const bieres = await loadBieres();
 
-    const selectBiereRetrait = document.getElementById('select-biere-retrait');
-    if (selectBiereRetrait) {
-        selectBiereRetrait.innerHTML = '<option value="">-- Bière --</option>';
-        bieres.forEach(biere => {
-            const option = document.createElement('option');
-            option.value = biere.id;
-            option.textContent = biere.nom;
-            selectBiereRetrait.appendChild(option);
-        });
-    }
+    // Mettre à jour les sélecteurs
+    const selectors = [
+        { id: 'select-biere-retrait', label: '-- Bière --' },
+        { id: 'select-biere-fermentation', label: '-- Sélectionner une bière --' },
+        { id: 'select-biere-conditionnement', label: '-- Sélectionner une bière --' }
+    ];
 
-    const selectBiereFermentation = document.getElementById('select-biere-fermentation');
-    if (selectBiereFermentation) {
-        selectBiereFermentation.innerHTML = '<option value="">-- Sélectionner une bière --</option>';
-        bieres.forEach(biere => {
-            const option = document.createElement('option');
-            option.value = biere.id;
-            option.textContent = biere.nom;
-            selectBiereFermentation.appendChild(option);
-        });
-    }
-
-    const selectBiereConditionnement = document.getElementById('select-biere-conditionnement');
-    if (selectBiereConditionnement) {
-        selectBiereConditionnement.innerHTML = '<option value="">-- Sélectionner une bière --</option>';
-        bieres.forEach(biere => {
-            const option = document.createElement('option');
-            option.value = biere.id;
-            option.textContent = biere.nom;
-            selectBiereConditionnement.appendChild(option);
-        });
-    }
+    selectors.forEach(({ id, label }) => {
+        const selectElement = document.getElementById(id);
+        if (selectElement) {
+            selectElement.innerHTML = `<option value="">${label}</option>`;
+            bieres.forEach(biere => {
+                const option = document.createElement('option');
+                option.value = biere.id;
+                option.textContent = biere.nom;
+                selectElement.appendChild(option);
+            });
+        }
+    });
 }
 
 // Écouteurs dynamiques pour les actions sur les bières
 function attachBiereEventListeners() {
     const tbody = document.querySelector('#table-bieres tbody');
     if (!tbody) return;
-
-    // Détacher l'ancien écouteur s'il existe
-    const oldHandler = tbody.onclick;
-    if (oldHandler) {
-        tbody.onclick = null;
-    }
 
     tbody.onclick = async (e) => {
         const target = e.target.closest('button[data-action]');
@@ -98,7 +76,7 @@ function attachBiereEventListeners() {
         const id = target.closest('tr').dataset.id;
 
         try {
-            const biere = await window.DB.loadItemById('bieres', id);
+            const biere = window.appDataCache.bieres.find(b => b.id === id);
             if (!biere) {
                 console.error("Bière non trouvée pour l'ID:", id);
                 return;
@@ -124,9 +102,16 @@ function attachBiereEventListeners() {
 // Voir les ingrédients d'une bière (optimisé)
 async function voirIngredientsBiere(id) {
     try {
-        let biere = bieresCache.find(b => b.id === id);
+        let biere = window.appDataCache.bieres.find(b => b.id === id);
         if (!biere) {
             biere = await window.DB.loadItemById('bieres', id);
+            if (biere) {
+                // Mettre à jour le cache global si nécessaire
+                const index = window.appDataCache.bieres.findIndex(b => b.id === id);
+                if (index === -1) {
+                    window.appDataCache.bieres.push(biere);
+                }
+            }
         }
 
         if (!biere || !biere.ingredients || biere.ingredients.length === 0) {
@@ -148,7 +133,7 @@ async function voirIngredientsBiere(id) {
 // Ouvrir la modale d'édition (optimisé)
 async function openEditBiereModal(id) {
     try {
-        let biere = bieresCache.find(b => b.id === id);
+        let biere = window.appDataCache.bieres.find(b => b.id === id);
         if (!biere) {
             biere = await window.DB.loadItemById('bieres', id);
         }
@@ -217,10 +202,10 @@ async function saveEditBiere(id) {
 
         await window.DB.updateItem('bieres', updatedBiere);
 
-        // Mettre à jour le cache local
-        const index = bieresCache.findIndex(b => b.id === id);
+        // Mettre à jour le cache global
+        const index = window.appDataCache.bieres.findIndex(b => b.id === id);
         if (index !== -1) {
-            bieresCache[index] = updatedBiere;
+            window.appDataCache.bieres[index] = updatedBiere;
         }
 
         alert("Bière mise à jour avec succès !");
@@ -253,8 +238,9 @@ async function ajouterBiere() {
             ingredients: []
         };
 
-        await window.DB.addItem('bieres', nouvelleBiere);
-        alert(`La bière "${nom}" a été ajoutée avec succès.`);
+        const newId = await window.DB.addItem('bieres', nouvelleBiere);
+        nouvelleBiere.id = newId;
+        window.appDataCache.bieres.push(nouvelleBiere);
 
         // Réinitialiser le formulaire
         document.getElementById('nom-biere').value = '';
@@ -262,10 +248,9 @@ async function ajouterBiere() {
         document.getElementById('degre-biere').value = '';
         document.getElementById('volume-biere').value = '';
 
-        // Recharger le cache et afficher les bières
-        await loadBieres(true); // Force le rechargement
         afficherBieres();
         rechargerSelecteursBieres();
+        alert(`La bière "${nom}" a été ajoutée avec succès.`);
     } catch (error) {
         console.error("Erreur lors de l'ajout de la bière:", error);
         alert("Une erreur est survenue lors de l'ajout de la bière.");
@@ -275,7 +260,7 @@ async function ajouterBiere() {
 // Supprimer une bière (optimisé)
 async function deleteBiere(id) {
     try {
-        const biere = await window.DB.loadItemById('bieres', id);
+        const biere = window.appDataCache.bieres.find(b => b.id === id);
         if (!biere) return;
 
         const confirmDelete = confirm(`Voulez-vous vraiment supprimer "${biere.nom}" ?`);
@@ -283,8 +268,8 @@ async function deleteBiere(id) {
 
         await window.DB.deleteItem('bieres', id);
 
-        // Mettre à jour le cache local
-        bieresCache = bieresCache.filter(b => b.id !== id);
+        // Mettre à jour le cache global
+        window.appDataCache.bieres = window.appDataCache.bieres.filter(b => b.id !== id);
 
         afficherBieres();
         rechargerSelecteursBieres();
