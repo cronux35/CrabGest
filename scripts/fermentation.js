@@ -1,4 +1,4 @@
-// fermentation.js - Gestion complète du suivi de fermentation avec points colorés
+// fermentation.js - Gestion complète du suivi de fermentation avec gestion des superpositions
 let fermentationChart = null;
 
 // Couleurs par type d'action pour les points sur le graphique
@@ -11,11 +11,19 @@ const ACTION_COLORS = {
     autre: 'rgb(201, 203, 207)'          // Gris pour les autres types
 };
 
+// Déplacement vertical pour les points superposés
+const OFFSETS = {
+    densite: -0.015,  // Décalage vers le bas pour la densité
+    temperature: 0.015, // Décalage vers le haut pour la température
+    purge: -0.03,      // Décalage vers le bas pour la purge
+    pression: 0.03,    // Décalage vers le haut pour la pression
+    dry_hopping: 0.045 // Décalage vers le haut pour le dry hopping
+};
+
 // Charger les bières dans le sélecteur de fermentation
 async function chargerSelecteurBieresFermentation() {
     try {
         const bieres = await window.DB.loadData('bieres').catch(() => []);
-
         const selectBiereFermentation = document.getElementById('select-biere-fermentation');
         if (selectBiereFermentation) {
             selectBiereFermentation.innerHTML = '<option value="">-- Sélectionner une bière --</option>';
@@ -63,7 +71,7 @@ function calculerLimitesEchelles(densites, temperatures) {
     };
 }
 
-// Préparer les données pour le graphique avec points colorés
+// Préparer les données pour le graphique avec gestion des superpositions
 function preparerDonneesGraphique(data) {
     const types = [...new Set(data.map(a => a.type))];
     const datasets = [];
@@ -91,8 +99,8 @@ function preparerDonneesGraphique(data) {
                 tension: type === 'densite' || type === 'temperature' ? 0.3 : 0, // Lisser uniquement les courbes de densité et température
                 fill: false,
                 yAxisID: type === 'densite' ? 'y' : 'y1',
-                pointRadius: type === 'densite' || type === 'temperature' ? 4 : 6, // Points plus gros pour les autres actions
-                pointHoverRadius: type === 'densite' || type === 'temperature' ? 6 : 8,
+                pointRadius: 5,
+                pointHoverRadius: 7,
                 pointBackgroundColor: ACTION_COLORS[type] || ACTION_COLORS.autre,
                 pointBorderColor: '#fff',
                 pointBorderWidth: 2,
@@ -100,6 +108,38 @@ function preparerDonneesGraphique(data) {
             });
         }
     });
+
+    // Ajouter un dataset spécial pour les points superposés
+    const superposedPoints = [];
+    dates.forEach(date => {
+        const actionsAtDate = data.filter(a => a.date === date);
+        if (actionsAtDate.length > 1) {
+            actionsAtDate.forEach((action, index) => {
+                superposedPoints.push({
+                    x: date,
+                    y: action.valeur + (OFFSETS[action.type] || 0),
+                    id: action.id,
+                    type: action.type,
+                    date: action.date,
+                    valeur: action.valeur,
+                    offset: OFFSETS[action.type] || 0
+                });
+            });
+        }
+    });
+
+    // Ajouter un dataset invisible pour les points superposés (utilisé pour les tooltips)
+    if (superposedPoints.length > 0) {
+        datasets.push({
+            label: 'Actions groupées',
+            data: superposedPoints,
+            borderColor: 'rgba(0, 0, 0, 0)',
+            backgroundColor: 'rgba(0, 0, 0, 0)',
+            pointRadius: 0, // Invisible
+            pointHoverRadius: 0,
+            showLine: false
+        });
+    }
 
     return { datasets, labels: dates.map(date => new Date(date).toLocaleString()) };
 }
@@ -155,7 +195,7 @@ function attachDeleteEventListeners() {
     });
 }
 
-// Afficher le graphique de fermentation avec points colorés et infobulles détaillées
+// Afficher le graphique de fermentation avec gestion des superpositions
 function afficherGraphiqueFermentation(data, nomBiere) {
     if (data.length === 0) {
         const ctx = document.getElementById('fermentationChart');
@@ -166,7 +206,7 @@ function afficherGraphiqueFermentation(data, nomBiere) {
         return;
     }
 
-    // Préparer les données avec points colorés
+    // Préparer les données avec gestion des superpositions
     const { datasets, labels } = preparerDonneesGraphique(data);
 
     // Calculer les limites dynamiques
@@ -182,7 +222,7 @@ function afficherGraphiqueFermentation(data, nomBiere) {
             fermentationChart = null;
         }
 
-        // Créer un nouveau graphique avec points colorés
+        // Créer un nouveau graphique avec gestion des superpositions
         fermentationChart = new Chart(ctx, {
             type: 'line',
             data: {
@@ -213,15 +253,24 @@ function afficherGraphiqueFermentation(data, nomBiere) {
                             label: function(context) {
                                 const label = context.dataset.label || '';
                                 const value = context.parsed.y;
-                                if (value !== null) {
+                                if (value !== null && label !== 'Actions groupées') {
                                     return `${label}: ${label === 'Gravité (SG)' ? value.toFixed(3) : value.toFixed(1)}`;
                                 }
                                 return null;
                             },
-                            afterLabel: function(context) {
-                                const index = context.dataIndex;
-                                const date = context.chart.data.labels[index];
-                                return `Date: ${date}`;
+                            afterBody: function(contexts) {
+                                const dateIndex = contexts[0].dataIndex;
+                                const date = contexts[0].label;
+                                const actionsAtDate = data.filter(a => new Date(a.date).toLocaleString() === date);
+
+                                if (actionsAtDate.length > 1) {
+                                    return ['Actions à cette date:', ...actionsAtDate.map(a =>
+                                        `- ${a.type === 'densite' ? 'Gravité' :
+                                          a.type === 'temperature' ? 'Température' :
+                                          a.type.charAt(0).toUpperCase() + a.type.slice(1)}: ${a.valeur}`
+                                    )];
+                                }
+                                return null;
                             }
                         }
                     }
@@ -284,20 +333,44 @@ function afficherGraphiqueFermentation(data, nomBiere) {
 
                     if (points.length > 0) {
                         const pointIndex = points[0].index;
-                        const datasetIndex = points[0].datasetIndex;
-                        const dataset = fermentationChart.data.datasets[datasetIndex];
                         const label = fermentationChart.data.labels[pointIndex];
-                        const value = dataset.data[pointIndex];
+                        const actionsAtDate = data.filter(a => new Date(a.date).toLocaleString() === label);
 
-                        if (value !== null) {
-                            alert(`Détails de l'action:\n\n` +
-                                  `Type: ${dataset.label}\n` +
-                                  `Valeur: ${dataset.label === 'Gravité (SG)' ? value.toFixed(3) : value.toFixed(1)}\n` +
-                                  `Date: ${label}`);
+                        if (actionsAtDate.length > 0) {
+                            alert(`Actions à ${label}:\n\n` +
+                                  actionsAtDate.map(a =>
+                                    `${a.type === 'densite' ? 'Gravité' :
+                                      a.type === 'temperature' ? 'Température' :
+                                      a.type.charAt(0).toUpperCase() + a.type.slice(1)}: ${a.valeur}`
+                                  ).join('\n'));
                         }
                     }
                 }
-            }
+            },
+            plugins: [{
+                afterDraw: function(chart) {
+                    const ctx = chart.ctx;
+                    chart.data.datasets.forEach((dataset, i) => {
+                        const meta = chart.getDatasetMeta(i);
+                        if (dataset.label === 'Actions groupées') {
+                            meta.data.forEach((point, index) => {
+                                const actionsAtDate = data.filter(a => new Date(a.date).toLocaleString() === chart.data.labels[index]);
+                                if (actionsAtDate.length > 1) {
+                                    ctx.save();
+                                    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                                    ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)';
+                                    ctx.lineWidth = 1;
+                                    ctx.beginPath();
+                                    ctx.arc(point.x, point.y, 8, 0, Math.PI * 2);
+                                    ctx.fill();
+                                    ctx.stroke();
+                                    ctx.restore();
+                                }
+                            });
+                        }
+                    });
+                }
+            }]
         });
     }
 }
