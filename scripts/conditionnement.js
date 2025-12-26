@@ -2,6 +2,17 @@
 let conditionnementChart = null;
 let currentEditId = null;
 
+// Constante pour les types de contenants
+const TYPES_CONTENANTS = [
+    { id: 'canette_44cl', label: 'Canette 44cl', volume: 0.44 },
+    { id: 'canette_33cl', label: 'Canette 33cl', volume: 0.33 },
+    { id: 'bouteille_33cl', label: 'Bouteille 33cl', volume: 0.33 },
+    { id: 'bouteille_50cl', label: 'Bouteille 50cl', volume: 0.50 },
+    { id: 'bouteille_75cl', label: 'Bouteille 75cl', volume: 0.75 },
+    { id: 'fut_19l', label: 'Fût 19L', volume: 19 },
+    { id: 'fut_20l', label: 'Fût 20L', volume: 20 }
+];
+
 // Charger les bières dans le sélecteur de conditionnement
 async function chargerSelecteurBieresConditionnement() {
     try {
@@ -98,10 +109,7 @@ function ouvrirModaleConditionnement(conditionnement = null) {
         btnEnregistrer.onclick = () => mettreAJourConditionnement(conditionnement.id);
 
         const biereId = conditionnement.id_biere;
-        const biere = bieres.find(b => b.id === biereId);
-        if (biere) {
-            selectBiereConditionnement.value = biereId;
-        }
+        selectBiereConditionnement.value = biereId;
 
         abvFinalInput.value = conditionnement.abv_final || '';
         dateConditionnementInput.value = conditionnement.date.split('T')[0]; // Format YYYY-MM-DD
@@ -159,16 +167,13 @@ async function ajouterConditionnement() {
         return;
     }
 
-    let volumeUnitaire;
-    if (typeContenant === 'canette_44cl') volumeUnitaire = 0.44;
-    else if (typeContenant === 'canette_33cl') volumeUnitaire = 0.33;
-    else if (typeContenant === 'bouteille_33cl') volumeUnitaire = 0.33;
-    else if (typeContenant === 'bouteille_50cl') volumeUnitaire = 0.50;
-    else if (typeContenant === 'bouteille_75cl') volumeUnitaire = 0.75;
-    else if (typeContenant === 'fut_19l') volumeUnitaire = 19;
-    else if (typeContenant === 'fut_20l') volumeUnitaire = 20;
+    const contenantInfo = TYPES_CONTENANTS.find(c => c.id === typeContenant);
+    if (!contenantInfo) {
+        alert("Type de contenant invalide.");
+        return;
+    }
 
-    const volumeTotal = quantite * volumeUnitaire;
+    const volumeTotal = quantite * contenantInfo.volume;
 
     try {
         const biere = await window.DB.loadItemById('bieres', idBiere);
@@ -183,7 +188,7 @@ async function ajouterConditionnement() {
             contenants: [{
                 type: typeContenant,
                 quantite: quantite,
-                volume_unitaire: volumeUnitaire
+                volume_unitaire: contenantInfo.volume
             }],
             volume_total: volumeTotal
         };
@@ -237,16 +242,13 @@ async function mettreAJourConditionnement(id) {
         return;
     }
 
-    let volumeUnitaire;
-    if (typeContenant === 'canette_44cl') volumeUnitaire = 0.44;
-    else if (typeContenant === 'canette_33cl') volumeUnitaire = 0.33;
-    else if (typeContenant === 'bouteille_33cl') volumeUnitaire = 0.33;
-    else if (typeContenant === 'bouteille_50cl') volumeUnitaire = 0.50;
-    else if (typeContenant === 'bouteille_75cl') volumeUnitaire = 0.75;
-    else if (typeContenant === 'fut_19l') volumeUnitaire = 19;
-    else if (typeContenant === 'fut_20l') volumeUnitaire = 20;
+    const contenantInfo = TYPES_CONTENANTS.find(c => c.id === typeContenant);
+    if (!contenantInfo) {
+        alert("Type de contenant invalide.");
+        return;
+    }
 
-    const volumeTotal = quantite * volumeUnitaire;
+    const volumeTotal = quantite * contenantInfo.volume;
 
     try {
         const biere = await window.DB.loadItemById('bieres', idBiere);
@@ -259,7 +261,7 @@ async function mettreAJourConditionnement(id) {
             contenants: [{
                 type: typeContenant,
                 quantite: quantite,
-                volume_unitaire: volumeUnitaire
+                volume_unitaire: contenantInfo.volume
             }],
             volume_total: volumeTotal
         };
@@ -375,17 +377,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const typeContenantSelect = document.getElementById('type-contenant');
     if (typeContenantSelect) {
         typeContenantSelect.innerHTML = '<option value="">-- Sélectionner un contenant --</option>';
-        const typesContenants = [
-            { id: 'canette_44cl', label: 'Canette 44cl' },
-            { id: 'canette_33cl', label: 'Canette 33cl' },
-            { id: 'bouteille_33cl', label: 'Bouteille 33cl' },
-            { id: 'bouteille_50cl', label: 'Bouteille 50cl' },
-            { id: 'bouteille_75cl', label: 'Bouteille 75cl' },
-            { id: 'fut_19l', label: 'Fût 19L' },
-            { id: 'fut_20l', label: 'Fût 20L' }
-        ];
-
-        typesContenants.forEach(contenant => {
+        TYPES_CONTENANTS.forEach(contenant => {
             const option = document.createElement('option');
             option.value = contenant.id;
             option.textContent = contenant.label;
