@@ -1,4 +1,4 @@
-// fermentation.js - Gestion complète du suivi de fermentation avec points empilés
+// fermentation.js - Gestion complète du suivi de fermentation avec courbes continues
 let fermentationChart = null;
 
 // Couleurs par type d'action pour les points sur le graphique
@@ -11,8 +11,8 @@ const ACTION_COLORS = {
     autre: 'rgb(201, 203, 207)'          // Gris pour les autres types
 };
 
-// Déplacement vertical pour les points superposés
-const OFFSETS = {
+// Déplacement vertical pour les points d'action en bas de l'axe
+const ACTION_OFFSETS = {
     purge: -0.05,
     pression: -0.10,
     dry_hopping: -0.15,
@@ -70,7 +70,7 @@ function calculerLimitesEchelles(densites, temperatures) {
     };
 }
 
-// Préparer les données pour le graphique avec points empilés
+// Préparer les données pour le graphique avec courbes continues
 function preparerDonneesGraphique(data) {
     const types = [...new Set(data.map(a => a.type))];
     const datasets = [];
@@ -79,10 +79,11 @@ function preparerDonneesGraphique(data) {
     const dates = [...new Set(data.map(a => a.date))].sort((a, b) => new Date(a) - new Date(b));
 
     // Préparer les données pour la densité et la température
-    types.filter(type => type === 'densite' || type === 'temperature').forEach(type => {
+    ['densite', 'temperature'].forEach(type => {
         const actions = data.filter(a => a.type === type).sort((a, b) => new Date(a.date) - new Date(b.date));
 
         if (actions.length > 0) {
+            // Créer un tableau de valeurs aligné avec les dates
             const values = dates.map(date => {
                 const action = actions.find(a => a.date === date);
                 return action ? action.valeur : null;
@@ -101,7 +102,7 @@ function preparerDonneesGraphique(data) {
                 pointBackgroundColor: ACTION_COLORS[type],
                 pointBorderColor: '#fff',
                 pointBorderWidth: 2,
-                showLine: true
+                spanGaps: false // Assure la continuité de la courbe
             });
         }
     });
@@ -117,7 +118,7 @@ function preparerDonneesGraphique(data) {
 
     // Créer un dataset pour les autres actions
     const otherDatasets = [];
-    Object.keys(actionsByDate).forEach(date => {
+    dates.forEach(date => {
         const actions = actionsByDate[date];
         if (actions.length > 0) {
             actions.forEach((action, index) => {
@@ -128,7 +129,7 @@ function preparerDonneesGraphique(data) {
                     type: action.type,
                     date: action.date,
                     valeur: action.valeur,
-                    offset: OFFSETS[action.type] ? OFFSETS[action.type] * (index + 1) : -0.05 * (index + 1)
+                    offset: ACTION_OFFSETS[action.type] ? ACTION_OFFSETS[action.type] * (index + 1) : -0.05 * (index + 1)
                 });
             });
         }
@@ -213,7 +214,7 @@ function attachDeleteEventListeners() {
     });
 }
 
-// Afficher le graphique de fermentation avec points empilés
+// Afficher le graphique de fermentation avec courbes continues
 function afficherGraphiqueFermentation(data, nomBiere) {
     if (data.length === 0) {
         const ctx = document.getElementById('fermentationChart');
@@ -224,7 +225,7 @@ function afficherGraphiqueFermentation(data, nomBiere) {
         return;
     }
 
-    // Préparer les données avec points empilés
+    // Préparer les données avec courbes continues
     const { datasets, labels } = preparerDonneesGraphique(data);
 
     // Calculer les limites dynamiques
@@ -240,7 +241,7 @@ function afficherGraphiqueFermentation(data, nomBiere) {
             fermentationChart = null;
         }
 
-        // Créer un nouveau graphique avec points empilés
+        // Créer un nouveau graphique avec courbes continues
         fermentationChart = new Chart(ctx, {
             type: 'line',
             data: {
@@ -350,7 +351,7 @@ function afficherGraphiqueFermentation(data, nomBiere) {
                     );
 
                     if (points.length > 0) {
-                        const pointIndex = points[0].index;
+                        const pointIndex = points[0].dataIndex;
                         const label = fermentationChart.data.labels[pointIndex];
                         const actionsAtDate = data.filter(a => new Date(a.date).toLocaleString() === label);
 
@@ -454,7 +455,7 @@ async function supprimerActionFermentation(id) {
         }
     } catch (error) {
         console.error("Erreur lors de la suppression de l'action de fermentation:", error);
-        alert("Une erreur est survenue lors de la suppression.");
+        alert("Erreur lors de la suppression.");
     }
 }
 
