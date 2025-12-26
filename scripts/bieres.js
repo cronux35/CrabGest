@@ -1,4 +1,7 @@
-// Utilise le cache global
+// Variable globale pour éviter les doubles clics
+let isAddingBiere = false;
+
+// Charger les bières (avec cache)
 async function loadBieres(forceReload = false) {
     if (!forceReload && window.appDataCache.bieres.length > 0) {
         return window.appDataCache.bieres;
@@ -7,7 +10,7 @@ async function loadBieres(forceReload = false) {
     return window.appDataCache.bieres;
 }
 
-// Afficher les bières (optimisé)
+// Afficher les bières
 async function afficherBieres() {
     const bieres = await loadBieres();
     const tbody = document.querySelector('#table-bieres tbody');
@@ -38,11 +41,10 @@ async function afficherBieres() {
     attachBiereEventListeners();
 }
 
-// Recharger les sélecteurs de bières (optimisé)
+// Recharger les sélecteurs de bières
 async function rechargerSelecteursBieres() {
     const bieres = await loadBieres();
 
-    // Mettre à jour les sélecteurs
     const selectors = [
         { id: 'select-biere-retrait', label: '-- Bière --' },
         { id: 'select-biere-fermentation', label: '-- Sélectionner une bière --' },
@@ -68,6 +70,13 @@ function attachBiereEventListeners() {
     const tbody = document.querySelector('#table-bieres tbody');
     if (!tbody) return;
 
+    // Détache l'ancien écouteur s'il existe
+    const oldHandler = tbody.onclick;
+    if (oldHandler) {
+        tbody.onclick = null;
+    }
+
+    // Attache le nouvel écouteur
     tbody.onclick = async (e) => {
         const target = e.target.closest('button[data-action]');
         if (!target) return;
@@ -99,14 +108,13 @@ function attachBiereEventListeners() {
     };
 }
 
-// Voir les ingrédients d'une bière (optimisé)
+// Voir les ingrédients d'une bière
 async function voirIngredientsBiere(id) {
     try {
         let biere = window.appDataCache.bieres.find(b => b.id === id);
         if (!biere) {
             biere = await window.DB.loadItemById('bieres', id);
             if (biere) {
-                // Mettre à jour le cache global si nécessaire
                 const index = window.appDataCache.bieres.findIndex(b => b.id === id);
                 if (index === -1) {
                     window.appDataCache.bieres.push(biere);
@@ -130,7 +138,7 @@ async function voirIngredientsBiere(id) {
     }
 }
 
-// Ouvrir la modale d'édition (optimisé)
+// Ouvrir la modale d'édition
 async function openEditBiereModal(id) {
     try {
         let biere = window.appDataCache.bieres.find(b => b.id === id);
@@ -178,9 +186,15 @@ async function openEditBiereModal(id) {
             <button type="button" id="saveEditBiereBtn" class="btn btn-primary">Enregistrer</button>
         `;
 
-        document.getElementById('saveEditBiereBtn').onclick = async () => {
-            await saveEditBiere(id);
-        };
+        // Écouteur pour le bouton "Enregistrer"
+        setTimeout(() => {
+            const btnEnregistrer = document.getElementById('saveEditBiereBtn');
+            if (btnEnregistrer) {
+                btnEnregistrer.onclick = null;
+                btnEnregistrer.removeEventListener('click', saveEditBiere);
+                btnEnregistrer.addEventListener('click', () => saveEditBiere(id));
+            }
+        }, 100);
 
         openModal('editModal');
     } catch (error) {
@@ -189,7 +203,7 @@ async function openEditBiereModal(id) {
     }
 }
 
-// Sauvegarder une bière modifiée (optimisé)
+// Sauvegarder une bière modifiée
 async function saveEditBiere(id) {
     try {
         const updatedBiere = {
@@ -217,19 +231,25 @@ async function saveEditBiere(id) {
     }
 }
 
-// Ajouter une bière (optimisé)
+// Ajouter une bière
 async function ajouterBiere() {
-    const nom = document.getElementById('nom-biere').value;
-    const style = document.getElementById('style-biere').value;
-    const degre = parseFloat(document.getElementById('degre-biere').value);
-    const volume = parseFloat(document.getElementById('volume-biere').value);
-
-    if (!nom) {
-        alert("Veuillez au moins indiquer un nom pour la bière.");
+    if (isAddingBiere) {
+        console.log("Double appel détecté !");
         return;
     }
+    isAddingBiere = true;
 
     try {
+        const nom = document.getElementById('nom-biere').value;
+        const style = document.getElementById('style-biere').value;
+        const degre = parseFloat(document.getElementById('degre-biere').value);
+        const volume = parseFloat(document.getElementById('volume-biere').value);
+
+        if (!nom) {
+            alert("Veuillez au moins indiquer un nom pour la bière.");
+            return;
+        }
+
         const nouvelleBiere = {
             nom: nom,
             style: style,
@@ -242,22 +262,46 @@ async function ajouterBiere() {
         nouvelleBiere.id = newId;
         window.appDataCache.bieres.push(nouvelleBiere);
 
+        // Met à jour le tableau sans tout recharger
+        const tbody = document.querySelector('#table-bieres tbody');
+        if (tbody) {
+            const newRow = document.createElement('tr');
+            newRow.setAttribute('data-id', newId);
+            newRow.innerHTML = `
+                <td>${newId}</td>
+                <td>${nom}</td>
+                <td>${style || '-'}</td>
+                <td>${degre || '-'}</td>
+                <td>${volume || '-'}</td>
+                <td>
+                    <button class="action-btn edit-btn" data-action="edit" title="Éditer">
+                        <i class="material-icons">edit</i>
+                    </button>
+                    <button class="action-btn delete-btn" data-action="delete" title="Supprimer">
+                        <i class="material-icons">delete</i>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(newRow);
+        }
+
         // Réinitialiser le formulaire
         document.getElementById('nom-biere').value = '';
         document.getElementById('style-biere').value = '';
         document.getElementById('degre-biere').value = '';
         document.getElementById('volume-biere').value = '';
 
-        afficherBieres();
         rechargerSelecteursBieres();
         alert(`La bière "${nom}" a été ajoutée avec succès.`);
     } catch (error) {
         console.error("Erreur lors de l'ajout de la bière:", error);
         alert("Une erreur est survenue lors de l'ajout de la bière.");
+    } finally {
+        isAddingBiere = false;
     }
 }
 
-// Supprimer une bière (optimisé)
+// Supprimer une bière
 async function deleteBiere(id) {
     try {
         const biere = window.appDataCache.bieres.find(b => b.id === id);
@@ -279,5 +323,11 @@ async function deleteBiere(id) {
     }
 }
 
-// Initialisation
-document.addEventListener('DOMContentLoaded', afficherBieres);
+// Initialisation des écouteurs
+document.addEventListener('DOMContentLoaded', () => {
+    // Écouteur pour le bouton "Ajouter Bière"
+    const btnAjouterBiere = document.getElementById('btn-ajouter-biere');
+    if (btnAjouterBiere) {
+        btnAjouterBiere.addEventListener('click', ajouterBiere);
+    }
+});

@@ -136,7 +136,7 @@
             <h2>Gestion des Stocks</h2>
             <div class="card">
                 <div class="form-group">
-                    <button onclick="ouvrirModalAjoutIngredient()" class="btn btn-primary">
+                    <button id="btn-ajouter-ingredient" class="btn btn-primary">
                         <i class="material-icons">add</i> Ajouter un ingrédient
                     </button>
                 </div>
@@ -182,7 +182,7 @@
                             <option value="">-- Bière --</option>
                         </select>
                         <input type="number" id="quantite-retrait" class="form-control" placeholder="Quantité (g)" min="1">
-                        <button onclick="retirerStockPourBiere()" class="btn btn-primary">Retirer</button>
+                        <button id="btn-retirer-stock" class="btn btn-primary">Retirer</button>
                     </div>
                     <div id="retrait-error" class="error-message"></div>
                 </div>
@@ -224,7 +224,7 @@
                     <input type="text" id="style-biere" class="form-control" placeholder="Style">
                     <input type="number" id="degre-biere" class="form-control" placeholder="Degré alcoolique" step="0.1">
                     <input type="number" id="volume-biere" class="form-control" placeholder="Volume (L)" step="0.1">
-                    <button onclick="ajouterBiere()" class="btn btn-primary">Ajouter Bière</button>
+                    <button id="btn-ajouter-biere" class="btn btn-primary">Ajouter Bière</button>
                 </div>
                 <div class="table-responsive">
                     <table id="table-bieres" class="table">
@@ -263,7 +263,7 @@
                         <option value="dry_hopping">Dry Hopping (g)</option>
                     </select>
                     <input type="number" id="valeur-action" class="form-control" placeholder="Valeur" step="any">
-                    <button onclick="ajouterActionFermentation()" class="btn btn-primary">Ajouter Action</button>
+                    <button id="btn-ajouter-action-fermentation" class="btn btn-primary">Ajouter Action</button>
                 </div>
 
                 <h3>Actions de fermentation</h3>
@@ -292,7 +292,7 @@
     <h2>Conditionnement</h2>
     <div class="card">
         <div class="form-group">
-            <button onclick="ouvrirModaleAjoutConditionnement()" class="btn btn-primary">
+            <button id="btn-ajouter-conditionnement" class="btn btn-primary">
                 <i class="material-icons">add</i> Ajouter un conditionnement
             </button>
         </div>

@@ -1,3 +1,7 @@
+// Variable globale pour éviter les doubles clics
+let isAddingIngredient = false;
+let isAddingStock = false;
+
 // Utilise le cache global
 async function loadStocks(forceReload = false) {
     if (!forceReload && window.appDataCache.stocks.length > 0) {
@@ -37,10 +41,19 @@ function ouvrirModalAjoutIngredient() {
         conditionnement: "",
         notes: ""
     });
+
+    // Écouteur pour le bouton "Enregistrer" de la modale
+    setTimeout(() => {
+        const btnEnregistrer = document.getElementById('saveEditBiereBtn');
+        if (btnEnregistrer) {
+            btnEnregistrer.onclick = null;
+            btnEnregistrer.removeEventListener('click', ajouterIngredient);
+            btnEnregistrer.addEventListener('click', ajouterIngredient);
+        }
+    }, 100);
 }
 
-
-// Charger les données initiales (optimisé)
+// Charger les données initiales
 async function chargerDonnees() {
     try {
         await Promise.all([
@@ -69,7 +82,7 @@ async function chargerDonnees() {
     }
 }
 
-// Charger les données pour le retrait de stock (optimisé)
+// Charger les données pour le retrait de stock
 async function chargerDonneesRetrait() {
     try {
         const selectIngredientRetrait = document.getElementById('select-ingredient-retrait');
@@ -98,7 +111,7 @@ async function chargerDonneesRetrait() {
     }
 }
 
-// Charger les types d'ingrédients (optimisé)
+// Charger les types d'ingrédients
 async function chargerTypesIngredients() {
     const types = [...new Set(window.appDataCache.stocks.map(s => s.type))];
     const selectType = document.getElementById('select-type-ingredient');
@@ -113,7 +126,7 @@ async function chargerTypesIngredients() {
     }
 }
 
-// Charger les ingrédients par type (optimisé)
+// Charger les ingrédients par type
 async function chargerIngredientsParType() {
     const type = document.getElementById('select-type-ingredient').value;
     const selectIngredient = document.getElementById('select-ingredient-retrait');
@@ -130,7 +143,49 @@ async function chargerIngredientsParType() {
     });
 }
 
-// Afficher les stocks (optimisé)
+// Filtrer les stocks par bière
+async function filtrerStocksParBiere() {
+    const biereId = document.getElementById('biere-select').value;
+    const stockTableBody = document.querySelector('#table-stocks tbody');
+    if (!stockTableBody) return;
+
+    let stocksFiltres = window.appDataCache.stocks;
+    if (biereId) {
+        const biere = window.appDataCache.bieres.find(b => b.id === biereId);
+        if (biere && biere.ingredients) {
+            const ingredientIds = biere.ingredients.map(ing => ing.id);
+            stocksFiltres = window.appDataCache.stocks.filter(stock => ingredientIds.includes(stock.id));
+        }
+    }
+
+    stockTableBody.innerHTML = stocksFiltres.map(stock => `
+        <tr data-id="${stock.id}">
+            <td>${stock.type || ''}</td>
+            <td>${stock.nom || ''}</td>
+            <td>${stock.lot || '-'}</td>
+            <td class="${stock.quantite < 0 ? 'stock-negatif' : ''}">${stock.quantite || 0}g</td>
+            <td>${stock.fournisseur || ''}</td>
+            <td>${stock.specification || '-'}</td>
+            <td>${stock.annee_recolte || '-'}</td>
+            <td>${stock.conditionnement || 'non spécifié'}</td>
+            <td>
+                <button class="action-btn edit-btn" data-action="edit" title="Éditer">
+                    <i class="material-icons">edit</i>
+                </button>
+                <button class="action-btn delete-btn" data-action="delete" title="Supprimer">
+                    <i class="material-icons">delete</i>
+                </button>
+                ${stock.notes ? `<button class="action-btn notes-btn" data-action="notes" title="Voir les notes">
+                    <i class="material-icons">info</i>
+                </button>` : ''}
+            </td>
+        </tr>
+    `).join('');
+
+    attachEventListeners();
+}
+
+// Afficher les stocks
 async function afficherStocks() {
     try {
         const stockTableBody = document.querySelector('#table-stocks tbody');
@@ -166,11 +221,15 @@ async function afficherStocks() {
     }
 }
 
-// Écouteurs dynamiques pour les actions sur les stocks (optimisé)
+// Écouteurs dynamiques pour les actions sur les stocks
 function attachEventListeners() {
     const stockTableBody = document.querySelector('#table-stocks tbody');
     if (!stockTableBody) return;
 
+    // Détache l'ancien écouteur s'il existe
+    stockTableBody.onclick = null;
+
+    // Attache le nouvel écouteur
     stockTableBody.onclick = async (e) => {
         const target = e.target.closest('button[data-action]');
         if (!target) return;
@@ -214,7 +273,7 @@ function attachEventListeners() {
     };
 }
 
-// Sauvegarder un ingrédient modifié (optimisé)
+// Sauvegarder un ingrédient modifié
 async function saveEdit() {
     if (!currentEditType || currentEditId === null) {
         console.error("Type ou ID manquant pour la sauvegarde.");
@@ -268,24 +327,30 @@ async function saveEdit() {
     }
 }
 
-// Ajouter un ingrédient (optimisé)
+// Ajouter un ingrédient
 async function ajouterIngredient() {
-    const type = document.getElementById('edit-type').value;
-    const nom = document.getElementById('edit-nom').value;
-    const lot = document.getElementById('edit-lot').value;
-    const quantite = parseFloat(document.getElementById('edit-quantite').value);
-    const fournisseur = document.getElementById('edit-fournisseur').value;
-    const specification = document.getElementById('edit-specification').value;
-    const annee = document.getElementById('edit-annee')?.value;
-    const conditionnement = document.getElementById('edit-conditionnement').value;
-    const notes = document.getElementById('edit-notes').value;
-
-    if (!type || !nom || !fournisseur || isNaN(quantite)) {
-        alert("Veuillez remplir tous les champs obligatoires.");
+    if (isAddingIngredient) {
+        console.log("Double appel détecté !");
         return;
     }
+    isAddingIngredient = true;
 
     try {
+        const type = document.getElementById('edit-type').value;
+        const nom = document.getElementById('edit-nom').value;
+        const lot = document.getElementById('edit-lot').value;
+        const quantite = parseFloat(document.getElementById('edit-quantite').value);
+        const fournisseur = document.getElementById('edit-fournisseur').value;
+        const specification = document.getElementById('edit-specification').value;
+        const annee = document.getElementById('edit-annee')?.value;
+        const conditionnement = document.getElementById('edit-conditionnement').value;
+        const notes = document.getElementById('edit-notes').value;
+
+        if (!type || !nom || !fournisseur || isNaN(quantite)) {
+            alert("Veuillez remplir tous les champs obligatoires.");
+            return;
+        }
+
         const nouvelIngredient = {
             type: type,
             nom: nom,
@@ -303,7 +368,35 @@ async function ajouterIngredient() {
         nouvelIngredient.id = newId;
         window.appDataCache.stocks.push(nouvelIngredient);
 
-        await afficherStocks();
+        // Met à jour le tableau sans tout recharger
+        const stockTableBody = document.querySelector('#table-stocks tbody');
+        if (stockTableBody) {
+            const newRow = document.createElement('tr');
+            newRow.setAttribute('data-id', newId);
+            newRow.innerHTML = `
+                <td>${type}</td>
+                <td>${nom}</td>
+                <td>${lot || '-'}</td>
+                <td class="${quantite < 0 ? 'stock-negatif' : ''}">${quantite}g</td>
+                <td>${fournisseur}</td>
+                <td>${specification || '-'}</td>
+                <td>${annee || '-'}</td>
+                <td>${conditionnement || 'non spécifié'}</td>
+                <td>
+                    <button class="action-btn edit-btn" data-action="edit" title="Éditer">
+                        <i class="material-icons">edit</i>
+                    </button>
+                    <button class="action-btn delete-btn" data-action="delete" title="Supprimer">
+                        <i class="material-icons">delete</i>
+                    </button>
+                    ${notes ? `<button class="action-btn notes-btn" data-action="notes" title="Voir les notes">
+                        <i class="material-icons">info</i>
+                    </button>` : ''}
+                </td>
+            `;
+            stockTableBody.appendChild(newRow);
+        }
+
         await chargerTypesIngredients();
         await chargerIngredientsParType();
         closeModal('editModal');
@@ -311,10 +404,12 @@ async function ajouterIngredient() {
     } catch (error) {
         console.error("Erreur lors de l'ajout de l'ingrédient:", error);
         alert("Une erreur est survenue lors de l'ajout de l'ingrédient.");
+    } finally {
+        isAddingIngredient = false;
     }
 }
 
-// Retirer du stock pour une bière (optimisé)
+// Retirer du stock pour une bière
 async function retirerStockPourBiere() {
     const idIngredient = document.getElementById('select-ingredient-retrait')?.value;
     const idBiere = document.getElementById('select-biere-retrait')?.value;
@@ -409,7 +504,7 @@ async function retirerStockPourBiere() {
     }
 }
 
-// Annuler un retrait (optimisé)
+// Annuler un retrait
 async function annulerRetrait(entryId) {
     try {
         const entry = window.appDataCache.historique_stocks.find(e => e.id == entryId);
@@ -468,7 +563,7 @@ async function annulerRetrait(entryId) {
     }
 }
 
-// Afficher l'historique des retraits (optimisé)
+// Afficher l'historique des retraits
 async function afficherHistoriqueRetraits() {
     try {
         const selectBiere = document.getElementById('select-biere-historique');
@@ -506,7 +601,7 @@ async function afficherHistoriqueRetraits() {
     }
 }
 
-// Charger les bières pour le filtre (optimisé)
+// Charger les bières pour le filtre
 async function chargerBieresPourFiltre() {
     try {
         const selectBiere = document.getElementById('select-biere-historique');
@@ -524,10 +619,38 @@ async function chargerBieresPourFiltre() {
     }
 }
 
-// Initialisation
-document.addEventListener('DOMContentLoaded', async () => {
-    await chargerDonnees();
-    await chargerTypesIngredients();
-    await chargerBieresPourFiltre();
-    await afficherHistoriqueRetraits();
+// Initialisation des écouteurs
+document.addEventListener('DOMContentLoaded', () => {
+    // Écouteurs pour les boutons
+    const btnAjouterIngredient = document.getElementById('btn-ajouter-ingredient');
+    if (btnAjouterIngredient) {
+        btnAjouterIngredient.addEventListener('click', ouvrirModalAjoutIngredient);
+    }
+
+    const btnRetirerStock = document.getElementById('btn-retirer-stock');
+    if (btnRetirerStock) {
+        btnRetirerStock.addEventListener('click', retirerStockPourBiere);
+    }
+
+    // Écouteurs pour les sélecteurs
+    const selectTypeIngredient = document.getElementById('select-type-ingredient');
+    if (selectTypeIngredient) {
+        selectTypeIngredient.addEventListener('change', chargerIngredientsParType);
+    }
+
+    const selectBiereHistorique = document.getElementById('select-biere-historique');
+    if (selectBiereHistorique) {
+        selectBiereHistorique.addEventListener('change', afficherHistoriqueRetraits);
+    }
+
+    const biereSelect = document.getElementById('biere-select');
+    if (biereSelect) {
+        biereSelect.addEventListener('change', filtrerStocksParBiere);
+    }
+
+    // Charger les données initiales
+    chargerDonnees();
+    chargerTypesIngredients();
+    chargerBieresPourFiltre();
+    afficherHistoriqueRetraits();
 });
