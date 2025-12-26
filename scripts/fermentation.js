@@ -1,4 +1,4 @@
-// fermentation.js - Gestion complète du suivi de fermentation avec affichage garanti des points
+// fermentation.js - Gestion complète du suivi de fermentation avec points centrés verticalement
 let fermentationChart = null;
 
 // Couleurs par type d'action pour les points sur le graphique
@@ -9,13 +9,6 @@ const ACTION_COLORS = {
     pression: 'rgb(255, 206, 86)',      // Jaune pour la pression
     dry_hopping: 'rgb(153, 102, 255)',   // Violet pour le dry hopping
     autre: 'rgb(201, 203, 207)'          // Gris pour les autres types
-};
-
-// Déplacement vertical pour les points d'action en bas de l'axe
-const ACTION_OFFSETS = {
-    purge: -0.05,
-    pression: -0.10,
-    dry_hopping: -0.15,
 };
 
 // Charger les bières dans le sélecteur de fermentation
@@ -66,17 +59,23 @@ function calculerLimitesEchelles(densites, temperatures) {
 
     return {
         gravite: { min: minGravite, max: maxGravite },
-        temperature: { min: minTemperature, max: maxTemperature }
+        temperature: { min: minTemperature, max: maxTemperature },
+        midY: (minGravite + maxTemperature) / 2 // Calcul du milieu de l'axe Y
     };
 }
 
-// Préparer les données pour le graphique avec courbes continues et points visibles
+// Préparer les données pour le graphique avec courbes continues et points centrés verticalement
 function preparerDonneesGraphique(data) {
     const types = [...new Set(data.map(a => a.type))];
     const datasets = [];
 
     // Extraire les dates uniques et les trier
     const dates = [...new Set(data.map(a => a.date))].sort((a, b) => new Date(a) - new Date(b));
+
+    // Calculer les limites dynamiques
+    const densites = data.filter(a => a.type === 'densite');
+    const temperatures = data.filter(a => a.type === 'temperature');
+    const limites = calculerLimitesEchelles(densites, temperatures);
 
     // Préparer les données pour la densité et la température
     ['densite', 'temperature'].forEach(type => {
@@ -121,19 +120,10 @@ function preparerDonneesGraphique(data) {
     otherTypes.forEach(type => {
         const actions = otherActions.filter(a => a.type === type);
         if (actions.length > 0) {
-            const points = [];
-            dates.forEach(date => {
+            const points = dates.map(date => {
                 const action = actions.find(a => a.date === date);
-                if (action) {
-                    points.push({
-                        x: date,
-                        y: 0, // Toujours en bas de l'axe des abscisses
-                        id: action.id,
-                        type: action.type,
-                        valeur: action.valeur
-                    });
-                }
-            });
+                return action ? { x: date, y: limites.midY, id: action.id, type: action.type, valeur: action.valeur } : null;
+            }).filter(point => point !== null);
 
             datasets.push({
                 label: type.charAt(0).toUpperCase() + type.slice(1),
@@ -146,12 +136,12 @@ function preparerDonneesGraphique(data) {
                 pointBorderColor: '#fff',
                 pointBorderWidth: 2,
                 showLine: false,
-                yAxisID: 'y' // Utiliser l'axe de la densité pour positionner les points en bas
+                yAxisID: 'y' // Utiliser l'axe Y principal
             });
         }
     });
 
-    return { datasets, labels: dates.map(date => new Date(date).toLocaleString()) };
+    return { datasets, labels: dates.map(date => new Date(date).toLocaleString()), midY: limites.midY };
 }
 
 // Afficher le suivi de fermentation pour une bière sélectionnée
@@ -205,7 +195,7 @@ function attachDeleteEventListeners() {
     });
 }
 
-// Afficher le graphique de fermentation avec courbes continues et points visibles
+// Afficher le graphique de fermentation avec courbes continues et points centrés verticalement
 function afficherGraphiqueFermentation(data, nomBiere) {
     if (data.length === 0) {
         const ctx = document.getElementById('fermentationChart');
@@ -216,8 +206,8 @@ function afficherGraphiqueFermentation(data, nomBiere) {
         return;
     }
 
-    // Préparer les données avec courbes continues et points visibles
-    const { datasets, labels } = preparerDonneesGraphique(data);
+    // Préparer les données avec courbes continues et points centrés verticalement
+    const { datasets, labels, midY } = preparerDonneesGraphique(data);
 
     // Calculer les limites dynamiques
     const densites = data.filter(a => a.type === 'densite');
@@ -232,7 +222,7 @@ function afficherGraphiqueFermentation(data, nomBiere) {
             fermentationChart = null;
         }
 
-        // Créer un nouveau graphique avec courbes continues et points visibles
+        // Créer un nouveau graphique avec courbes continues et points centrés verticalement
         fermentationChart = new Chart(ctx, {
             type: 'line',
             data: {
