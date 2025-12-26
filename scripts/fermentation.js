@@ -7,7 +7,7 @@ const ACTION_COLORS = {
     temperature: 'rgb(255, 99, 132)',   // Rose pour la température
     purge: 'rgb(54, 162, 235)',         // Bleu pour la purge
     pression: 'rgb(255, 206, 86)',      // Jaune pour la pression
-    dry_hopping: 'rgb(153, 102, 255)',    // Violet pour le dry hopping
+    dry_hopping: 'rgb(153, 102, 255)',   // Violet pour le dry hopping
     autre: 'rgb(201, 203, 207)'          // Gris pour les autres types
 };
 
@@ -77,15 +77,15 @@ function preparerDonneesGraphique(data) {
                        type === 'temperature' ? 'Température (°C)' :
                        type.charAt(0).toUpperCase() + type.slice(1),
                 data: actions.map(a => ({
-                    x: new Date(a.date),
+                    x: a.date,
                     y: a.valeur,
                     id: a.id,
                     type: a.type,
-                    date: new Date(a.date).toLocaleString(),
+                    date: a.date,
                     valeur: a.valeur
                 })),
                 borderColor: ACTION_COLORS[type] || ACTION_COLORS.autre,
-                backgroundColor: `${ACTION_COLORS[type] || ACTION_COLORS.autre}33`, // 33 = 20% d'opacité
+                backgroundColor: `${ACTION_COLORS[type] || ACTION_COLORS.autre}33`,
                 tension: 0.1,
                 fill: false,
                 yAxisID: type === 'densite' ? 'y' : 'y1',
@@ -165,7 +165,101 @@ function afficherGraphiqueFermentation(data, nomBiere) {
             fermentationChart = null;
         }
 
-        // Créer un nouveau graphique avec points colorés
+        // Configuration de l'adaptateur de dates pour Chart.js
+        // Utilisation de Luxon (recommandé par Chart.js)
+        // Note: Luxon doit être chargé avant Chart.js dans le HTML
+        Chart.register({
+            _adapters: {
+                _date: {
+                    // Fonctions minimales requises par Chart.js
+                    override: function(t) {
+                        return {
+                            // Parse une date depuis une chaîne ou un timestamp
+                            parse: function(input, fmt) {
+                                if (typeof input === 'string') {
+                                    return new Date(input);
+                                } else if (typeof input === 'number') {
+                                    return new Date(input);
+                                } else if (input instanceof Date) {
+                                    return input;
+                                }
+                                return null;
+                            },
+                            // Formate une date en chaîne
+                            format: function(date, fmt) {
+                                return date.toLocaleString();
+                            },
+                            // Ajoute des jours/mois/années à une date
+                            add: function(date, amount, unit) {
+                                const newDate = new Date(date);
+                                switch (unit) {
+                                    case 'day': newDate.setDate(newDate.getDate() + amount); break;
+                                    case 'month': newDate.setMonth(newDate.getMonth() + amount); break;
+                                    case 'year': newDate.setFullYear(newDate.getFullYear() + amount); break;
+                                    case 'hour': newDate.setHours(newDate.getHours() + amount); break;
+                                    case 'minute': newDate.setMinutes(newDate.getMinutes() + amount); break;
+                                    case 'second': newDate.setSeconds(newDate.getSeconds() + amount); break;
+                                }
+                                return newDate;
+                            },
+                            // Soustrait des jours/mois/années à une date
+                            diff: function(max, min, unit) {
+                                const diff = max - min;
+                                switch (unit) {
+                                    case 'day': return diff / (1000 * 60 * 60 * 24);
+                                    case 'month': return (max.getFullYear() - min.getFullYear()) * 12 + (max.getMonth() - min.getMonth());
+                                    case 'year': return max.getFullYear() - min.getFullYear();
+                                    case 'hour': return diff / (1000 * 60 * 60);
+                                    case 'minute': return diff / (1000 * 60);
+                                    case 'second': return diff / 1000;
+                                    default: return diff;
+                                }
+                            },
+                            // Début et fin d'une unité de temps
+                            startOf: function(date, unit) {
+                                const newDate = new Date(date);
+                                switch (unit) {
+                                    case 'day': newDate.setHours(0, 0, 0, 0); break;
+                                    case 'month': newDate.setDate(1); newDate.setHours(0, 0, 0, 0); break;
+                                    case 'year': newDate.setMonth(0, 1); newDate.setHours(0, 0, 0, 0); break;
+                                    case 'hour': newDate.setMinutes(0, 0, 0); break;
+                                    case 'minute': newDate.setSeconds(0, 0); break;
+                                    case 'second': newDate.setMilliseconds(0); break;
+                                }
+                                return newDate;
+                            },
+                            endOf: function(date, unit) {
+                                const newDate = new Date(date);
+                                switch (unit) {
+                                    case 'day': newDate.setHours(23, 59, 59, 999); break;
+                                    case 'month':
+                                        newDate.setMonth(newDate.getMonth() + 1);
+                                        newDate.setDate(0);
+                                        newDate.setHours(23, 59, 59, 999);
+                                        break;
+                                    case 'year':
+                                        newDate.setMonth(11, 31);
+                                        newDate.setHours(23, 59, 59, 999);
+                                        break;
+                                    case 'hour':
+                                        newDate.setMinutes(59, 59, 999);
+                                        break;
+                                    case 'minute':
+                                        newDate.setSeconds(59, 999);
+                                        break;
+                                    case 'second':
+                                        newDate.setMilliseconds(999);
+                                        break;
+                                }
+                                return newDate;
+                            }
+                        };
+                    }
+                }
+            }
+        });
+
+        // Créer un nouveau graphique avec points colorés et adaptateur de dates
         fermentationChart = new Chart(ctx, {
             type: 'line',
             data: {
@@ -191,12 +285,12 @@ function afficherGraphiqueFermentation(data, nomBiere) {
                                     `Type: ${point.type === 'densite' ? 'Gravité' :
                                           point.type === 'temperature' ? 'Température' :
                                           point.type.charAt(0).toUpperCase() + point.type.slice(1)}`,
-                                    `Valeur: ${point.type === 'densite' ? point.valeur.toFixed(3) : point.valeur.toFixed(1)}`,
-                                    `Date: ${point.date}`
+                                    `Valeur: ${point.type === 'densite' ? point.y.toFixed(3) : point.y.toFixed(1)}`,
+                                    `Date: ${new Date(point.x).toLocaleString()}`
                                 ];
                             },
                             title: function() {
-                                return ''; // On utilise le callback label pour tout afficher
+                                return '';
                             }
                         }
                     }
@@ -266,13 +360,12 @@ function afficherGraphiqueFermentation(data, nomBiere) {
                         const dataset = fermentationChart.data.datasets[datasetIndex];
                         const point = dataset.data[pointIndex];
 
-                        // Afficher une infobulle détaillée ou une alerte
                         alert(`Détails de l'action:\n\n` +
                               `Type: ${point.type === 'densite' ? 'Gravité' :
                                     point.type === 'temperature' ? 'Température' :
                                     point.type.charAt(0).toUpperCase() + point.type.slice(1)}\n` +
-                              `Valeur: ${point.type === 'densite' ? point.valeur.toFixed(3) : point.valeur.toFixed(1)}\n` +
-                              `Date: ${point.date}`);
+                              `Valeur: ${point.type === 'densite' ? point.y.toFixed(3) : point.y.toFixed(1)}\n` +
+                              `Date: ${new Date(point.x).toLocaleString()}`);
                     }
                 }
             }
