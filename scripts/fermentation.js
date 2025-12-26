@@ -1,4 +1,4 @@
-// fermentation.js - Gestion complète du suivi de fermentation avec courbes continues et points visibles
+// fermentation.js - Gestion complète du suivi de fermentation avec affichage garanti des points
 let fermentationChart = null;
 
 // Couleurs par type d'action pour les points sur le graphique
@@ -121,10 +121,19 @@ function preparerDonneesGraphique(data) {
     otherTypes.forEach(type => {
         const actions = otherActions.filter(a => a.type === type);
         if (actions.length > 0) {
-            const points = dates.map(date => {
+            const points = [];
+            dates.forEach(date => {
                 const action = actions.find(a => a.date === date);
-                return action ? { x: date, y: 0, id: action.id, type: action.type, valeur: action.valeur } : null;
-            }).filter(point => point !== null);
+                if (action) {
+                    points.push({
+                        x: date,
+                        y: 0, // Toujours en bas de l'axe des abscisses
+                        id: action.id,
+                        type: action.type,
+                        valeur: action.valeur
+                    });
+                }
+            });
 
             datasets.push({
                 label: type.charAt(0).toUpperCase() + type.slice(1),
