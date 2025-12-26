@@ -1,11 +1,11 @@
-// conditionnement.js - Gestion des déclarations de conditionnement avec édition
+// conditionnement.js - Gestion des déclarations de conditionnement avec édition et résumé
 if (typeof currentEditId === 'undefined') {
-    let currentEditId = null;
+    var currentEditId = null;
 }
 
 // Constante pour les types de contenants
 if (typeof TYPES_CONTENANTS === 'undefined') {
-    const TYPES_CONTENANTS = [
+    var TYPES_CONTENANTS = [
         { id: 'canette_44cl', label: 'Canette 44cl', volume: 0.44 },
         { id: 'canette_33cl', label: 'Canette 33cl', volume: 0.33 },
         { id: 'bouteille_33cl', label: 'Bouteille 33cl', volume: 0.33 },
@@ -58,8 +58,14 @@ async function chargerConditionnements(idBiere) {
         if (conditionnementsTable) {
             const tbody = conditionnementsTable.querySelector('tbody');
             if (tbody) {
-                tbody.innerHTML = conditionnementsBiere.map(conditionnement => `
-                    <tr data-id="${conditionnement.id}">
+                // Effacer le contenu actuel
+                tbody.innerHTML = '';
+
+                // Ajouter les lignes de conditionnements
+                conditionnementsBiere.forEach(conditionnement => {
+                    const row = document.createElement('tr');
+                    row.dataset.id = conditionnement.id;
+                    row.innerHTML = `
                         <td>${conditionnement.numero_lot}</td>
                         <td>${conditionnement.biere_nom || 'Inconnu'}</td>
                         <td>${conditionnement.abv_final || 'N/A'}</td>
@@ -75,8 +81,26 @@ async function chargerConditionnements(idBiere) {
                                 <i class="material-icons">delete</i>
                             </button>
                         </td>
-                    </tr>
-                `).join('');
+                    `;
+                    tbody.appendChild(row);
+                });
+
+                // Ajouter la ligne de résumé
+                if (conditionnementsBiere.length > 0) {
+                    const totalVolume = conditionnementsBiere.reduce((sum, c) => sum + c.volume_total, 0);
+                    const totalABV = conditionnementsBiere.reduce((sum, c) => sum + (c.abv_final || 0), 0) / conditionnementsBiere.length;
+
+                    const summaryRow = document.createElement('tr');
+                    summaryRow.className = 'summary-row';
+                    summaryRow.innerHTML = `
+                        <td colspan="4" style="text-align: right; font-weight: bold;">Total</td>
+                        <td style="font-weight: bold;">${conditionnementsBiere.reduce((total, c) => total + c.contenants.reduce((sum, cont) => sum + cont.quantite, 0), 0)}</td>
+                        <td style="font-weight: bold;">${totalVolume.toFixed(2)} L</td>
+                        <td style="font-weight: bold;">ABV moyen: ${totalABV.toFixed(2)}%</td>
+                        <td></td>
+                    `;
+                    tbody.appendChild(summaryRow);
+                }
             }
         }
 
