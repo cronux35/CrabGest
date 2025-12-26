@@ -67,7 +67,7 @@ function calculerLimitesEchelles(densites, temperatures) {
     };
 }
 
-// Préparer les données pour le graphique avec courbes continues et points visibles
+// Préparer les données pour le graphique
 function preparerDonneesGraphique(data) {
     const types = [...new Set(data.map(a => a.type))];
     const datasets = [];
@@ -155,8 +155,16 @@ async function afficherSuiviFermentation(idBiere) {
 
         const data = fermentations.filter(f => f.id_biere == idBiere);
 
+        // Préparer les données avec courbes continues et points visibles
+        const { datasets, labels } = preparerDonneesGraphique(data);
+
+        // Calculer les limites dynamiques
+        const densites = data.filter(a => a.type === 'densite');
+        const temperatures = data.filter(a => a.type === 'temperature');
+        const limites = calculerLimitesEchelles(densites, temperatures);
+
         // Afficher le graphique
-        afficherGraphiqueFermentation(data, biere ? biere.nom : 'Bière inconnue');
+        afficherGraphiqueFermentation(datasets, labels, biere ? biere.nom : 'Bière inconnue', limites);
 
         // Afficher les actions de fermentation dans un tableau
         const actionsTable = document.getElementById('fermentation-actions-table');
@@ -187,36 +195,8 @@ async function afficherSuiviFermentation(idBiere) {
     }
 }
 
-// Attacher les écouteurs pour les boutons "Supprimer"
-function attachDeleteEventListeners() {
-    const deleteButtons = document.querySelectorAll('.action-btn.delete-btn');
-    deleteButtons.forEach(button => {
-        button.onclick = async function() {
-            const id = this.getAttribute('data-id');
-            await supprimerActionFermentation(id);
-        };
-    });
-}
-
 // Afficher le graphique de fermentation avec courbes continues et points visibles
-function afficherGraphiqueFermentation(data, nomBiere) {
-    if (data.length === 0) {
-        const ctx = document.getElementById('fermentationChart');
-        if (ctx && fermentationChart) {
-            fermentationChart.destroy();
-            fermentationChart = null;
-        }
-        return;
-    }
-
-    // Préparer les données avec courbes continues et points visibles
-    const { datasets, labels } = preparerDonneesGraphique(data);
-
-    // Calculer les limites dynamiques
-    const densites = data.filter(a => a.type === 'densite');
-    const temperatures = data.filter(a => a.type === 'temperature');
-    const limites = calculerLimitesEchelles(densites, temperatures);
-
+function afficherGraphiqueFermentation(datasets, labels, nomBiere, limites) {
     const ctx = document.getElementById('fermentationChart');
     if (ctx) {
         // Détruire le graphique existant s'il y en a un
@@ -264,9 +244,8 @@ function afficherGraphiqueFermentation(data, nomBiere) {
                             afterBody: function(contexts) {
                                 const dateIndex = contexts[0].dataIndex;
                                 const date = contexts[0].label;
-                                const actionsAtDate = data.filter(a => new Date(a.date).toLocaleString() === date);
-
-                                if (actionsAtDate.length > 0) {
+                                const actionsAtDate = contexts[0].raw;
+                                if (actionsAtDate && actionsAtDate.length > 0) {
                                     return ['Actions à cette date:', ...actionsAtDate.map(a =>
                                         `- ${a.type === 'densite' ? 'Gravité' :
                                           a.type === 'temperature' ? 'Température' :
@@ -352,6 +331,17 @@ function afficherGraphiqueFermentation(data, nomBiere) {
             }
         });
     }
+}
+
+// Attacher les écouteurs pour les boutons "Supprimer"
+function attachDeleteEventListeners() {
+    const deleteButtons = document.querySelectorAll('.action-btn.delete-btn');
+    deleteButtons.forEach(button => {
+        button.onclick = async function() {
+            const id = this.getAttribute('data-id');
+            await supprimerActionFermentation(id);
+        };
+    });
 }
 
 // Ajouter une action de fermentation
