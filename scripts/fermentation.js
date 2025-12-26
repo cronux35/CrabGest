@@ -1,4 +1,4 @@
-// fermentation.js - Gestion complète du suivi de fermentation avec courbes continues
+// fermentation.js - Gestion complète du suivi de fermentation avec courbes continues et actions visibles
 let fermentationChart = null;
 
 // Couleurs par type d'action pour les points sur le graphique
@@ -70,7 +70,7 @@ function calculerLimitesEchelles(densites, temperatures) {
     };
 }
 
-// Préparer les données pour le graphique avec courbes continues
+// Préparer les données pour le graphique avec courbes continues et actions visibles
 function preparerDonneesGraphique(data) {
     const types = [...new Set(data.map(a => a.type))];
     const datasets = [];
@@ -102,7 +102,7 @@ function preparerDonneesGraphique(data) {
                 pointBackgroundColor: ACTION_COLORS[type],
                 pointBorderColor: '#fff',
                 pointBorderWidth: 2,
-                spanGaps: false // Assure la continuité de la courbe
+                spanGaps: true // Assure la continuité de la courbe en ignorant les valeurs manquantes
             });
         }
     });
@@ -214,7 +214,7 @@ function attachDeleteEventListeners() {
     });
 }
 
-// Afficher le graphique de fermentation avec courbes continues
+// Afficher le graphique de fermentation avec courbes continues et actions visibles
 function afficherGraphiqueFermentation(data, nomBiere) {
     if (data.length === 0) {
         const ctx = document.getElementById('fermentationChart');
@@ -225,7 +225,7 @@ function afficherGraphiqueFermentation(data, nomBiere) {
         return;
     }
 
-    // Préparer les données avec courbes continues
+    // Préparer les données avec courbes continues et actions visibles
     const { datasets, labels } = preparerDonneesGraphique(data);
 
     // Calculer les limites dynamiques
@@ -241,7 +241,7 @@ function afficherGraphiqueFermentation(data, nomBiere) {
             fermentationChart = null;
         }
 
-        // Créer un nouveau graphique avec courbes continues
+        // Créer un nouveau graphique avec courbes continues et actions visibles
         fermentationChart = new Chart(ctx, {
             type: 'line',
             data: {
