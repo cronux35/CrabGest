@@ -1,5 +1,6 @@
-// conditionnement.js - Gestion des déclarations de conditionnement
+// conditionnement.js - Gestion des déclarations de conditionnement avec édition
 let conditionnementChart = null;
+let currentEditId = null;
 
 // Charger les bières dans le sélecteur de conditionnement
 async function chargerSelecteurBieresConditionnement() {
@@ -53,6 +54,9 @@ async function chargerConditionnements(idBiere) {
                         <td>${conditionnement.volume_total} L</td>
                         <td>${new Date(conditionnement.date).toLocaleDateString()}</td>
                         <td>
+                            <button class="action-btn edit-btn" data-action="edit" data-id="${conditionnement.id}" title="Éditer">
+                                <i class="material-icons">edit</i>
+                            </button>
                             <button class="action-btn delete-btn" data-action="delete" data-id="${conditionnement.id}" title="Supprimer">
                                 <i class="material-icons">delete</i>
                             </button>
@@ -66,6 +70,62 @@ async function chargerConditionnements(idBiere) {
     } catch (error) {
         console.error("Erreur lors du chargement des conditionnements:", error);
     }
+}
+
+// Ouvrir la modale pour ajouter ou éditer un conditionnement
+function ouvrirModaleConditionnement(conditionnement = null) {
+    const modaleConditionnement = document.getElementById('modale-conditionnement');
+    if (!modaleConditionnement) return;
+
+    const formConditionnement = document.getElementById('form-conditionnement');
+    if (!formConditionnement) return;
+
+    const selectBiereConditionnement = document.getElementById('select-biere-conditionnement');
+    const abvFinalInput = document.getElementById('abv-final');
+    const typeContenantSelect = document.getElementById('type-contenant');
+    const quantiteContenantInput = document.getElementById('quantite-contenant');
+    const dateConditionnementInput = document.getElementById('date-conditionnement');
+    const btnEnregistrer = document.querySelector('#modale-conditionnement .btn-primary');
+
+    if (!selectBiereConditionnement || !abvFinalInput || !typeContenantSelect || !quantiteContenantInput || !dateConditionnementInput || !btnEnregistrer) {
+        console.error("Un ou plusieurs éléments du formulaire sont introuvables.");
+        return;
+    }
+
+    if (conditionnement) {
+        // Mode édition
+        currentEditId = conditionnement.id;
+        btnEnregistrer.onclick = () => mettreAJourConditionnement(conditionnement.id);
+
+        const biereId = conditionnement.id_biere;
+        const biere = bieres.find(b => b.id === biereId);
+        if (biere) {
+            selectBiereConditionnement.value = biereId;
+        }
+
+        abvFinalInput.value = conditionnement.abv_final || '';
+        dateConditionnementInput.value = conditionnement.date.split('T')[0]; // Format YYYY-MM-DD
+
+        // Remplir le premier contenant (simplification)
+        if (conditionnement.contenants && conditionnement.contenants.length > 0) {
+            const contenant = conditionnement.contenants[0];
+            typeContenantSelect.value = contenant.type;
+            quantiteContenantInput.value = contenant.quantite;
+        }
+    } else {
+        // Mode ajout
+        currentEditId = null;
+        btnEnregistrer.onclick = ajouterConditionnement;
+
+        // Réinitialiser les champs
+        selectBiereConditionnement.value = '';
+        abvFinalInput.value = '';
+        typeContenantSelect.value = '';
+        quantiteContenantInput.value = '';
+        dateConditionnementInput.value = '';
+    }
+
+    modaleConditionnement.style.display = 'block';
 }
 
 // Ajouter un conditionnement
@@ -136,12 +196,6 @@ async function ajouterConditionnement() {
             modaleConditionnement.style.display = 'none';
         }
 
-        // Réinitialiser les champs
-        abvFinalInput.value = '';
-        typeContenantSelect.value = '';
-        quantiteContenantInput.value = '';
-        dateConditionnementInput.value = '';
-
         // Rafraîchir l'affichage
         chargerConditionnements(idBiere);
 
@@ -149,6 +203,82 @@ async function ajouterConditionnement() {
     } catch (error) {
         console.error("Erreur lors de l'ajout du conditionnement:", error);
         alert("Une erreur est survenue lors de l'enregistrement.");
+    }
+}
+
+// Mettre à jour un conditionnement
+async function mettreAJourConditionnement(id) {
+    const selectBiereConditionnement = document.getElementById('select-biere-conditionnement');
+    const abvFinalInput = document.getElementById('abv-final');
+    const typeContenantSelect = document.getElementById('type-contenant');
+    const quantiteContenantInput = document.getElementById('quantite-contenant');
+    const dateConditionnementInput = document.getElementById('date-conditionnement');
+
+    if (!selectBiereConditionnement || !abvFinalInput || !typeContenantSelect || !quantiteContenantInput || !dateConditionnementInput) {
+        console.error("Un ou plusieurs éléments du formulaire sont introuvables.");
+        alert("Une erreur est survenue. Veuillez vérifier que tous les champs sont correctement chargés.");
+        return;
+    }
+
+    const idBiere = selectBiereConditionnement.value;
+    const abvFinal = abvFinalInput.value;
+    const typeContenant = typeContenantSelect.value;
+    const quantiteContenant = quantiteContenantInput.value;
+    const dateConditionnement = dateConditionnementInput.value;
+
+    if (!idBiere || !abvFinal || !typeContenant || !quantiteContenant || !dateConditionnement) {
+        alert("Veuillez remplir tous les champs.");
+        return;
+    }
+
+    const quantite = parseInt(quantiteContenant);
+    if (isNaN(quantite) || quantite <= 0) {
+        alert("Veuillez entrer une quantité valide.");
+        return;
+    }
+
+    let volumeUnitaire;
+    if (typeContenant === 'canette_44cl') volumeUnitaire = 0.44;
+    else if (typeContenant === 'canette_33cl') volumeUnitaire = 0.33;
+    else if (typeContenant === 'bouteille_33cl') volumeUnitaire = 0.33;
+    else if (typeContenant === 'bouteille_50cl') volumeUnitaire = 0.50;
+    else if (typeContenant === 'bouteille_75cl') volumeUnitaire = 0.75;
+    else if (typeContenant === 'fut_19l') volumeUnitaire = 19;
+    else if (typeContenant === 'fut_20l') volumeUnitaire = 20;
+
+    const volumeTotal = quantite * volumeUnitaire;
+
+    try {
+        const biere = await window.DB.loadItemById('bieres', idBiere);
+
+        const conditionnementMisAJour = {
+            id_biere: idBiere,
+            biere_nom: biere.nom,
+            date: dateConditionnement,
+            abv_final: parseFloat(abvFinal),
+            contenants: [{
+                type: typeContenant,
+                quantite: quantite,
+                volume_unitaire: volumeUnitaire
+            }],
+            volume_total: volumeTotal
+        };
+
+        await window.DB.updateItem('conditionnements', id, conditionnementMisAJour);
+
+        // Fermer la modale
+        const modaleConditionnement = document.getElementById('modale-conditionnement');
+        if (modaleConditionnement) {
+            modaleConditionnement.style.display = 'none';
+        }
+
+        // Rafraîchir l'affichage
+        chargerConditionnements(idBiere);
+
+        alert(`Conditionnement mis à jour avec succès.`);
+    } catch (error) {
+        console.error("Erreur lors de la mise à jour du conditionnement:", error);
+        alert("Une erreur est survenue lors de la mise à jour.");
     }
 }
 
@@ -187,7 +317,12 @@ function attachConditionnementEventListeners() {
         const action = target.dataset.action;
         const id = target.closest('tr').dataset.id;
 
-        if (action === 'delete') {
+        if (action === 'edit') {
+            const conditionnement = await window.DB.loadItemById('conditionnements', id);
+            if (conditionnement) {
+                ouvrirModaleConditionnement(conditionnement);
+            }
+        } else if (action === 'delete') {
             await supprimerConditionnement(id);
         }
     };
@@ -221,10 +356,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const btnAjouterConditionnement = document.getElementById('btn-ajouter-conditionnement');
     if (btnAjouterConditionnement) {
         btnAjouterConditionnement.addEventListener('click', function() {
-            const modaleConditionnement = document.getElementById('modale-conditionnement');
-            if (modaleConditionnement) {
-                modaleConditionnement.style.display = 'block';
-            }
+            ouvrirModaleConditionnement();
         });
     }
 
