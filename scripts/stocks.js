@@ -23,6 +23,23 @@ async function loadHistoriqueStocks(forceReload = false) {
     return window.appDataCache.historique_stocks;
 }
 
+// Ouvrir la modale d'ajout d'ingrédient
+function ouvrirModalAjoutIngredient() {
+    openEditIngredientModal('stock', null, {
+        type: "",
+        nom: "",
+        lot: "",
+        quantite: 0,
+        fournisseur: "",
+        specification: "",
+        annee_recolte: null,
+        pourcentage_aa: null,
+        conditionnement: "",
+        notes: ""
+    });
+}
+
+
 // Charger les données initiales (optimisé)
 async function chargerDonnees() {
     try {
