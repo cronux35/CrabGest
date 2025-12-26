@@ -1,4 +1,4 @@
-// fermentation.js - Gestion complète du suivi de fermentation avec affichage garanti des points
+// fermentation.js - Gestion complète du suivi de fermentation avec tri des actions et affichage des points
 let fermentationChart = null;
 
 // Couleurs par type d'action pour les points sur le graphique
@@ -168,12 +168,15 @@ async function afficherSuiviFermentation(idBiere) {
         // Afficher le graphique
         afficherGraphiqueFermentation(datasets, labels, biere ? biere.nom : 'Bière inconnue', limites);
 
-        // Afficher les actions de fermentation dans un tableau
+        // Afficher les actions de fermentation dans un tableau trié par date
         const actionsTable = document.getElementById('fermentation-actions-table');
         if (actionsTable) {
             const tbody = actionsTable.querySelector('tbody');
             if (tbody) {
-                tbody.innerHTML = data.map(action => `
+                // Trier les actions par date
+                const sortedData = [...data].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+                tbody.innerHTML = sortedData.map(action => `
                     <tr data-id="${action.id}">
                         <td>${new Date(action.date).toLocaleString()}</td>
                         <td>${action.type === 'densite' ? 'Gravité' :
@@ -315,31 +318,6 @@ function afficherGraphiqueFermentation(datasets, labels, nomBiere, limites) {
                             minRotation: 45
                         }
                     }
-                },
-                onClick: function(evt) {
-                    const points = fermentationChart.getElementsAtEventForMode(
-                        evt, 'nearest', { intersect: true }, true
-                    );
-
-                    if (points.length > 0) {
-                        const pointIndex = points[0].dataIndex;
-                        const label = fermentationChart.data.labels[pointIndex];
-                        const actionsAtDate = fermentationChart.data.datasets
-                            .flatMap(dataset => dataset.data[pointIndex] ? [{
-                                type: dataset.label.toLowerCase(),
-                                valeur: dataset.data[pointIndex].y || dataset.data[pointIndex].valeur
-                            }] : [])
-                            .filter(action => action);
-
-                        if (actionsAtDate.length > 0) {
-                            alert(`Actions à ${label}:\n\n` +
-                                  actionsAtDate.map(a =>
-                                    `${a.type === 'gravité (sg)' ? 'Gravité' :
-                                      a.type === 'température (°c)' ? 'Température' :
-                                      a.type.charAt(0).toUpperCase() + a.type.slice(1)}: ${a.valeur}`
-                                  ).join('\n'));
-                        }
-                    }
                 }
             }
         });
@@ -417,7 +395,8 @@ async function supprimerActionFermentation(id) {
                     action.type === 'temperature' ? 'température' :
                     action.type.charAt(0).toUpperCase() + action.type.slice(1)} ?`)) {
             await window.DB.deleteItem('fermentations', id);
-            afficherSuiviFermentation(action.id_biere);
+            const idBiere = document.getElementById('select-biere-fermentation').value;
+            afficherSuiviFermentation(idBiere);
         }
     } catch (error) {
         console.error("Erreur lors de la suppression de l'action de fermentation:", error);
