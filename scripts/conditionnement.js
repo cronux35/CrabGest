@@ -295,8 +295,9 @@ async function mettreAJourConditionnement(id) {
             return;
         }
 
+        // Créer un nouvel objet avec l'ID inclus
         const conditionnementMisAJour = {
-            id: id, // Assurez-vous que l'ID est inclus dans l'objet
+            id: id, // Inclure l'ID explicitement
             id_biere: idBiere,
             biere_nom: biere.nom,
             date: dateConditionnement,
