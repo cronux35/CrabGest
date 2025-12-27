@@ -416,23 +416,32 @@ async function detruireConditionnement(id) {
 function ouvrirModaleRaisonDestruction(id) {
     // Créer la modale si elle n'existe pas
     let modaleRaisonDestruction = document.getElementById('modale-raison-destruction');
+
     if (!modaleRaisonDestruction) {
         modaleRaisonDestruction = document.createElement('div');
         modaleRaisonDestruction.id = 'modale-raison-destruction';
         modaleRaisonDestruction.className = 'custom-modal';
+
         modaleRaisonDestruction.innerHTML = `
             <div class="modal-content">
-                <span class="close">&times;</span>
-                <h3>Raison de la destruction</h3>
+                <div class="modal-header">
+                    <h3>Raison de la destruction</h3>
+                    <span class="close" id="close-raison-destruction">&times;</span>
+                </div>
                 <form id="form-raison-destruction">
                     <div class="form-group">
-                        <label for="raison-destruction">Veuillez indiquer la raison de la destruction :</label>
-                        <textarea id="raison-destruction" class="form-control" rows="4" required></textarea>
+                        <label for="raison-destruction">Veuillez indiquer la raison de la destruction (obligatoire) :</label>
+                        <textarea id="raison-destruction" class="form-control" rows="5"
+                                placeholder="Ex: Contamination bactérienne, goût anormal, problème d'étiquetage, bouteille cassée, etc."></textarea>
                     </div>
-                    <button type="button" id="btn-confirmer-destruction" class="btn btn-primary">Confirmer la destruction</button>
+                    <div class="modal-footer">
+                        <button type="button" id="btn-annuler-destruction" class="btn btn-secondary">Annuler</button>
+                        <button type="button" id="btn-confirmer-destruction" class="btn btn-danger">Confirmer la destruction</button>
+                    </div>
                 </form>
             </div>
         `;
+
         document.body.appendChild(modaleRaisonDestruction);
     }
 
@@ -443,7 +452,7 @@ function ouvrirModaleRaisonDestruction(id) {
     const btnConfirmerDestruction = document.getElementById('btn-confirmer-destruction');
     if (btnConfirmerDestruction) {
         btnConfirmerDestruction.onclick = async () => {
-            const raisonDestruction = document.getElementById('raison-destruction').value;
+            const raisonDestruction = document.getElementById('raison-destruction').value.trim();
             if (!raisonDestruction) {
                 alert("Veuillez indiquer une raison pour la destruction.");
                 return;
@@ -454,14 +463,30 @@ function ouvrirModaleRaisonDestruction(id) {
         };
     }
 
-    // Écouteur pour fermer la modale
-    const closeModal = modaleRaisonDestruction.querySelector('.close');
+    // Écouteur pour le bouton d'annulation
+    const btnAnnulerDestruction = document.getElementById('btn-annuler-destruction');
+    if (btnAnnulerDestruction) {
+        btnAnnulerDestruction.onclick = () => {
+            modaleRaisonDestruction.style.display = 'none';
+        };
+    }
+
+    // Écouteur pour fermer la modale (croix et clic à l'extérieur)
+    const closeModal = document.getElementById('close-raison-destruction');
     if (closeModal) {
         closeModal.onclick = () => {
             modaleRaisonDestruction.style.display = 'none';
         };
     }
+
+    // Fermer la modale en cliquant à l'extérieur du contenu
+    modaleRaisonDestruction.onclick = (event) => {
+        if (event.target === modaleRaisonDestruction) {
+            modaleRaisonDestruction.style.display = 'none';
+        }
+    };
 }
+
 
 // Marquer un conditionnement comme détruit ou rétablir
 async function marquerConditionnement(id, detruit, raisonDestruction) {

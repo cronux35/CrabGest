@@ -1183,31 +1183,30 @@ th.sorted-desc::after {
 .summary-row td:first-child {
     text-align: left;
 }
-
-
-/* Style pour la modale de raison de destruction - Version intégrée au thème */
+/* Style pour la modale de raison de destruction - Version optimisée */
 #modale-raison-destruction {
     display: none;
     position: fixed;
-    z-index: 1000;
+    z-index: 1001;
     left: 0;
     top: 0;
     width: 100%;
     height: 100%;
     overflow: auto;
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: rgba(0, 0, 0, 0.7);
 }
 
 #modale-raison-destruction .modal-content {
-    background-color: #2d2d2d; /* Fond sombre comme le reste de l'application */
+    background-color: #2d2d2d;
     margin: 10% auto;
     padding: 25px;
     border: none;
     width: 50%;
     max-width: 600px;
     border-radius: 8px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-    color: #f5f5f5; /* Texte clair pour contraste */
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+    color: #f5f5f5;
+    animation: modalFadeIn 0.3s ease-out;
 }
 
 #modale-raison-destruction .modal-header {
@@ -1215,15 +1214,16 @@ th.sorted-desc::after {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
-    padding-bottom: 10px;
+    padding-bottom: 15px;
     border-bottom: 1px solid #444;
 }
 
 #modale-raison-destruction h3 {
     margin: 0;
-    color: #ffc107; /* Jaune pour les titres comme dans votre thème */
+    color: #ffc107;
     font-family: 'Roboto', sans-serif;
     font-weight: 500;
+    font-size: 1.2rem;
 }
 
 #modale-raison-destruction .close {
@@ -1246,14 +1246,14 @@ th.sorted-desc::after {
     display: block;
     margin-bottom: 8px;
     color: #f5f5f5;
-    font-weight: 500;
     font-family: 'Roboto', sans-serif;
+    font-weight: 400;
 }
 
 #modale-raison-destruction #raison-destruction {
     width: 100%;
     padding: 12px;
-    margin: 10px 0;
+    margin: 0;
     border: 1px solid #444;
     border-radius: 4px;
     background-color: #3d3d3d;
@@ -1274,13 +1274,31 @@ th.sorted-desc::after {
     display: flex;
     justify-content: flex-end;
     gap: 10px;
-    margin-top: 20px;
     padding-top: 15px;
     border-top: 1px solid #444;
 }
 
-#modale-raison-destruction .btn {
+#modale-raison-destruction .btn-secondary {
     padding: 10px 20px;
+    background-color: #3d3d3d;
+    color: #f5f5f5;
+    border: 1px solid #444;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: 'Roboto', sans-serif;
+    transition: all 0.2s;
+}
+
+#modale-raison-destruction .btn-secondary:hover {
+    background-color: #4a4a4a;
+    border-color: #666;
+}
+
+#modale-raison-destruction #btn-confirmer-destruction {
+    padding: 10px 20px;
+    background-color: #d32f2f;
+    color: white;
+    border: none;
     border-radius: 4px;
     cursor: pointer;
     font-family: 'Roboto', sans-serif;
@@ -1288,28 +1306,11 @@ th.sorted-desc::after {
     transition: all 0.2s;
 }
 
-#modale-raison-destruction .btn-secondary {
-    background-color: #444;
-    color: #f5f5f5;
-    border: 1px solid #666;
+#modale-raison-destruction #btn-confirmer-destruction:hover {
+    background-color: #b71c1c;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
-#modale-raison-destruction .btn-secondary:hover {
-    background-color: #555;
-    border-color: #777;
-}
-
-#modale-raison-destruction .btn-danger {
-    background-color: #e64a19; /* Orange rougeâtre comme dans votre thème */
-    color: white;
-    border: none;
-}
-
-#modale-raison-destruction .btn-danger:hover {
-    background-color: #d84315;
-}
-
-/* Animation pour l'apparition de la modale */
 @keyframes modalFadeIn {
     from {
         opacity: 0;
@@ -1319,10 +1320,6 @@ th.sorted-desc::after {
         opacity: 1;
         transform: translateY(0);
     }
-}
-
-#modale-raison-destruction .modal-content {
-    animation: modalFadeIn 0.3s ease-out;
 }
 
 /* Style pour les tooltips de raison de destruction */
