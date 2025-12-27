@@ -91,7 +91,7 @@ async function chargerConditionnements(idBiere) {
                     const totalABV = conditionnementsBiere.reduce((sum, c) => sum + (c.abv_final || 0), 0) / conditionnementsBiere.length;
 
                     const summaryRow = document.createElement('tr');
-                    summaryRow.className = 'summary-row';
+                    //summaryRow.className = 'summary-row';
                     summaryRow.innerHTML = `
                         <td colspan="4" style="text-align: right; font-weight: bold;">Total</td>
                         <td style="font-weight: bold;">${totalVolume.toFixed(2)} L</td>
