@@ -2,6 +2,22 @@
 let currentClient = null;
 let currentCommande = [];
 
+// ventes.js
+if (typeof window.TYPES_CONTENANTS === 'undefined') {
+    window.TYPES_CONTENANTS = [
+        { id: 'canette_44cl', label: 'Canette 44cl', volume: 0.44 },
+        { id: 'canette_33cl', label: 'Canette 33cl', volume: 0.33 },
+        { id: 'bouteille_33cl', label: 'Bouteille 33cl', volume: 0.33 },
+        { id: 'bouteille_50cl', label: 'Bouteille 50cl', volume: 0.50 },
+        { id: 'bouteille_75cl', label: 'Bouteille 75cl', volume: 0.75 },
+        { id: 'fut_19l', label: 'Fût 19L', volume: 19 },
+        { id: 'fut_20l', label: 'Fût 20L', volume: 20 }
+    ];
+}
+
+// ... reste du code inchangé
+
+
 // Charger les clients
 async function chargerClients() {
     const selectClient = document.getElementById('select-client');

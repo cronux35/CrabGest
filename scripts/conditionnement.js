@@ -3,9 +3,8 @@ if (typeof currentEditId === 'undefined') {
     var currentEditId = null;
 }
 
-// Constante pour les types de contenants
 if (typeof TYPES_CONTENANTS === 'undefined') {
-    var TYPES_CONTENANTS = [
+    window.TYPES_CONTENANTS = [
         { id: 'canette_44cl', label: 'Canette 44cl', volume: 0.44 },
         { id: 'canette_33cl', label: 'Canette 33cl', volume: 0.33 },
         { id: 'bouteille_33cl', label: 'Bouteille 33cl', volume: 0.33 },
@@ -194,7 +193,7 @@ async function ajouterConditionnement() {
         return;
     }
 
-    const contenantInfo = TYPES_CONTENANTS.find(c => c.id === typeContenant);
+    const contenantInfo = window.TYPES_CONTENANTS.find(c => c.id === typeContenant);
     if (!contenantInfo) {
         alert("Type de contenant invalide.");
         return;
@@ -269,7 +268,7 @@ async function mettreAJourConditionnement(id) {
         return;
     }
 
-    const contenantInfo = TYPES_CONTENANTS.find(c => c.id === typeContenant);
+    const contenantInfo = window.TYPES_CONTENANTS.find(c => c.id === typeContenant);
     if (!contenantInfo) {
         alert("Type de contenant invalide.");
         return;
@@ -404,7 +403,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const typeContenantSelect = document.getElementById('type-contenant');
     if (typeContenantSelect) {
         typeContenantSelect.innerHTML = '<option value="">-- Sélectionner un contenant --</option>';
-        TYPES_CONTENANTS.forEach(contenant => {
+        window.TYPES_CONTENANTS.forEach(contenant => {
             const option = document.createElement('option');
             option.value = contenant.id;
             option.textContent = contenant.label;
