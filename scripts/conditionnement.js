@@ -1,9 +1,5 @@
 // conditionnement.js - Gestion des déclarations de conditionnement avec édition et résumé
-if (typeof currentCondiEditId === 'undefined') {
-    var currentCondiEditId = null;
-}
-
-if (typeof TYPES_CONTENANTS === 'undefined') {
+if (typeof window.TYPES_CONTENANTS === 'undefined') {
     window.TYPES_CONTENANTS = [
         { id: 'canette_44cl', label: 'Canette 44cl', volume: 0.44 },
         { id: 'canette_33cl', label: 'Canette 33cl', volume: 0.33 },
@@ -13,6 +9,10 @@ if (typeof TYPES_CONTENANTS === 'undefined') {
         { id: 'fut_19l', label: 'Fût 19L', volume: 19 },
         { id: 'fut_20l', label: 'Fût 20L', volume: 20 }
     ];
+}
+
+if (typeof window.currentCondiEditId === 'undefined') {
+    window.currentCondiEditId = null;
 }
 
 // Charger les bières dans le sélecteur de conditionnement
@@ -47,7 +47,6 @@ async function chargerSelecteurBieresConditionnement() {
     }
 }
 
-// Charger les conditionnements pour une bière sélectionnée
 // Charger les conditionnements pour une bière sélectionnée
 async function chargerConditionnements(idBiere) {
     try {
@@ -91,11 +90,14 @@ async function chargerConditionnements(idBiere) {
                     const totalABV = conditionnementsBiere.reduce((sum, c) => sum + (c.abv_final || 0), 0) / conditionnementsBiere.length;
 
                     const summaryRow = document.createElement('tr');
-                    //summaryRow.className = 'summary-row';
+                    summaryRow.className = 'summary-row';
+                    summaryRow.style.backgroundColor = '#f8f9fa';
+                    summaryRow.style.fontWeight = 'bold';
                     summaryRow.innerHTML = `
-                        <td colspan="4" style="text-align: right; font-weight: bold;">Total</td>
-                        <td style="font-weight: bold;">${totalVolume.toFixed(2)} L</td>
-                        <td style="font-weight: bold;">ABV : ${totalABV.toFixed(2)}%</td>
+                        <td colspan="4" style="text-align: right;">Total</td>
+                        <td>${conditionnementsBiere.reduce((total, c) => total + c.contenants.reduce((sum, cont) => sum + cont.quantite, 0), 0)}</td>
+                        <td>${totalVolume.toFixed(2)} L</td>
+                        <td>ABV : ${totalABV.toFixed(2)}%</td>
                         <td></td>
                     `;
                     tbody.appendChild(summaryRow);
@@ -108,7 +110,6 @@ async function chargerConditionnements(idBiere) {
         console.error("Erreur lors du chargement des conditionnements:", error);
     }
 }
-
 
 // Ouvrir la modale pour ajouter ou éditer un conditionnement
 function ouvrirModaleConditionnement(conditionnement = null) {
@@ -132,7 +133,7 @@ function ouvrirModaleConditionnement(conditionnement = null) {
 
     if (conditionnement) {
         // Mode édition
-        currentCondiEditId = conditionnement.id;
+        window.currentCondiEditId = conditionnement.id;
         btnEnregistrer.onclick = () => mettreAJourConditionnement(conditionnement.id);
 
         const biereId = conditionnement.id_biere;
@@ -149,7 +150,7 @@ function ouvrirModaleConditionnement(conditionnement = null) {
         }
     } else {
         // Mode ajout
-        currentCondiEditId = null;
+        window.currentCondiEditId = null;
         btnEnregistrer.onclick = ajouterConditionnement;
 
         // Réinitialiser les champs
@@ -284,6 +285,7 @@ async function mettreAJourConditionnement(id) {
             id_biere: idBiere,
             biere_nom: biere.nom,
             date: dateConditionnement,
+            numero_lot: document.querySelector(`tr[data-id="${id}"] td:first-child`).textContent, // Conserver le numéro de lot existant
             abv_final: parseFloat(abvFinal),
             contenants: [{
                 type: typeContenant,
@@ -307,7 +309,7 @@ async function mettreAJourConditionnement(id) {
         alert(`Conditionnement mis à jour avec succès.`);
     } catch (error) {
         console.error("Erreur lors de la mise à jour du conditionnement:", error);
-        alert("Une erreur est survenue lors de la mise à jour.");
+        alert("Une erreur est survenue lors de la mise à jour : " + error.message);
     }
 }
 
@@ -344,7 +346,14 @@ function attachConditionnementEventListeners() {
         if (!target) return;
 
         const action = target.dataset.action;
-        const id = target.closest('tr').dataset.id;
+        const row = target.closest('tr');
+        if (!row) return;
+
+        const id = row.dataset.id;
+        if (!id) {
+            console.error("ID du conditionnement non trouvé.");
+            return;
+        }
 
         if (action === 'edit') {
             const conditionnement = await window.DB.loadItemById('conditionnements', id);
