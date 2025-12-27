@@ -1169,6 +1169,17 @@ th.sorted-desc::after {
     align-items: center;
 }
 
+.summary-row {
+    font-weight: bold;
+    background-color: #f8f9fa;
+}
 
+.summary-row td {
+    text-align: right;
+}
+
+.summary-row td:first-child {
+    text-align: left;
+}
 
 
