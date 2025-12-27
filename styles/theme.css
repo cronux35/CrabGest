@@ -1185,7 +1185,7 @@ th.sorted-desc::after {
 }
 
 
-/* Style pour la modale de raison de destruction */
+/* Style pour la modale de raison de destruction - Version intégrée au thème */
 #modale-raison-destruction {
     display: none;
     position: fixed;
@@ -1195,53 +1195,170 @@ th.sorted-desc::after {
     width: 100%;
     height: 100%;
     overflow: auto;
-    background-color: rgba(0,0,0,0.4);
+    background-color: rgba(0, 0, 0, 0.5);
 }
 
 #modale-raison-destruction .modal-content {
-    background-color: #fefefe;
-    margin: 15% auto;
-    padding: 20px;
-    border: 1px solid #888;
+    background-color: #2d2d2d; /* Fond sombre comme le reste de l'application */
+    margin: 10% auto;
+    padding: 25px;
+    border: none;
     width: 50%;
-    border-radius: 5px;
-    box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
+    max-width: 600px;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    color: #f5f5f5; /* Texte clair pour contraste */
+}
+
+#modale-raison-destruction .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #444;
+}
+
+#modale-raison-destruction h3 {
+    margin: 0;
+    color: #ffc107; /* Jaune pour les titres comme dans votre thème */
+    font-family: 'Roboto', sans-serif;
+    font-weight: 500;
 }
 
 #modale-raison-destruction .close {
-    color: #aaa;
-    float: right;
-    font-size: 28px;
+    color: #f5f5f5;
+    font-size: 24px;
     font-weight: bold;
     cursor: pointer;
+    transition: color 0.2s;
 }
 
 #modale-raison-destruction .close:hover {
-    color: black;
+    color: #ffc107;
+}
+
+#modale-raison-destruction .form-group {
+    margin-bottom: 20px;
+}
+
+#modale-raison-destruction label {
+    display: block;
+    margin-bottom: 8px;
+    color: #f5f5f5;
+    font-weight: 500;
+    font-family: 'Roboto', sans-serif;
 }
 
 #modale-raison-destruction #raison-destruction {
     width: 100%;
-    padding: 10px;
+    padding: 12px;
     margin: 10px 0;
-    border: 1px solid #ddd;
+    border: 1px solid #444;
     border-radius: 4px;
+    background-color: #3d3d3d;
+    color: #f5f5f5;
+    font-family: 'Roboto', sans-serif;
     resize: vertical;
-    min-height: 100px;
+    min-height: 120px;
+    transition: border-color 0.2s;
 }
 
-#modale-raison-destruction #btn-confirmer-destruction {
-    background-color: #f44336;
-    color: white;
-    padding: 10px 15px;
-    border: none;
+#modale-raison-destruction #raison-destruction:focus {
+    outline: none;
+    border-color: #ffc107;
+    box-shadow: 0 0 0 2px rgba(255, 193, 7, 0.2);
+}
+
+#modale-raison-destruction .modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #444;
+}
+
+#modale-raison-destruction .btn {
+    padding: 10px 20px;
     border-radius: 4px;
     cursor: pointer;
-    margin-top: 10px;
+    font-family: 'Roboto', sans-serif;
+    font-weight: 500;
+    transition: all 0.2s;
 }
 
-#modale-raison-destruction #btn-confirmer-destruction:hover {
-    background-color: #d32f2f;
+#modale-raison-destruction .btn-secondary {
+    background-color: #444;
+    color: #f5f5f5;
+    border: 1px solid #666;
+}
+
+#modale-raison-destruction .btn-secondary:hover {
+    background-color: #555;
+    border-color: #777;
+}
+
+#modale-raison-destruction .btn-danger {
+    background-color: #e64a19; /* Orange rougeâtre comme dans votre thème */
+    color: white;
+    border: none;
+}
+
+#modale-raison-destruction .btn-danger:hover {
+    background-color: #d84315;
+}
+
+/* Animation pour l'apparition de la modale */
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+#modale-raison-destruction .modal-content {
+    animation: modalFadeIn 0.3s ease-out;
+}
+
+/* Style pour les tooltips de raison de destruction */
+[title="Détruit pour la raison suivante"] {
+    position: relative;
+    cursor: help;
+}
+
+[title="Détruit pour la raison suivante"]:hover::after {
+    content: attr(title);
+    position: absolute;
+    left: 0;
+    bottom: 100%;
+    background-color: #3d3d3d;
+    color: #f5f5f5;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 14px;
+    white-space: nowrap;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    z-index: 100;
+    max-width: 300px;
+    line-height: 1.4;
+    border: 1px solid #555;
+}
+
+[title="Détruit pour la raison suivante"]:hover::before {
+    content: "";
+    position: absolute;
+    left: 15px;
+    bottom: 100%;
+    width: 0;
+    height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-top: 8px solid #3d3d3d;
 }
 
 
