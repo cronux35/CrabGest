@@ -1,4 +1,6 @@
 // conditionnement.js - Gestion des déclarations de conditionnement avec édition et résumé
+
+// Déclaration des types de contenants
 if (typeof window.TYPES_CONTENANTS === 'undefined') {
     window.TYPES_CONTENANTS = [
         { id: 'canette_44cl', label: 'Canette 44cl', volume: 0.44 },
@@ -11,6 +13,7 @@ if (typeof window.TYPES_CONTENANTS === 'undefined') {
     ];
 }
 
+// Variable globale pour l'ID en cours d'édition
 if (typeof window.currentEditId === 'undefined') {
     window.currentEditId = null;
 }
