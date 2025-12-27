@@ -242,7 +242,6 @@ async function ajouterConditionnement() {
 }
 
 // Mettre à jour un conditionnement
-// Mettre à jour un conditionnement
 async function mettreAJourConditionnement(id) {
     if (!id) {
         console.error("ID du conditionnement non défini.");
@@ -285,7 +284,51 @@ async function mettreAJourConditionnement(id) {
         return;
     }
 
-    const volume
+    const volumeTotal = quantite * contenantInfo.volume;
+
+    try {
+        const biere = await window.DB.loadItemById('bieres', idBiere);
+        const conditionnementExistant = await window.DB.loadItemById('conditionnements', id);
+
+        if (!conditionnementExistant) {
+            alert("Conditionnement non trouvé.");
+            return;
+        }
+
+        // Supprimer l'ancien conditionnement et en créer un nouveau avec les mêmes données mises à jour
+        await window.DB.deleteItem('conditionnements', id);
+
+        const conditionnementMisAJour = {
+            id_biere: idBiere,
+            biere_nom: biere.nom,
+            date: dateConditionnement,
+            numero_lot: conditionnementExistant.numero_lot, // Conserver le numéro de lot existant
+            abv_final: parseFloat(abvFinal),
+            contenants: [{
+                type: typeContenant,
+                quantite: quantite,
+                volume_unitaire: contenantInfo.volume
+            }],
+            volume_total: volumeTotal
+        };
+
+        await window.DB.addItem('conditionnements', conditionnementMisAJour);
+
+        // Fermer la modale
+        const modaleConditionnement = document.getElementById('modale-conditionnement');
+        if (modaleConditionnement) {
+            modaleConditionnement.style.display = 'none';
+        }
+
+        // Rafraîchir l'affichage
+        chargerConditionnements(idBiere);
+
+        alert(`Conditionnement mis à jour avec succès.`);
+    } catch (error) {
+        console.error("Erreur lors de la mise à jour du conditionnement:", error);
+        alert("Une erreur est survenue lors de la mise à jour : " + error.message);
+    }
+}
 
 // Supprimer un conditionnement
 async function supprimerConditionnement(id) {
