@@ -48,6 +48,7 @@ async function chargerSelecteurBieresConditionnement() {
 }
 
 // Charger les conditionnements pour une bière sélectionnée
+// Charger les conditionnements pour une bière sélectionnée
 async function chargerConditionnements(idBiere) {
     try {
         const conditionnements = await window.DB.loadData('conditionnements').catch(() => []);
@@ -93,9 +94,8 @@ async function chargerConditionnements(idBiere) {
                     summaryRow.className = 'summary-row';
                     summaryRow.innerHTML = `
                         <td colspan="4" style="text-align: right; font-weight: bold;">Total</td>
-                        <td style="font-weight: bold;">${conditionnementsBiere.reduce((total, c) => total + c.contenants.reduce((sum, cont) => sum + cont.quantite, 0), 0)}</td>
                         <td style="font-weight: bold;">${totalVolume.toFixed(2)} L</td>
-                        <td style="font-weight: bold;">ABV moyen: ${totalABV.toFixed(2)}%</td>
+                        <td style="font-weight: bold;">ABV : ${totalABV.toFixed(2)}%</td>
                         <td></td>
                     `;
                     tbody.appendChild(summaryRow);
@@ -108,6 +108,7 @@ async function chargerConditionnements(idBiere) {
         console.error("Erreur lors du chargement des conditionnements:", error);
     }
 }
+
 
 // Ouvrir la modale pour ajouter ou éditer un conditionnement
 function ouvrirModaleConditionnement(conditionnement = null) {

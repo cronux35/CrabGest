@@ -1172,10 +1172,12 @@ th.sorted-desc::after {
 .summary-row {
     font-weight: bold;
     background-color: #f8f9fa;
+    color: #000;
 }
 
 .summary-row td {
     text-align: right;
+    padding: 8px;
 }
 
 .summary-row td:first-child {
