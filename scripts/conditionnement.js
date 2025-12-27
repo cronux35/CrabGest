@@ -1,4 +1,4 @@
-// conditionnement.js - Gestion des déclarations de conditionnement avec édition et résumé
+// conditionnement.js - Gestion des déclarations de conditionnement avec destruction et raison
 
 // Déclaration des types de contenants
 if (typeof window.TYPES_CONTENANTS === 'undefined') {
@@ -13,7 +13,6 @@ if (typeof window.TYPES_CONTENANTS === 'undefined') {
     ];
 }
 
-// Variable globale pour l'ID en cours d'édition
 if (typeof window.currentEditId === 'undefined') {
     window.currentEditId = null;
 }
@@ -67,20 +66,37 @@ async function chargerConditionnements(idBiere) {
                 conditionnementsBiere.forEach(conditionnement => {
                     const row = document.createElement('tr');
                     row.dataset.id = conditionnement.id;
+
+                    // Appliquer un style différent si le conditionnement est détruit
+                    if (conditionnement.detruit) {
+                        row.style.backgroundColor = '#ffebee';
+                        row.style.textDecoration = 'line-through';
+                        row.style.color = '#d32f2f';
+                    }
+
+                    // Ajouter un tooltip pour la raison de destruction si elle existe
+                    const raisonDestruction = conditionnement.raison_destruction ?
+                        ` title="Raison de destruction: ${conditionnement.raison_destruction}"` : '';
+
                     row.innerHTML = `
-                        <td>${conditionnement.numero_lot}</td>
-                        <td>${conditionnement.biere_nom || 'Inconnu'}</td>
-                        <td>${conditionnement.abv_final || 'N/A'}</td>
-                        <td>${conditionnement.contenants.map(c => `${c.type} (${c.quantite})`).join(', ')}</td>
-                        <td>${conditionnement.contenants.reduce((total, c) => total + c.quantite, 0)}</td>
-                        <td>${conditionnement.volume_total} L</td>
-                        <td>${new Date(conditionnement.date).toLocaleDateString()}</td>
+                        <td${raisonDestruction}>${conditionnement.numero_lot} ${conditionnement.detruit ? '(DÉTRUIT)' : ''}</td>
+                        <td${raisonDestruction}>${conditionnement.biere_nom || 'Inconnu'}</td>
+                        <td${raisonDestruction}>${conditionnement.abv_final || 'N/A'}</td>
+                        <td${raisonDestruction}>${conditionnement.contenants.map(c => `${c.type} (${c.quantite})`).join(', ')}</td>
+                        <td${raisonDestruction}>${conditionnement.contenants.reduce((total, c) => total + c.quantite, 0)}</td>
+                        <td${raisonDestruction}>${conditionnement.volume_total} L</td>
+                        <td${raisonDestruction}>${new Date(conditionnement.date).toLocaleDateString()}</td>
                         <td>
-                            <button class="action-btn edit-btn" data-action="edit" data-id="${conditionnement.id}" title="Éditer">
+                            <button class="action-btn edit-btn" data-action="edit" data-id="${conditionnement.id}" title="Éditer" ${conditionnement.detruit ? 'disabled' : ''}>
                                 <i class="material-icons">edit</i>
                             </button>
-                            <button class="action-btn delete-btn" data-action="delete" data-id="${conditionnement.id}" title="Supprimer">
+                            <button class="action-btn delete-btn" data-action="delete" data-id="${conditionnement.id}" title="Supprimer" ${conditionnement.detruit ? 'disabled' : ''}>
                                 <i class="material-icons">delete</i>
+                            </button>
+                            <button class="action-btn destroy-btn" data-action="destroy" data-id="${conditionnement.id}"
+                                    title="${conditionnement.detruit ? 'Rétablir ce conditionnement' : 'Détruire ce conditionnement'}"
+                                    style="background-color: ${conditionnement.detruit ? '#4caf50' : '#f44336'};">
+                                <i class="material-icons">${conditionnement.detruit ? 'restore' : 'delete_forever'}</i>
                             </button>
                         </td>
                     `;
@@ -89,21 +105,39 @@ async function chargerConditionnements(idBiere) {
 
                 // Ajouter la ligne de résumé
                 if (conditionnementsBiere.length > 0) {
-                    const totalVolume = conditionnementsBiere.reduce((sum, c) => sum + c.volume_total, 0);
-                    const totalABV = conditionnementsBiere.reduce((sum, c) => sum + (c.abv_final || 0), 0) / conditionnementsBiere.length;
+                    const totalVolume = conditionnementsBiere.reduce((sum, c) => c.detruit ? sum : sum + c.volume_total, 0);
+                    const totalABV = conditionnementsBiere.filter(c => !c.detruit).length > 0 ?
+                                      conditionnementsBiere.reduce((sum, c) => c.detruit ? sum : sum + (c.abv_final || 0), 0) /
+                                      conditionnementsBiere.filter(c => !c.detruit).length : 0;
 
                     const summaryRow = document.createElement('tr');
                     summaryRow.className = 'summary-row';
                     summaryRow.style.backgroundColor = '#f8f9fa';
                     summaryRow.style.fontWeight = 'bold';
                     summaryRow.innerHTML = `
-                        <td colspan="4" style="text-align: right;">Total</td>
-                        <td>${conditionnementsBiere.reduce((total, c) => total + c.contenants.reduce((sum, cont) => sum + cont.quantite, 0), 0)}</td>
-                        <td>${totalVolume.toFixed(2)} L</td>
-                        <td>ABV : ${totalABV.toFixed(2)}%</td>
+                        <td colspan="4" style="text-align: right;">Total (disponibles)</td>
+                        <td>${conditionnementsBiere.filter(c => !c.detruit).reduce((total, c) => total + c.contenants.reduce((sum, cont) => sum + cont.quantite, 0), 0)}</td>
+                        <td>${totalVolume ? totalVolume.toFixed(2) : '0.00'} L</td>
+                        <td>ABV : ${totalABV ? totalABV.toFixed(2) : '0.00'}%</td>
                         <td></td>
                     `;
                     tbody.appendChild(summaryRow);
+
+                    // Ajouter une ligne pour les détruits
+                    const totalVolumeDetruit = conditionnementsBiere.reduce((sum, c) => c.detruit ? sum + c.volume_total : sum, 0);
+                    if (totalVolumeDetruit > 0) {
+                        const destroyedRow = document.createElement('tr');
+                        destroyedRow.className = 'summary-row';
+                        destroyedRow.style.backgroundColor = '#ffebee';
+                        destroyedRow.style.fontWeight = 'bold';
+                        destroyedRow.innerHTML = `
+                            <td colspan="4" style="text-align: right;">Total (détruits)</td>
+                            <td>${conditionnementsBiere.filter(c => c.detruit).reduce((total, c) => total + c.contenants.reduce((sum, cont) => sum + cont.quantite, 0), 0)}</td>
+                            <td>${totalVolumeDetruit.toFixed(2)} L</td>
+                            <td colspan="2"></td>
+                        `;
+                        tbody.appendChild(destroyedRow);
+                    }
                 }
             }
         }
@@ -223,7 +257,9 @@ async function ajouterConditionnement() {
                 quantite: quantite,
                 volume_unitaire: contenantInfo.volume
             }],
-            volume_total: volumeTotal
+            volume_total: volumeTotal,
+            detruit: false, // Par défaut, non détruit
+            raison_destruction: null // Pas de raison de destruction par défaut
         };
 
         await window.DB.addItem('conditionnements', nouveauConditionnement);
@@ -312,7 +348,9 @@ async function mettreAJourConditionnement(id) {
                 quantite: quantite,
                 volume_unitaire: contenantInfo.volume
             }],
-            volume_total: volumeTotal
+            volume_total: volumeTotal,
+            detruit: conditionnementExistant.detruit || false, // Conserver l'état détruit
+            raison_destruction: conditionnementExistant.raison_destruction || null // Conserver la raison de destruction
         };
 
         await window.DB.addItem('conditionnements', conditionnementMisAJour);
@@ -339,7 +377,7 @@ async function supprimerConditionnement(id) {
         const conditionnement = await window.DB.loadItemById('conditionnements', id);
         if (!conditionnement) return;
 
-        if (confirm(`Voulez-vous vraiment supprimer ce conditionnement (Lot: ${conditionnement.numero_lot}) ?`)) {
+        if (confirm(`Voulez-vous vraiment supprimer définitivement ce conditionnement (Lot: ${conditionnement.numero_lot}) ?`)) {
             await window.DB.deleteItem('conditionnements', id);
             const listboxBieres = document.getElementById('listbox-bieres');
             if (listboxBieres) {
@@ -350,6 +388,109 @@ async function supprimerConditionnement(id) {
     } catch (error) {
         console.error("Erreur lors de la suppression du conditionnement:", error);
         alert("Une erreur est survenue lors de la suppression.");
+    }
+}
+
+// Détruire ou rétablir un conditionnement
+async function detruireConditionnement(id) {
+    try {
+        const conditionnement = await window.DB.loadItemById('conditionnements', id);
+        if (!conditionnement) return;
+
+        if (conditionnement.detruit) {
+            // Si déjà détruit, on demande confirmation pour rétablir
+            if (confirm(`Voulez-vous vraiment rétablir ce conditionnement (Lot: ${conditionnement.numero_lot}) ?`)) {
+                await marquerConditionnement(id, false, null);
+            }
+        } else {
+            // Si non détruit, on ouvre une modale pour demander la raison de la destruction
+            ouvrirModaleRaisonDestruction(id);
+        }
+    } catch (error) {
+        console.error(`Erreur lors de la vérification du conditionnement:`, error);
+        alert(`Une erreur est survenue lors de la vérification du conditionnement.`);
+    }
+}
+
+// Ouvrir une modale pour demander la raison de la destruction
+function ouvrirModaleRaisonDestruction(id) {
+    // Créer la modale si elle n'existe pas
+    let modaleRaisonDestruction = document.getElementById('modale-raison-destruction');
+    if (!modaleRaisonDestruction) {
+        modaleRaisonDestruction = document.createElement('div');
+        modaleRaisonDestruction.id = 'modale-raison-destruction';
+        modaleRaisonDestruction.className = 'custom-modal';
+        modaleRaisonDestruction.innerHTML = `
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h3>Raison de la destruction</h3>
+                <form id="form-raison-destruction">
+                    <div class="form-group">
+                        <label for="raison-destruction">Veuillez indiquer la raison de la destruction :</label>
+                        <textarea id="raison-destruction" class="form-control" rows="4" required></textarea>
+                    </div>
+                    <button type="button" id="btn-confirmer-destruction" class="btn btn-primary">Confirmer la destruction</button>
+                </form>
+            </div>
+        `;
+        document.body.appendChild(modaleRaisonDestruction);
+    }
+
+    // Afficher la modale
+    modaleRaisonDestruction.style.display = 'block';
+
+    // Écouteur pour le bouton de confirmation
+    const btnConfirmerDestruction = document.getElementById('btn-confirmer-destruction');
+    if (btnConfirmerDestruction) {
+        btnConfirmerDestruction.onclick = async () => {
+            const raisonDestruction = document.getElementById('raison-destruction').value;
+            if (!raisonDestruction) {
+                alert("Veuillez indiquer une raison pour la destruction.");
+                return;
+            }
+
+            await marquerConditionnement(id, true, raisonDestruction);
+            modaleRaisonDestruction.style.display = 'none';
+        };
+    }
+
+    // Écouteur pour fermer la modale
+    const closeModal = modaleRaisonDestruction.querySelector('.close');
+    if (closeModal) {
+        closeModal.onclick = () => {
+            modaleRaisonDestruction.style.display = 'none';
+        };
+    }
+}
+
+// Marquer un conditionnement comme détruit ou rétablir
+async function marquerConditionnement(id, detruit, raisonDestruction) {
+    try {
+        const conditionnement = await window.DB.loadItemById('conditionnements', id);
+        if (!conditionnement) return;
+
+        // Supprimer l'ancien conditionnement et en créer un nouveau avec l'état détruit mis à jour
+        await window.DB.deleteItem('conditionnements', id);
+
+        const conditionnementMisAJour = {
+            ...conditionnement,
+            detruit: detruit,
+            raison_destruction: detruit ? raisonDestruction : null
+        };
+
+        await window.DB.addItem('conditionnements', conditionnementMisAJour);
+
+        // Rafraîchir l'affichage
+        const listboxBieres = document.getElementById('listbox-bieres');
+        if (listboxBieres) {
+            const idBiere = listboxBieres.value;
+            chargerConditionnements(idBiere);
+        }
+
+        alert(`Conditionnement ${detruit ? 'détruit' : 'rétabli'} avec succès.`);
+    } catch (error) {
+        console.error(`Erreur lors de la ${detruit ? 'destruction' : 'réhabilitation'} du conditionnement:`, error);
+        alert(`Une erreur est survenue lors de la ${detruit ? 'destruction' : 'réhabilitation'}.`);
     }
 }
 
@@ -387,6 +528,8 @@ function attachConditionnementEventListeners() {
             }
         } else if (action === 'delete') {
             await supprimerConditionnement(id);
+        } else if (action === 'destroy') {
+            await detruireConditionnement(id);
         }
     };
 }
