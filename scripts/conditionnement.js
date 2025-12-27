@@ -1,6 +1,6 @@
 // conditionnement.js - Gestion des déclarations de conditionnement avec édition et résumé
-if (typeof currentEditId === 'undefined') {
-    var currentEditId = null;
+if (typeof currentCondiEditId === 'undefined') {
+    var currentCondiEditId = null;
 }
 
 if (typeof TYPES_CONTENANTS === 'undefined') {
@@ -131,7 +131,7 @@ function ouvrirModaleConditionnement(conditionnement = null) {
 
     if (conditionnement) {
         // Mode édition
-        currentEditId = conditionnement.id;
+        currentCondiEditId = conditionnement.id;
         btnEnregistrer.onclick = () => mettreAJourConditionnement(conditionnement.id);
 
         const biereId = conditionnement.id_biere;
@@ -148,7 +148,7 @@ function ouvrirModaleConditionnement(conditionnement = null) {
         }
     } else {
         // Mode ajout
-        currentEditId = null;
+        currentCondiEditId = null;
         btnEnregistrer.onclick = ajouterConditionnement;
 
         // Réinitialiser les champs
