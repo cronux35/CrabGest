@@ -11,8 +11,8 @@ if (typeof window.TYPES_CONTENANTS === 'undefined') {
     ];
 }
 
-if (typeof window.currentCondiEditId === 'undefined') {
-    window.currentCondiEditId = null;
+if (typeof window.currentEditId === 'undefined') {
+    window.currentEditId = null;
 }
 
 // Charger les bières dans le sélecteur de conditionnement
@@ -133,8 +133,10 @@ function ouvrirModaleConditionnement(conditionnement = null) {
 
     if (conditionnement) {
         // Mode édition
-        window.currentCondiEditId = conditionnement.id;
-        btnEnregistrer.onclick = () => mettreAJourConditionnement(conditionnement.id);
+        window.currentEditId = conditionnement.id;
+        btnEnregistrer.onclick = () => {
+            mettreAJourConditionnement(conditionnement.id);
+        };
 
         const biereId = conditionnement.id_biere;
         selectBiereConditionnement.value = biereId;
@@ -150,7 +152,7 @@ function ouvrirModaleConditionnement(conditionnement = null) {
         }
     } else {
         // Mode ajout
-        window.currentCondiEditId = null;
+        window.currentEditId = null;
         btnEnregistrer.onclick = ajouterConditionnement;
 
         // Réinitialiser les champs
@@ -241,6 +243,12 @@ async function ajouterConditionnement() {
 
 // Mettre à jour un conditionnement
 async function mettreAJourConditionnement(id) {
+    if (!id) {
+        console.error("ID du conditionnement non défini.");
+        alert("Erreur : ID du conditionnement non défini.");
+        return;
+    }
+
     const selectBiereConditionnement = document.getElementById('select-biere-conditionnement');
     const abvFinalInput = document.getElementById('abv-final');
     const typeContenantSelect = document.getElementById('type-contenant');
@@ -280,12 +288,18 @@ async function mettreAJourConditionnement(id) {
 
     try {
         const biere = await window.DB.loadItemById('bieres', idBiere);
+        const conditionnementExistant = await window.DB.loadItemById('conditionnements', id);
+
+        if (!conditionnementExistant) {
+            alert("Conditionnement non trouvé.");
+            return;
+        }
 
         const conditionnementMisAJour = {
             id_biere: idBiere,
             biere_nom: biere.nom,
             date: dateConditionnement,
-            numero_lot: document.querySelector(`tr[data-id="${id}"] td:first-child`).textContent, // Conserver le numéro de lot existant
+            numero_lot: conditionnementExistant.numero_lot, // Conserver le numéro de lot existant
             abv_final: parseFloat(abvFinal),
             contenants: [{
                 type: typeContenant,
@@ -356,9 +370,14 @@ function attachConditionnementEventListeners() {
         }
 
         if (action === 'edit') {
-            const conditionnement = await window.DB.loadItemById('conditionnements', id);
-            if (conditionnement) {
-                ouvrirModaleConditionnement(conditionnement);
+            try {
+                const conditionnement = await window.DB.loadItemById('conditionnements', id);
+                if (conditionnement) {
+                    ouvrirModaleConditionnement(conditionnement);
+                }
+            } catch (error) {
+                console.error("Erreur lors de la récupération du conditionnement:", error);
+                alert("Erreur lors de la récupération du conditionnement.");
             }
         } else if (action === 'delete') {
             await supprimerConditionnement(id);
